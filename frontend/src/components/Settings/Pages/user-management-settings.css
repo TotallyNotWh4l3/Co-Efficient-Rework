@@ -1,0 +1,80 @@
+.user-mgmt-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* ---- add-user form ---- */
+
+.user-mgmt-settings__form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 4px;
+}
+
+.user-mgmt-settings__error {
+    color: var(--color-error);
+    font-size: 12px;
+    margin: -4px 0 0;
+}
+
+/* ---- user list row ---- */
+
+.user-mgmt-settings__toast {
+    color: var(--color-success);
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.user-mgmt-settings__password-btn,
+.user-mgmt-settings__delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.user-mgmt-settings__password-btn {
+    color: var(--color-text-secondary);
+}
+
+.user-mgmt-settings__password-btn:hover {
+    background: var(--color-element-hover);
+    color: var(--color-text);
+    border-color: var(--color-border-hover);
+}
+
+.user-mgmt-settings__delete-btn {
+    color: var(--color-error);
+}
+
+.user-mgmt-settings__delete-btn:hover:not(:disabled) {
+    background: var(--color-error-bg);
+    border-color: var(--color-error);
+}
+
+.user-mgmt-settings__delete-btn:disabled,
+.user-mgmt-settings__password-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ---- stacked row variant (used on the Role row in the add-user form) ---- */
+
+.settings__row--stacked {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}

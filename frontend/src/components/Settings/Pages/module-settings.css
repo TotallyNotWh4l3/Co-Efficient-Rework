@@ -1,0 +1,112 @@
+/* frontend/src/components/Settings/Pages/module-settings.css */
+
+.module-settings {
+    display: flex;
+    flex-direction: column;
+}
+
+.module-settings__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.module-settings__add-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 14px;
+    background: var(--color-element);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+    text-align: left;
+}
+
+.module-settings__add-card:hover {
+    background: var(--color-element-hover);
+    border-color: var(--color-border-hover);
+    color: var(--color-text);
+}
+
+.module-settings__add-card:active {
+    background: var(--color-element-active);
+}
+
+.module-settings__add-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--color-accent-muted);
+    color: var(--color-text-accent);
+    flex-shrink: 0;
+}
+
+.module-settings__empty {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.module-settings__list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+    list-style: none;
+    padding: 0;
+}
+
+.module-settings__list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--color-element);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+
+.module-settings__list-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.module-settings__list-type {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+.module-settings__remove-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.module-settings__remove-btn:hover {
+    color: var(--color-error);
+    background: var(--color-error-bg);
+    border-color: rgba(239, 68, 68, 0.3);
+}

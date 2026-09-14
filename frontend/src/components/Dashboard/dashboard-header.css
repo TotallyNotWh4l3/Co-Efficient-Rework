@@ -1,0 +1,54 @@
+/* Main container */
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    height: 4rem;
+    padding: 1rem 2rem;
+
+    background: var(--color-bg-elevated);
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* Shared layout */
+.dashboard-header__wordmark,
+.dashboard-header__buttons,
+.dashboard-header__titles {
+    display: flex;
+    align-items: center;
+}
+
+/* Wordmark */
+.dashboard-header__wordmark {
+    gap: 0.5rem;
+    flex-direction: row;
+}
+
+.dashboard-header__logo {
+    width: 2rem;
+    height: 2rem;
+}
+
+.dashboard-header__titles {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+}
+
+.dashboard-header__title {
+    font-size: 1.325rem;
+    line-height: 1.325rem;
+    font-weight: 800;
+}
+
+.dashboard-header__subtitle {
+    font-size: 0.625rem;
+    line-height: 0.625rem;
+    font-weight: 600;
+}
+
+/* Right side */
+.dashboard-header__buttons {
+    gap: 1rem;
+}

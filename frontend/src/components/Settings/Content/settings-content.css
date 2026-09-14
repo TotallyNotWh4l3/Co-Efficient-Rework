@@ -1,0 +1,17 @@
+.settings__content {
+    flex: 1;
+
+    padding: 2rem 2.5rem;
+
+    overflow-y: auto;
+
+    background: var(--color-bg-elevated);
+}
+
+.settings-content__empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    flex: 1;
+}

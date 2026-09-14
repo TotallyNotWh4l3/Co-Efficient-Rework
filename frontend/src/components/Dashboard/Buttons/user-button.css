@@ -1,0 +1,116 @@
+/* ==========================================================================
+   User Menu
+   ========================================================================== */
+
+.user-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    background: var(--color-element);
+    border: 1px solid var(--color-border);
+    border-radius: 9999px;
+    color: var(--color-text);
+    cursor: pointer;
+    transition:
+        background-color 150ms ease,
+        border-color 150ms ease,
+        box-shadow 150ms ease;
+}
+
+.user-button:hover {
+    background: var(--color-element-hover);
+    border-color: var(--color-border-hover);
+}
+
+.user-button:active {
+    background: var(--color-element-active);
+}
+
+.user-button:focus-visible {
+    outline: none;
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px var(--color-focus);
+}
+
+.user-button__username {
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   Dropdown
+   ========================================================================== */
+
+.user-button__content {
+    min-width: 12rem;
+    padding: 0.25rem;
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-md);
+    animation: user-button-fade-in 120ms ease;
+    z-index: 9999;
+}
+
+.user-button__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border-radius: 0.5rem;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    outline: none;
+    user-select: none;
+    transition:
+        background-color 150ms ease,
+        color 150ms ease;
+}
+
+.user-button__item:hover,
+.user-button__item[data-highlighted] {
+    background: var(--color-element-hover);
+    color: var(--color-text);
+}
+
+.user-button__item:active {
+    background: var(--color-element-active);
+}
+
+.user-button__separator {
+    height: 1px;
+    margin: 0.25rem 0;
+
+    background: var(--color-border);
+}
+
+.user-button__label {
+    padding: 0.5rem 0.75rem;
+
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+
+@keyframes user-button-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "watch": ["."],
+    "ext": "js,mjs,cjs,json",
+    "ignore": [
+        "data/*.db",
+        "data/*.db-journal",
+        "data/*.db-wal",
+        "data/*.db-shm",
+        "node_modules"
+    ]
+}

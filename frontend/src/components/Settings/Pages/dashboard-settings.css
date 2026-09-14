@@ -1,0 +1,19 @@
+.dashboard-settings__module-block {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background: var(--color-overlay-light);
+}
+
+.dashboard-settings__module-block:first-of-type {
+    margin-top: 1rem;
+}
+
+.dashboard-settings__module-name {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    text-transform: capitalize;
+    color: var(--color-text-accent);
+}

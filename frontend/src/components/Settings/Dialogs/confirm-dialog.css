@@ -1,0 +1,14 @@
+.confirm-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    max-width: 380px;
+    padding: 20px;
+}
+
+.confirm-dialog .settings__row {
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+}

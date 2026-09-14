@@ -1,0 +1,184 @@
+.theme-dialog {
+    width: 100%;
+    padding: 1.5rem;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.theme-dialog__builtin-note {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.theme-dialog__color-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.theme-dialog__color-field,
+.theme-dialog__shadow-field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.theme-dialog__swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 0.25rem;
+    border: 1px solid var(--color-border);
+    flex-shrink: 0;
+}
+
+.theme-dialog__color-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.theme-dialog__color-label {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    text-transform: capitalize;
+}
+
+.theme-dialog__color-text {
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
+    color: var(--color-text);
+    font-size: 0.75rem;
+    padding: 0.25rem 0.4rem;
+    font-family: monospace;
+    width: 100%;
+}
+
+.theme-dialog__color-text:focus {
+    outline: none;
+    border-color: var(--color-border-focus);
+}
+
+.theme-dialog__error {
+    color: var(--color-error);
+    font-size: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.theme-dialog__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.theme-dialog__footer-right {
+    display: flex;
+    gap: 0.75rem;
+    margin-left: auto;
+}
+
+.theme-dialog__input {
+    width: 100%;
+}
+
+.theme-dialog__color-picker-input {
+    position: absolute;
+    width: 0;
+    height: 0;
+    padding: 0;
+    border: none;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.theme-dialog__picker-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.theme-dialog__picker-btn:hover:not(:disabled) {
+    background: var(--color-element-hover);
+    color: var(--color-text);
+    border-color: var(--color-border-hover);
+}
+
+.theme-dialog__picker-btn:focus-visible {
+    outline: none;
+    border-color: var(--color-border-focus);
+}
+
+.theme-dialog__picker-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.theme-dialog__color-text-wrap {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+}
+
+.theme-dialog__color-hash {
+    display: flex;
+    align-items: center;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    border-right: none;
+    border-radius: 0.25rem 0 0 0.25rem;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    font-family: monospace;
+    padding: 0.25rem 0 0.25rem 0.4rem;
+    user-select: none;
+}
+
+.theme-dialog__color-text-wrap .theme-dialog__color-text {
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.theme-dialog__color-text-wrap:has(.theme-dialog__color-hash) .theme-dialog__color-text {
+    border-left: none;
+    padding-left: 0.1rem;
+}
+
+.theme-dialog__color-text-wrap:focus-within .theme-dialog__color-hash {
+    border-color: var(--color-border-focus);
+}
+
+.theme-dialog__format-toggle {
+    align-self: flex-start;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
+    color: var(--color-text-muted);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.1rem 0.3rem;
+    cursor: pointer;
+}
+
+.theme-dialog__format-toggle:hover:not(:disabled) {
+    background: var(--color-element-hover);
+    color: var(--color-text);
+    border-color: var(--color-border-hover);
+}
+
+.theme-dialog__format-toggle:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
