@@ -5,6 +5,9 @@
 // 概要: サーバーのエントリーポイント (フルローカル版)
 // ===================================================
 
+import dns from "dns";
+dns.setDefaultResultOrder("ipv4first");
+
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -25,9 +28,13 @@ import userRoutes from "./modules/users/userRoutes.js";
 
 import sseRoutes from "./sse/sseRoutes.js";
 
-dotenv.config();
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 app.use(cors());
 app.use(express.json());
@@ -46,13 +53,15 @@ app.use("/api/geocoding", geocodingRoutes);
 app.use("/api/themes", themeRoutes);
 app.use("/api/users", userRoutes);
 
-app.get("/", (req, res) => {
-    res.json({
-        message: "Co:Efficient Backend Running (local)",
-    });
-});
-
 const PORT = process.env.PORT || 3001;
+
+// Serve built frontend
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+// Catch-all for client-side routing (keep this AFTER your /api routes)
+app.get(/^(?!\/api).*/, (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+});
 
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running!`);

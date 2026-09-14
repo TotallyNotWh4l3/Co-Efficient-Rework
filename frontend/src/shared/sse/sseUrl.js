@@ -11,7 +11,7 @@
  * verifies it manually. See backend/sse/sseRoutes.js.
  */
 export function getSSEUrl() {
-    const base = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+    const base = import.meta.env.VITE_API_URL || "/api";
     const token = localStorage.getItem("co-efficient-token") || "";
     return `${base}/sse?token=${encodeURIComponent(token)}`;
 }
