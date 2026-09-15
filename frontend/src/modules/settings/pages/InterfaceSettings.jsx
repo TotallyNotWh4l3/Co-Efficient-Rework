@@ -17,7 +17,7 @@ import { useThemes } from "../../themes/useThemes";
 import Settings from "../components/SettingsComponents";
 import LocationList from "../../locations/LocationList";
 
-import { LANGUAGE_OPTIONS } from "../../../shared/constants/interface/languageOptions";
+import { LANGUAGE_OPTIONS } from "../../../shared/constants/interface/options";
 
 import { Computer } from "lucide-react";
 

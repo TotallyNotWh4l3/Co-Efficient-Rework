@@ -1,10 +1,3 @@
-// ===================================================
-// ファイル名: settingsPages.js
-// 作成日: 2026/08/27
-// 作成者: ゴンザガ　ウェイン
-// 概要: 設定ページオプション
-// ===================================================
-
 import { Monitor, Blocks, LayoutDashboard, CircleHelp, Users } from "lucide-react";
 
 export const SETTINGS_PAGES = [
@@ -37,5 +30,17 @@ export const SETTINGS_PAGES = [
         id: "about",
         title: "About",
         icon: CircleHelp,
+    },
+];
+
+export const LANGUAGE_OPTIONS = [
+    {
+        id: "en",
+        label: "English",
+    },
+
+    {
+        id: "ja",
+        label: "日本語",
     },
 ];

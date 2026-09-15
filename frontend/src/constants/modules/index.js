@@ -1,1 +1,0 @@
-import { MODULE_CONFIG } from "./moduleConfig";

@@ -9,7 +9,7 @@ import { useState } from "react";
 
 import "./settings.css";
 
-import { SETTINGS_PAGES } from "../../shared/constants/interface/index";
+import { SETTINGS_PAGES } from "../../shared/constants/interface/options";
 import { useAuth } from "../auth/useAuth";
 
 import SettingsSidebar from "./SettingsSidebar";

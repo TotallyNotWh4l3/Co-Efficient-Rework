@@ -7,7 +7,7 @@
 
 import "./settings-sidebar.css";
 
-import { SETTINGS_PAGES } from "../../shared/constants/interface/index";
+import { SETTINGS_PAGES } from "../../shared/constants/interface/options";
 
 export default function SettingsSidebar({ currentPage, onPageChange, isAdmin }) {
     const visiblePages = SETTINGS_PAGES.filter((page) => !page.adminOnly || isAdmin);

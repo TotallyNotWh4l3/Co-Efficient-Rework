@@ -16,6 +16,25 @@ const isAdmin = (user) => user.role?.toLowerCase() === "admin";
 const isManagerOrAbove = (user) => ["manager", "admin"].includes(user.role?.toLowerCase());
 const canModify = (user, announcement) => isAdmin(user) || announcement.authorId === user.id;
 
+// See create() below: blocks a user re-submitting the exact same
+// title+content within this window (loop-spam of one identical post),
+// as a companion to the per-user rate limiter in announcementRoutes.js
+// (which caps total volume regardless of content).
+const DUPLICATE_COOLDOWN_MS = 30 * 1000;
+const recentPostsByUser = new Map();
+
+// Sweep old entries periodically so this doesn't grow unbounded on a
+// long-running server. unref() so it never keeps the process alive.
+setInterval(
+    () => {
+        const cutoff = Date.now() - DUPLICATE_COOLDOWN_MS;
+        for (const [key, postedAt] of recentPostsByUser) {
+            if (postedAt < cutoff) recentPostsByUser.delete(key);
+        }
+    },
+    5 * 60 * 1000,
+).unref();
+
 const announcementController = {
     // GET /api/announcements/recent -> last 5, for the dashboard card
     async getRecent(req, res) {
@@ -94,11 +113,27 @@ const announcementController = {
         }
     },
 
-    // POST /api/announcements -> any authenticated user may post
+    // POST /api/announcements -> any authenticated user may post.
+    // No role check here by design — but that means the only thing standing
+    // between "one legitimate post" and "700 identical posts from a console
+    // loop" is server-side throttling, since we can't distinguish a real
+    // click from a scripted fetch() call (same token, same headers either
+    // way). Two layers: the per-user rate limiter in announcementRoutes.js
+    // caps total volume, and the cooldown below specifically blocks a user
+    // firing the *same* title+content repeatedly in a tight loop.
     async create(req, res) {
         const { title, titleJa, content, contentJa, categories, isPinned } = req.body;
         if (!title?.trim() || !content?.trim()) {
             return res.status(400).json({ message: "Title and content are required." });
+        }
+
+        const duplicateKey = `${req.user.id}:${title.trim()}:${content.trim()}`;
+        const lastPostedAt = recentPostsByUser.get(duplicateKey);
+        if (lastPostedAt && Date.now() - lastPostedAt < DUPLICATE_COOLDOWN_MS) {
+            return res.status(429).json({
+                message:
+                    "You just posted this exact announcement — wait a bit before repeating it.",
+            });
         }
 
         try {
@@ -111,6 +146,8 @@ const announcementController = {
                 isPinned,
                 author: { id: req.user.id, name: req.user.username, role: req.user.role },
             });
+
+            recentPostsByUser.set(duplicateKey, Date.now());
 
             broadcast("announcements:created", created);
             res.status(201).json(created);
