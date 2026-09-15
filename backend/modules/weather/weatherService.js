@@ -16,9 +16,6 @@ import {
 import { formatWeather } from "./weatherFormatter.js";
 import { broadcast } from "../../sse/SSEController.js";
 
-const FIFTEEN_MIN_MS = 15 * 60 * 1000;
-
-
 const inFlightFetches = new Map();
 
 /**
@@ -61,18 +58,22 @@ export async function getWeather(location) {
 
     const row = await getCachedWeatherRow(locationId);
 
-    if (row?.payload?._dataTimestampUtc) {
-        const dataAgeMs = Date.now() - new Date(row.payload._dataTimestampUtc).getTime();
+    // Freshness is judged against OUR OWN aligned slot (weather_timestamp,
+    // set from getLatestWeatherTimestamp() at the moment we cached it) —
+    // not Open-Meteo's self-reported payload._dataTimestampUtc. Open-Meteo
+    // can lag its own labeled interval by up to ~15min before publishing,
+    // so comparing against their timestamp compounds with our 15min
+    // window into an effective ~30min refresh cadence. Comparing against
+    // our own slot means we always retry right on the XX:01/16/31/46
+    // schedule regardless of Open-Meteo's internal lag.
+    const currentSlot = getLatestWeatherTimestamp();
 
-        if (dataAgeMs >= 0 && dataAgeMs <= FIFTEEN_MIN_MS) {
-            console.log("[Weather] Cache hit.");
-            return stripInternalFields(row.payload);
-        }
-
-        console.log("[Weather] Cached data older than 15min (or clock skew), refetching...");
-    } else {
-        console.log("[Weather] No cache, fetching Open-Meteo...");
+    if (row?.payload && row.weather_timestamp === currentSlot) {
+        console.log("[Weather] Cache hit (still within current slot).");
+        return stripInternalFields(row.payload);
     }
+
+    console.log("[Weather] Cache is from a previous slot (or missing), refetching...");
 
     if (inFlightFetches.has(locationId)) {
         console.log("[Weather] Refetch already in flight on this instance, joining it.");
