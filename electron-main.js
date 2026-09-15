@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const logPath = path.join(app.getPath("userData"), "app-log.txt");
+const iconPath = path.join(__dirname, "frontend/public/favicon.ico");
 
 function log(msg) {
     const line = `[${new Date().toISOString()}] ${msg}\n`;
@@ -38,6 +39,7 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1280,
         height: 800,
+        icon: iconPath,
         webPreferences: {
             contextIsolation: true,
         },

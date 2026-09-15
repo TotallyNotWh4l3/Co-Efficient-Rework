@@ -24,7 +24,6 @@ function Workmark() {
 
     return (
         <div className="dashboard-header__wordmark">
-            <Layers />
             <div className="dashboard-header__titles">
                 <span className="dashboard-header__title">
                     <LinearGradient gradient={titleGradient}>
