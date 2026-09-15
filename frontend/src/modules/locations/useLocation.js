@@ -1,21 +1,23 @@
 
 // ===================================================
 // ファイル名: useLocation.js
-// 作成日: 2026/08/27
-// 作成者: ゴンザガ　ウェイン
 // 概要: ロケーション情報を取得・管理するカスタムフック
+//       旧: 45秒ごとのポーリングだったものを廃止し、バックエンドが
+//       配信する locations:location-created/updated/removed を
+//       購読する方式に変更。
 // ===================================================
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSettings } from "../settings/useSettings";
 import { useAuth } from "../auth/useAuth";
 import locationService from "./locationService";
-
-const POLL_INTERVAL_MS = 45000;
+import { getSSEUrl } from "../../shared/sse/sseUrl";
+import { useRealtime } from "../../shared/sse/RealtimeContext";
 
 export function useLocation({ live = true } = {}) {
     const { settings, loading: settingsLoading } = useSettings();
     const { user } = useAuth();
+    const { subscribe } = useRealtime();
 
     const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -43,17 +45,37 @@ export function useLocation({ live = true } = {}) {
         load();
     }, [user, load]);
 
-    // Polling replaces the old SSE-based live sync (removed to avoid holding
-    // long-lived connections open on free-tier hosting).
     useEffect(() => {
         if (!live || !user) return undefined;
 
-        const interval = setInterval(() => {
-            load({ silent: true });
-        }, POLL_INTERVAL_MS);
+        const url = getSSEUrl();
 
-        return () => clearInterval(interval);
-    }, [live, user, load]);
+        const unsubCreated = subscribe(url, "locations:location-created", (event) => {
+            const created = JSON.parse(event.data);
+            setLocations((prev) => {
+                const exists = prev.some((l) => l.id === created.id);
+                return exists
+                    ? prev.map((l) => (l.id === created.id ? created : l))
+                    : [...prev, created];
+            });
+        });
+
+        const unsubUpdated = subscribe(url, "locations:location-updated", (event) => {
+            const updated = JSON.parse(event.data);
+            setLocations((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+        });
+
+        const unsubRemoved = subscribe(url, "locations:location-removed", (event) => {
+            const { id } = JSON.parse(event.data);
+            setLocations((prev) => prev.filter((l) => l.id !== id));
+        });
+
+        return () => {
+            unsubCreated();
+            unsubUpdated();
+            unsubRemoved();
+        };
+    }, [live, user, subscribe]);
 
     const currentLocation = useMemo(() => {
         if (!settings) return null;

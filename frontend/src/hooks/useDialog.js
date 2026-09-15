@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: useDialog.js
 // 作成日: 2026/08/27
@@ -9,7 +8,8 @@
 import { useCallback, useState } from "react";
 import { useContext } from "react";
 
-import { DialogContext } from "../context/DialogContext";
+import { DialogContext } from "./DialogContext";
+import { uuidv4 } from "../utils/uuid";
 
 export function useDialogState() {
     const [dialogs, setDialogs] = useState([]);
@@ -18,7 +18,7 @@ export function useDialogState() {
         setDialogs((prev) => [
             ...prev,
             {
-                id: crypto.randomUUID(),
+                id: uuidv4(),
                 ...dialog,
             },
         ]);

@@ -1,15 +1,15 @@
 
 // ===================================================
 // ファイル名: useSchedule.js
-// 作成日: 2026/08/27
-// 作成者: ゴンザガ　ウェイン
 // 概要: スケジュール情報を取得・管理するカスタムフック
+//       旧: 45秒ごとのポーリングだったものを廃止し、バックエンドが
+//       配信する schedule:created/updated/deleted を購読する方式に変更。
 // ===================================================
 
 import { useState, useEffect, useCallback } from "react";
 import scheduleService from "./scheduleService";
-
-const POLL_INTERVAL_MS = 45000;
+import { getSSEUrl } from "../../shared/sse/sseUrl";
+import { useRealtime } from "../../shared/sse/RealtimeContext";
 
 export default function useSchedule({
     scope = "all",
@@ -20,6 +20,7 @@ export default function useSchedule({
     const [events, setEvents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { subscribe } = useRealtime();
 
     const load = useCallback(
         async ({ silent = false } = {}) => {
@@ -63,20 +64,48 @@ export default function useSchedule({
         [],
     );
 
-    // Polling replaces the old SSE-based live sync (removed to avoid holding
-    // long-lived connections open on free-tier hosting). Re-fetches the
-    // current scope's list wholesale on an interval. silent: true so a
-    // background refresh doesn't flip isLoading and flash the list back to
-    // its loading state when nothing visibly changed.
+    // Live sync via SSE. created/updated apply directly; deleted removes
+    // by id. Scoped views (today/upcoming/range) still get pushed every
+    // event — filtering on an event that falls outside the current scope
+    // is harmless since it'll just no-op against the sorted list, and
+    // this keeps the hook simple. Rejoin the full list is still exact
+    // because create/update come from the server as canonical rows.
     useEffect(() => {
         if (!live) return undefined;
 
-        const interval = setInterval(() => {
-            load({ silent: true });
-        }, POLL_INTERVAL_MS);
+        const url = getSSEUrl();
 
-        return () => clearInterval(interval);
-    }, [live, load]);
+        const unsubCreated = subscribe(url, "schedule:created", (event) => {
+            const created = JSON.parse(event.data);
+            setEvents((prev) => {
+                const list = Array.isArray(prev) ? prev : [];
+                if (list.some((e) => e.id === created.id)) return list;
+                return sortEvents([created, ...list]);
+            });
+        });
+
+        const unsubUpdated = subscribe(url, "schedule:updated", (event) => {
+            const updated = JSON.parse(event.data);
+            setEvents((prev) =>
+                sortEvents(
+                    (Array.isArray(prev) ? prev : []).map((e) =>
+                        e.id === updated.id ? updated : e,
+                    ),
+                ),
+            );
+        });
+
+        const unsubDeleted = subscribe(url, "schedule:deleted", (event) => {
+            const deleted = JSON.parse(event.data);
+            setEvents((prev) => (Array.isArray(prev) ? prev : []).filter((e) => e.id !== deleted.id));
+        });
+
+        return () => {
+            unsubCreated();
+            unsubUpdated();
+            unsubDeleted();
+        };
+    }, [live, subscribe, sortEvents]);
 
     const createEvent = useCallback(
         async (payload) => {

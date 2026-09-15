@@ -1,19 +1,21 @@
 
 // ===================================================
 // ファイル名: useThemes.js
-// 作成日: 2026/08/27
-// 作成者: ゴンザガ　ウェイン
 // 概要: テーマ情報を取得するカスタムフック
+//       旧: 45秒ごとのポーリングだったものを廃止し、バックエンドが
+//       配信する themes:theme-created/theme-updated/theme-removed を
+//       購読する方式に変更。
 // ===================================================
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import themeService from "./themeService";
-
-const POLL_INTERVAL_MS = 45000;
+import { getSSEUrl } from "../../shared/sse/sseUrl";
+import { useRealtime } from "../../shared/sse/RealtimeContext";
 
 export function useThemes({ live = true } = {}) {
     const { user } = useAuth();
+    const { subscribe } = useRealtime();
 
     const [themes, setThemes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -41,17 +43,37 @@ export function useThemes({ live = true } = {}) {
         load();
     }, [user, load]);
 
-    // Polling replaces the old SSE-based live sync (removed to avoid holding
-    // long-lived connections open on free-tier hosting).
     useEffect(() => {
         if (!live || !user) return undefined;
 
-        const interval = setInterval(() => {
-            load({ silent: true });
-        }, POLL_INTERVAL_MS);
+        const url = getSSEUrl();
 
-        return () => clearInterval(interval);
-    }, [live, user, load]);
+        const unsubCreated = subscribe(url, "themes:theme-created", (event) => {
+            const created = JSON.parse(event.data);
+            setThemes((prev) => {
+                const exists = prev.some((t) => t.id === created.id);
+                return exists
+                    ? prev.map((t) => (t.id === created.id ? created : t))
+                    : [...prev, created];
+            });
+        });
+
+        const unsubUpdated = subscribe(url, "themes:theme-updated", (event) => {
+            const updated = JSON.parse(event.data);
+            setThemes((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+        });
+
+        const unsubRemoved = subscribe(url, "themes:theme-removed", (event) => {
+            const { id } = JSON.parse(event.data);
+            setThemes((prev) => prev.filter((t) => t.id !== id));
+        });
+
+        return () => {
+            unsubCreated();
+            unsubUpdated();
+            unsubRemoved();
+        };
+    }, [live, user, subscribe]);
 
     const createTheme = useCallback(async (payload) => {
         const created = await themeService.create(payload);

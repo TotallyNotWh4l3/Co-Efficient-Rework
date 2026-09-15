@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: ThemeDialog.jsx
 // 作成日: 2026/08/27
@@ -12,6 +11,7 @@ import { useState } from "react";
 
 import { useLanguage } from "../settings/useLanguage";
 import { useAuth } from "../auth/useAuth";
+import { uuidv4 } from "../../shared/utils/uuid";
 
 import Settings from "../settings/components/SettingsComponents";
 import { useRef } from "react";
@@ -32,7 +32,7 @@ const COLOR_GROUPS = [
     {
         key: "surface",
         fields: ["bg", "bgElevated", "surface", "surfaceElevated", "surfaceFloating"],
-    },  
+    },
     {
         key: "element",
         fields: ["element", "elementHover", "elementActive", "elementSelected", "elementDisabled"],
@@ -235,7 +235,7 @@ export default function ThemeDialog({
         setSaveError(null);
         try {
             const themePayload = {
-                id: initialTheme?.id ?? crypto.randomUUID(),
+                id: initialTheme?.id ?? uuidv4(),
                 name: trimmedName,
                 // Preserve builtIn when an admin edits a built-in theme in
                 // place — this must stay true, not be reset to false.

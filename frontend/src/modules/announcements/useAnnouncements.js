@@ -1,20 +1,22 @@
 // ===================================================
 // ファイル名: useAnnouncements.js
-// 作成日: 2026/08/27
-// 作成者: ゴンザガ　ウェイン
 // 概要: お知らせフック
+//       旧: 45秒ごとのポーリングだったものを廃止し、バックエンドが
+//       central SSEController経由で配信する
+//       announcements:created/updated/deleted/archived/restored を
+//       購読する方式に変更。
 // ===================================================
-
 
 import { useState, useEffect, useCallback } from "react";
 import announcementService from "./announcementService";
-
-const POLL_INTERVAL_MS = 45000;
+import { getSSEUrl } from "../../shared/sse/sseUrl";
+import { useRealtime } from "../../shared/sse/RealtimeContext";
 
 export default function useAnnouncements({ recentOnly = true, live = true } = {}) {
     const [announcements, setAnnouncements] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { subscribe } = useRealtime();
 
     const load = useCallback(
         async ({ silent = false } = {}) => {
@@ -41,21 +43,56 @@ export default function useAnnouncements({ recentOnly = true, live = true } = {}
         load();
     }, [load]);
 
-    // Polling replaces the old SSE-based live sync (removed to avoid holding
-    // long-lived connections open on free-tier hosting, which was causing
-    // the backend to degrade under sustained load). Re-fetches the full
-    // list on an interval instead of listening for individual item events.
-    // silent: true so a background refresh doesn't flip isLoading and
-    // flash the list back to its loading state when nothing visibly changed.
+    // Live sync via SSE. created/updated/deleted are applied directly to
+    // local state for an instant, flicker-free update. archived/restored
+    // change *which list* an item belongs to (recentOnly vs. the archive
+    // view), so those just trigger a silent re-fetch of whatever this
+    // hook is currently scoped to — still instant (SSE-triggered), just
+    // not worth hand-merging since membership depends on `recentOnly`.
     useEffect(() => {
         if (!live) return undefined;
 
-        const interval = setInterval(() => {
-            load({ silent: true });
-        }, POLL_INTERVAL_MS);
+        const url = getSSEUrl();
 
-        return () => clearInterval(interval);
-    }, [live, load]);
+        const unsubCreated = subscribe(url, "announcements:created", (event) => {
+            const created = JSON.parse(event.data);
+            setAnnouncements((prev) => {
+                const list = Array.isArray(prev) ? prev : [];
+                if (list.some((a) => a.id === created.id)) return list;
+                return [created, ...list];
+            });
+        });
+
+        const unsubUpdated = subscribe(url, "announcements:updated", (event) => {
+            const updated = JSON.parse(event.data);
+            setAnnouncements((prev) =>
+                (Array.isArray(prev) ? prev : []).map((a) => (a.id === updated.id ? updated : a)),
+            );
+        });
+
+        const unsubDeleted = subscribe(url, "announcements:deleted", (event) => {
+            const deleted = JSON.parse(event.data);
+            setAnnouncements((prev) =>
+                (Array.isArray(prev) ? prev : []).filter((a) => a.id !== deleted.id),
+            );
+        });
+
+        const unsubArchived = subscribe(url, "announcements:archived", () => {
+            load({ silent: true });
+        });
+
+        const unsubRestored = subscribe(url, "announcements:restored", () => {
+            load({ silent: true });
+        });
+
+        return () => {
+            unsubCreated();
+            unsubUpdated();
+            unsubDeleted();
+            unsubArchived();
+            unsubRestored();
+        };
+    }, [live, load, subscribe]);
 
     const createAnnouncement = useCallback(async (payload) => {
         const created = await announcementService.create(payload);

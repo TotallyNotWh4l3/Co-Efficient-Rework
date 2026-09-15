@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import { MapPin, Search } from "lucide-react";
 
 import { useLocation } from "./useLocation";
+import { uuidv4 } from "../../shared/utils/uuid";
 import { useLanguage } from "../settings/useLanguage";
 import geocodingService from "../geocoding/geocodingService";
 
@@ -171,7 +172,7 @@ export default function LocationDialog({ initialLocation = null, onClose, onSave
             }
 
             await onSave({
-                id: initialLocation?.id ?? crypto.randomUUID(),
+                id: initialLocation?.id ?? uuidv4(),
                 name: finalName,
                 latitude: latitudeNumber,
                 longitude: longitudeNumber,

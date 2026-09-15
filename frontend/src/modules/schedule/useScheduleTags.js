@@ -1,20 +1,21 @@
 
 // ===================================================
 // ファイル名: useScheduleTags.js
-// 作成日: 2026/08/27
-// 作成者: ゴンザガ　ウェイン
 // 概要: スケジュールタグを管理するカスタムフック
+//       旧: 45秒ごとのポーリングだったものを廃止し、バックエンドが
+//       配信する schedule:tag-updated/tag-removed を購読する方式に変更。
 // ===================================================
 
 import { useCallback, useEffect, useState } from "react";
 import scheduleService from "./scheduleService";
-
-const POLL_INTERVAL_MS = 45000;
+import { getSSEUrl } from "../../shared/sse/sseUrl";
+import { useRealtime } from "../../shared/sse/RealtimeContext";
 
 export default function useScheduleTags({ live = true } = {}) {
     const [tags, setTags] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { subscribe } = useRealtime();
 
     const load = useCallback(async ({ silent = false } = {}) => {
         if (!silent) setIsLoading(true);
@@ -33,17 +34,29 @@ export default function useScheduleTags({ live = true } = {}) {
         load();
     }, [load]);
 
-    // Polling replaces the old SSE-based live sync (removed to avoid holding
-    // long-lived connections open on free-tier hosting).
     useEffect(() => {
         if (!live) return undefined;
 
-        const interval = setInterval(() => {
-            load({ silent: true });
-        }, POLL_INTERVAL_MS);
+        const url = getSSEUrl();
 
-        return () => clearInterval(interval);
-    }, [live, load]);
+        const unsubUpdated = subscribe(url, "schedule:tag-updated", (event) => {
+            const tag = JSON.parse(event.data);
+            setTags((prev) => {
+                const exists = prev.some((t) => t.id === tag.id);
+                return exists ? prev.map((t) => (t.id === tag.id ? tag : t)) : [...prev, tag];
+            });
+        });
+
+        const unsubRemoved = subscribe(url, "schedule:tag-removed", (event) => {
+            const { id } = JSON.parse(event.data);
+            setTags((prev) => prev.filter((t) => t.id !== id));
+        });
+
+        return () => {
+            unsubUpdated();
+            unsubRemoved();
+        };
+    }, [live, subscribe]);
 
     const upsertTag = useCallback(async (id, color) => {
         const tag = await scheduleService.upsertTag(id, color);

@@ -78,8 +78,20 @@ export function getRelativeRollingDays(daysBefore = 0) {
     return days;
 }
 
+// A real scheduling clash: two or more events at the exact same time on
+// the same day. (Events here are single points in time — no duration/end
+// field — so "overlap" means an identical eventTime, not just sharing a
+// day. Checking dayEvents.length > 1 alone meant any two events on the
+// same day showed the conflict badge forever, even after editing one to
+// a non-clashing time.)
 export function hasConflict(dayEvents) {
-    return dayEvents.length > 1;
+    if (dayEvents.length < 2) return false;
+    const seen = new Set();
+    for (const ev of dayEvents) {
+        if (seen.has(ev.eventTime)) return true;
+        seen.add(ev.eventTime);
+    }
+    return false;
 }
 
 /** First tag in the event's tag list determines display color; falls back to accent. */

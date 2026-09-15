@@ -1,13 +1,17 @@
 // ===================================================
 // ファイル名: useDashboard.js
-// 作成日: 2026/08/27
-// 作成者: ゴンザガ　ウェイン
 // 概要: ダッシュボード情報を取得・管理するカスタムフック
+//       旧: 45秒ごとのポーリングだったものを廃止し、バックエンドが
+//       配信する dashboard:layout-updated/module-added/module-removed/
+//       module-updated を購読する方式に変更。
+//       (ユーザー単位配信 — 同じユーザーの他タブ/他端末との同期用)
 // ===================================================
 
 import { useState, useEffect, useCallback } from "react";
 import { useDashboardContext } from "./DashboardContext";
 import dashboardService from "./dashboardService";
+import { getSSEUrl } from "../../shared/sse/sseUrl";
+import { useRealtime } from "../../shared/sse/RealtimeContext";
 
 const EMPTY_DASHBOARD = {
     id: "main",
@@ -16,22 +20,20 @@ const EMPTY_DASHBOARD = {
     modules: [],
 };
 
-const POLL_INTERVAL_MS = 45000;
-
 /**
  * useDashboard Hook
  *
  * Each user's dashboard lives server-side (not localStorage), so it follows
- * them across devices/browsers. Live sync now polls the server on an
- * interval rather than holding an SSE connection open — the previous SSE
- * setup was causing the free-tier backend host to degrade under sustained
- * load from multiple long-lived connections.
+ * them across devices/browsers. Live sync is via SSE — the backend
+ * broadcasts layout/module changes to that user's other connected tabs
+ * over the central /api/sse channel.
  */
 export function useDashboardState(user) {
     const userId = user?.id ?? user?._id ?? null;
     const [dashboard, setDashboard] = useState(EMPTY_DASHBOARD);
     const [loading, setLoading] = useState(true);
     const [selectedModuleId, setSelectedModuleId] = useState(null);
+    const { subscribe } = useRealtime();
 
     const load = useCallback(async ({ silent = false } = {}) => {
         if (!silent) setLoading(true);
@@ -74,19 +76,52 @@ export function useDashboardState(user) {
     }, [userId]);
 
     // =====================================================
-    // Live sync via polling — re-fetches the whole dashboard
-    // state on an interval instead of listening for individual
-    // module/layout events over SSE.
+    // Live sync via SSE — applies layout/module changes pushed
+    // from this same user's other connected tabs/devices.
     // =====================================================
     useEffect(() => {
         if (!userId) return undefined;
 
-        const interval = setInterval(() => {
-            load({ silent: true });
-        }, POLL_INTERVAL_MS);
+        const url = getSSEUrl();
 
-        return () => clearInterval(interval);
-    }, [userId, load]);
+        const unsubLayout = subscribe(url, "dashboard:layout-updated", (event) => {
+            const layout = JSON.parse(event.data);
+            setDashboard((prev) => ({ ...prev, layout: { ...prev.layout, ...layout } }));
+        });
+
+        const unsubAdded = subscribe(url, "dashboard:module-added", (event) => {
+            const module = JSON.parse(event.data);
+            setDashboard((prev) => {
+                if (prev.modules.some((m) => m.id === module.id)) return prev;
+                return { ...prev, modules: [...prev.modules, module] };
+            });
+        });
+
+        const unsubRemoved = subscribe(url, "dashboard:module-removed", (event) => {
+            const { id } = JSON.parse(event.data);
+            setDashboard((prev) => ({
+                ...prev,
+                modules: prev.modules.filter((module) => module.id !== id),
+            }));
+        });
+
+        const unsubUpdated = subscribe(url, "dashboard:module-updated", (event) => {
+            const updatedModule = JSON.parse(event.data);
+            setDashboard((prev) => ({
+                ...prev,
+                modules: prev.modules.map((module) =>
+                    module.id === updatedModule.id ? updatedModule : module,
+                ),
+            }));
+        });
+
+        return () => {
+            unsubLayout();
+            unsubAdded();
+            unsubRemoved();
+            unsubUpdated();
+        };
+    }, [userId, subscribe]);
 
     // =====================================================
     // Layout
