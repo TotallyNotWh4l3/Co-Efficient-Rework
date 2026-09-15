@@ -5,27 +5,27 @@
 // 概要: アプリケーションコンポーネント
 // ===================================================
 
-import Dashboard from "./components/Dashboard/Dashboard";
-import DialogManager from "./components/Settings/Components/UI/Dialog/DialogManager";
-import Login from "./components/Login/Login";
+import Dashboard from "./modules/dashboard/Dashboard";
+import DialogManager from "./common/Dialog/DialogManager";
+import Login from "./modules/auth/Login";
 
 // Hooks
-import { useSettingsState } from "./hooks/useSettings";
-import { useDashboardState } from "./hooks/useDashboard";
-import { useDialogState } from "./hooks/useDialog";
-import { useTheme } from "./hooks/useTheme";
-import { useAuthState, useAuth } from "./hooks/useAuth";
+import { useSettingsState } from "./modules/settings/useSettings";
+import { useDashboardState } from "./modules/dashboard/useDashboard";
+import { useDialogState } from "./shared/dialog/useDialog";
+import { useTheme } from "./modules/themes/useTheme";
+import { useAuthState, useAuth } from "./modules/auth/useAuth";
 
 // Context
-import { SettingsProvider } from "./context/SettingsContext";
-import { DashboardProvider } from "./context/DashboardContext";
-import { DialogProvider } from "./context/DialogContext";
-import { AuthProvider } from "./context/AuthContext";
-import { RealtimeProvider } from "./context/RealtimeContext";
+import { SettingsProvider } from "./modules/settings/SettingsContext";
+import { DashboardProvider } from "./modules/dashboard/DashboardContext";
+import { DialogProvider } from "./shared/dialog/DialogContext";
+import { AuthProvider } from "./modules/auth/AuthContext";
+import { RealtimeProvider } from "./shared/sse/RealtimeContext";
 
 // CSS
-import "./styles/global.css";
-import "./styles/variable.css";
+import "./shared/styles/global.css";
+import "./shared/styles/variable.css";
 
 function ThemeApplier() {
     useTheme();

@@ -1,0 +1,910 @@
+/* frontend/src/components/Modules/Announcement/AnnouncementCard.css
+   Uses tokens from frontend/src/styles/variable.css — import that globally
+   (e.g. in main.jsx or global.css) before this file. */
+
+.icon-xxs {
+    width: 10px;
+    height: 10px;
+}
+.icon-xs {
+    width: 14px;
+    height: 14px;
+}
+.icon-sm {
+    width: 16px;
+    height: 16px;
+}
+
+/* ---------- Card shell ---------- */
+.ann-card {
+    position: relative;
+    color: var(--color-text);
+    background: linear-gradient(135deg, var(--color-bg-elevated) 0%, var(--color-surface) 100%);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    transition: box-shadow 0.35s ease;
+}
+.ann-card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+.ann-glow {
+    position: absolute;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+}
+.ann-glow-top {
+    top: -15%;
+    right: -15%;
+    background: var(--color-accent-muted);
+}
+.ann-glow-bottom {
+    bottom: -20%;
+    left: -10%;
+    width: 180px;
+    height: 180px;
+    background: var(--color-accent-muted);
+    opacity: 0.6;
+}
+
+/* ---------- Header ---------- */
+.ann-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--color-border);
+    z-index: var(--z-dashboard, 1);
+    position: relative;
+}
+.ann-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.ann-header-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--color-accent-muted);
+    border: 1px solid var(--color-accent-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-accent);
+}
+.ann-header-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text);
+}
+.ann-header-subtitle {
+    font-size: 10px;
+    color: var(--color-text-muted);
+    font-weight: 500;
+    margin-top: 2px;
+}
+.ann-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ann-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    background: var(--color-accent);
+    color: var(--color-text);
+    border: 1px solid var(--color-accent-border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.ann-btn-primary:hover {
+    background: var(--color-accent-hover);
+}
+.ann-btn-primary:active {
+    background: var(--color-accent-active);
+}
+
+.ann-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ann-btn-secondary {
+    padding: 6px 14px;
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--color-element);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+}
+.ann-btn-secondary:hover {
+    background: var(--color-element-hover);
+}
+
+.ann-viewer-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--color-surface);
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    font-size: 9px;
+    color: var(--color-text-muted);
+}
+
+.ann-icon-toggle {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.ann-icon-toggle:hover {
+    color: var(--color-text-accent);
+    background: var(--color-element-hover);
+}
+.ann-icon-toggle.active {
+    background: var(--color-element-selected);
+    color: var(--color-text-accent);
+    border-color: var(--color-border-active);
+}
+
+/* ---------- Body / filters ---------- */
+.ann-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding-top: 12px;
+    min-height: 220px;
+    z-index: 1;
+    position: relative;
+}
+.ann-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.ann-search {
+    position: relative;
+}
+.ann-search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    pointer-events: none;
+}
+.ann-search input {
+    width: 100%;
+    font-size: 11px;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 6px 28px;
+    color: var(--color-text);
+}
+.ann-search input:focus {
+    outline: none;
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 2px var(--color-accent-muted);
+}
+.ann-search input::placeholder {
+    color: var(--color-text-disabled);
+}
+.ann-search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.ann-tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+.ann-tabs::-webkit-scrollbar {
+    display: none;
+}
+.ann-tab {
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.ann-tab:hover {
+    color: var(--color-text);
+    background: var(--color-element-hover);
+}
+.ann-tab.active {
+    background: var(--color-element-selected);
+    color: var(--color-text-accent);
+    border-color: var(--color-border-active);
+    font-weight: 700;
+}
+
+/* ---------- List / items ---------- */
+.ann-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 4px;
+    min-height: 160px;
+}
+.ann-list::-webkit-scrollbar {
+    width: 6px;
+}
+.ann-list::-webkit-scrollbar-thumb {
+    background: var(--color-surface-elevated);
+    border-radius: 3px;
+}
+.ann-list::-webkit-scrollbar-thumb:hover {
+    background: var(--color-element-active);
+}
+
+.ann-item {
+    position: relative;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+.ann-item:hover {
+    background: var(--color-surface-elevated);
+}
+
+.ann-pin-indicator {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    color: var(--color-warning);
+}
+.ann-item-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding-right: 16px;
+}
+.ann-item-icon {
+    margin-top: 2px;
+    padding: 4px;
+    border-radius: 6px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+}
+.ann-item-body {
+    flex-grow: 1;
+    min-width: 0;
+}
+.ann-item-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ann-flag {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+}
+.ann-tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+.ann-tag {
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+}
+.ann-item-desc {
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ann-item-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--color-border);
+    font-size: 9px;
+    color: var(--color-text-muted);
+}
+.ann-item-meta-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ann-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+.ann-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.7;
+}
+.ann-item:hover .ann-item-controls {
+    opacity: 1;
+}
+.ann-item-action {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    padding: 2px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.ann-item-action:hover {
+    color: var(--color-text-accent);
+    background: var(--color-surface);
+}
+.ann-item-action-danger:hover {
+    color: var(--color-error);
+}
+.ann-chevron {
+    color: var(--color-text-muted);
+    transition: transform 0.2s ease;
+}
+.ann-item:hover .ann-chevron {
+    transform: translateX(2px);
+}
+
+/* Category accent colors (bg/border/text per category) */
+.tag-urgent {
+    background: var(--color-element-selected);
+    border-color: var(--color-error);
+    color: var(--color-error);
+}
+.tag-maintenance {
+    background: var(--color-element-selected);
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+}
+.tag-event {
+    background: var(--color-element-selected);
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+.tag-announcement {
+    background: var(--color-accent-muted);
+    border-color: var(--color-accent-border);
+    color: var(--color-text-accent);
+}
+.tag-notice {
+    background: var(--color-accent-muted);
+    border-color: var(--color-accent-border);
+    color: var(--color-text-accent);
+}
+.tag-general {
+    background: var(--color-accent-muted);
+    border-color: var(--color-accent-border);
+    color: var(--color-text-accent);
+}
+
+.ann-item.tag-urgent {
+    border-color: var(--color-error);
+}
+.ann-item.tag-maintenance {
+    border-color: var(--color-warning);
+}
+.ann-item.tag-event {
+    border-color: var(--color-success);
+}
+.ann-item.tag-announcement {
+    border-color: var(--color-accent-border);
+}
+.ann-item.tag-notice {
+    border-color: var(--color-accent-border);
+}
+.ann-item.tag-general {
+    border-color: var(--color-border);
+}
+
+.ann-item-icon.tag-urgent,
+.ann-item-icon.tag-maintenance,
+.ann-item-icon.tag-event,
+.ann-item-icon.tag-announcement,
+.ann-item-icon.tag-notice,
+.ann-item-icon.tag-general {
+    color: inherit;
+}
+
+/* ---------- Empty state ---------- */
+.ann-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 32px 0;
+}
+.ann-empty-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--color-element);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-disabled);
+    margin-bottom: 8px;
+}
+.ann-empty-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+}
+.ann-empty-text {
+    font-size: 9px;
+    color: var(--color-text-muted);
+    max-width: 190px;
+    margin-top: 4px;
+}
+.ann-error-text {
+    color: var(--color-error);
+}
+
+/* ---------- Footer ---------- */
+.ann-footer {
+    padding-top: 8px;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 9.5px;
+    z-index: 1;
+    position: relative;
+}
+.ann-footer-live {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-text-secondary);
+}
+.ann-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-success);
+    animation: ann-pulse 1.6s ease-in-out infinite;
+}
+.ann-footer-version {
+    color: var(--color-text-disabled);
+    font-family: monospace;
+    font-size: 8.5px;
+}
+
+@keyframes ann-pulse {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.4;
+        transform: scale(1.4);
+    }
+}
+
+/* ---------- Toast ---------- */
+.ann-toast {
+    position: absolute;
+    bottom: 44px;
+    left: 16px;
+    right: 16px;
+    background: var(--color-element-selected);
+    border: 1px solid var(--color-success);
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: var(--z-toast, 1200);
+    color: var(--color-success);
+    font-size: 10px;
+    font-weight: 700;
+    animation: ann-toast-in 0.2s ease-out;
+}
+@keyframes ann-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ---------- Overlays (detail / form / archive) ---------- */
+.ann-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--color-surface);
+    backdrop-filter: blur(6px);
+    z-index: var(--z-dialog, 100);
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
+    border-radius: 16px;
+    animation: ann-fade-in 0.15s ease-out;
+}
+.ann-overlay-form {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-accent-border);
+}
+@keyframes ann-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.ann-overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+}
+.ann-overlay-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--color-text-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ann-icon-btn {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--color-element);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+}
+.ann-icon-btn:hover {
+    color: var(--color-text);
+    background: var(--color-element-hover);
+}
+
+.ann-overlay-body {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.ann-overlay-footer {
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.ann-badge {
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.ann-pinned-flag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-warning);
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+.ann-detail-title {
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--color-text);
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ann-detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 9px;
+    color: var(--color-text-muted);
+    margin: 10px 0;
+    padding: 6px 0;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+}
+.ann-detail-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.ann-detail-content {
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    font-weight: 600;
+    white-space: pre-wrap;
+}
+
+/* ---------- Form ---------- */
+.ann-form {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.ann-form-grow {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+.ann-label {
+    display: block;
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+.ann-input,
+.ann-textarea {
+    width: 100%;
+    font-size: 11px;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: var(--color-text);
+    font-weight: 600;
+}
+.ann-input:focus,
+.ann-textarea:focus {
+    outline: none;
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 2px var(--color-accent-muted);
+}
+.ann-textarea {
+    flex-grow: 1;
+    resize: none;
+}
+.ann-input::placeholder,
+.ann-textarea::placeholder {
+    color: var(--color-text-disabled);
+}
+
+.ann-tag-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.ann-tag-pick {
+    padding: 4px 12px;
+    font-size: 10.5px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-element);
+    color: var(--color-text-muted);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.ann-tag-pick:hover {
+    color: var(--color-text-secondary);
+    background: var(--color-element-hover);
+}
+.ann-tag-pick.selected.tag-urgent {
+    background: var(--color-element-selected);
+    border-color: var(--color-error);
+    color: var(--color-error);
+}
+.ann-tag-pick.selected.tag-maintenance {
+    background: var(--color-element-selected);
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+}
+.ann-tag-pick.selected.tag-event {
+    background: var(--color-element-selected);
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+.ann-tag-pick.selected.tag-announcement {
+    background: var(--color-accent-muted);
+    border-color: var(--color-accent);
+    color: var(--color-text-accent);
+}
+.ann-tag-pick.selected.tag-notice {
+    background: var(--color-accent-muted);
+    border-color: var(--color-text-accent);
+    color: var(--color-text-accent);
+}
+.ann-tag-pick.selected.tag-general {
+    background: var(--color-accent-muted);
+    border-color: var(--color-accent);
+    color: var(--color-text-accent);
+}
+
+.ann-pin-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background: var(--color-element);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+}
+.ann-pin-hint {
+    font-size: 9px;
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+.ann-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    font-weight: 700;
+}
+.ann-checkbox-label input {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: var(--color-accent);
+}
+.ann-pin-icon {
+    color: var(--color-warning);
+}
+
+.ann-form-actions {
+    padding-top: 8px;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    font-size: 10px;
+}
+
+/* ---------- Archive modal restore button ---------- */
+.ann-restore-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    align-self: flex-start;
+    margin-top: 8px;
+    padding: 4px 10px;
+    font-size: 9px;
+    font-weight: 800;
+    background: var(--color-accent-muted);
+    color: var(--color-text-accent);
+    border: 1px solid var(--color-accent-border);
+    border-radius: 6px;
+    cursor: pointer;
+}
+.ann-restore-btn:hover {
+    background: var(--color-element-selected);
+}
+
+/* ---------- Unread state ---------- */
+.ann-header-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ann-unread-badge {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--color-accent);
+    color: var(--color-text);
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.ann-item-unread {
+    border-color: var(--color-border-active);
+}
+.ann-unread-dot {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    box-shadow: 0 0 6px var(--color-accent);
+}
