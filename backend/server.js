@@ -11,6 +11,7 @@ dns.setDefaultResultOrder("ipv4first");
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import helmet from "helmet";
 
 import "./shared/db/database.js";
 
@@ -36,7 +37,27 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
-app.use(cors());
+app.use(helmet());
+
+// In production the frontend is served statically by this same Express
+// process (see below), so it's same-origin and needs no CORS at all.
+// In dev the Vite dev server runs on its own port (default 5173) and is
+// opened to the LAN via `server.host: true`, so its origin varies by
+// device IP — rather than reflecting every origin, allow any origin on
+// port 5173 specifically. Override with ALLOWED_ORIGINS (comma-separated)
+// for anything more specific.
+const isProduction = process.env.NODE_ENV === "production";
+const explicitOrigins = process.env.ALLOWED_ORIGINS?.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+const corsOptions = isProduction
+    ? { origin: false }
+    : {
+          origin: explicitOrigins?.length > 0 ? explicitOrigins : /^https?:\/\/[^/]+:5173$/,
+      };
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Single central SSE channel for every module's realtime push.
