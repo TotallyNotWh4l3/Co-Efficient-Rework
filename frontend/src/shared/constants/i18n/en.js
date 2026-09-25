@@ -165,6 +165,7 @@ export default {
                 title: "Layout",
                 description: "Spacing and column configurations",
                 columns: "Columns",
+                rows: "Rows",
                 gap: "Spacing",
                 padding: "Padding",
             },

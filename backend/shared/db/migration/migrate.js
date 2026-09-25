@@ -22,6 +22,7 @@ import addScheduleSubtitleAndTags from "./012_add_schedule_subtitle_and_tags_col
 import createThemesTable from "./013_create_themes.js";
 import addWeatherFetchClaimColumn from "./014_create_weather_fetch_claim_column.js";
 import fixUserForeignKeys from "./015_fix_foreign_keys.js";
+import addDashboardGridPlacement from "./016_dashboard_grid_placement.js";
 
 const migrations = [
     { name: "001_create_users", up: createUsersTable },
@@ -39,6 +40,8 @@ const migrations = [
     { name: "013_create_themes", up: createThemesTable },
     { name: "014_add_weather_fetch_claim", up: addWeatherFetchClaimColumn },
     { name: "015_fix_user_foreign_keys", up: fixUserForeignKeys },
+    { name: "016_dashboard_grid_placement", up: addDashboardGridPlacement },
+
 ];
 
 async function runMigrations() {

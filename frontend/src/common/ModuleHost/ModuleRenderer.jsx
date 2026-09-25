@@ -8,7 +8,7 @@
 import WeatherModuleContainer from "../../modules/weather/WeatherModuleContainer";
 import AnnouncementCard from "../../modules/announcements/AnnouncementModule";
 import ScheduleModule from "../../modules/schedule/ScheduleModule";
-// import "./module-renderer.css";
+import "./module-renderer.css";
 const MODULE_COMPONENTS = {
     weather: WeatherModuleContainer,
     announcement: AnnouncementCard,

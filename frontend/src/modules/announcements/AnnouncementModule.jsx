@@ -174,7 +174,7 @@ export default function AnnouncementModule({ module }) {
     });
 
     return (
-        <div className="ann-card" style={{ minHeight: isExtended ? "650px" : "320px" }}>
+        <div className="ann-card">
             <div className="ann-glow ann-glow-top" />
             <div className="ann-glow ann-glow-bottom" />
 

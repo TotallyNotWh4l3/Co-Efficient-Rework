@@ -16,7 +16,7 @@ import { useRealtime } from "../../shared/sse/RealtimeContext";
 const EMPTY_DASHBOARD = {
     id: "main",
     name: "Main Dashboard",
-    layout: { columns: 3, gap: 16, padding: 16 },
+    layout: { columns: 3, rows: 4, gap: 16, padding: 16 },
     modules: [],
 };
 

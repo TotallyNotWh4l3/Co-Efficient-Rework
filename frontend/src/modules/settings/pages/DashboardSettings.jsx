@@ -33,7 +33,7 @@ export default function DashboardSettings() {
         return <div className="dashboard-settings">Unable to load settings.</div>;
     }
 
-    const layout = dashboard?.layout ?? { columns: 3, gap: 16, padding: 16 };
+    const layout = dashboard?.layout ?? { columns: 3, rows: 4, gap: 16, padding: 16 };
 
     return (
         <div className="dashboard-settings">
@@ -66,6 +66,19 @@ export default function DashboardSettings() {
                         max={6}
                         value={layout.columns}
                         onChange={(e) => updateLayout("columns", Number(e.target.value))}
+                    />
+                </Settings.Row>
+
+                <Settings.Row className="settings__row--stacked">
+                    <Settings.RowContent>
+                        <Settings.RowLabel>{copy.layout?.rows ?? "Rows"}</Settings.RowLabel>
+                        <Settings.RowDescription>{layout.rows}</Settings.RowDescription>
+                    </Settings.RowContent>
+                    <Settings.Slider
+                        min={1}
+                        max={8}
+                        value={layout.rows}
+                        onChange={(e) => updateLayout("rows", Number(e.target.value))}
                     />
                 </Settings.Row>
 

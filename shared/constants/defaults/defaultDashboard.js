@@ -12,6 +12,7 @@ export const DEFAULT_DASHBOARD = {
 
     layout: {
         columns: 3,
+        rows: 4,
         gap: 16,
         padding: 16,
     },
@@ -32,6 +33,10 @@ export const DEFAULT_DASHBOARD = {
                 w: 2,
                 h: 2,
             },
+
+            // Top-left cell this module is seeded into (row-major,
+            // 0-based) — see Dashboard.js's footprint()/findFirstFreeCell().
+            cellIndex: 0,
         },
     ],
 };

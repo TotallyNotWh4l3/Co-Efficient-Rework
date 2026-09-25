@@ -96,41 +96,43 @@ export default function WeatherModule({
                 onRemove={onRemove}
             />
 
-            {localLayoutMode !== "forecast" && (
-                <WeatherCurrentSummary
-                    weatherCode={weatherCode}
-                    isDay={isDay}
-                    temp={temperature}
-                    highTemp={highTemp}
-                    lowTemp={lowTemp}
-                    isJapanese={isJapanese} // still needed for getWeatherDescText
-                />
-            )}
+            <div className="weather-body">
+                {localLayoutMode !== "forecast" && (
+                    <WeatherCurrentSummary
+                        weatherCode={weatherCode}
+                        isDay={isDay}
+                        temp={temperature}
+                        highTemp={highTemp}
+                        lowTemp={lowTemp}
+                        isJapanese={isJapanese} // still needed for getWeatherDescText
+                    />
+                )}
 
-            {localLayoutMode !== "forecast" && (
-                <WeatherStatsRow
-                    humidity={humidity}
-                    windSpeed={windSpeed}
-                    precipChance={precipChance}
-                    // isJapanese removed — no longer used inside
-                />
-            )}
+                {localLayoutMode !== "forecast" && (
+                    <WeatherStatsRow
+                        humidity={humidity}
+                        windSpeed={windSpeed}
+                        precipChance={precipChance}
+                        // isJapanese removed — no longer used inside
+                    />
+                )}
 
-            {localLayoutMode !== "current" && (
-                <WeatherForecastSection
-                    isJapanese={isJapanese}
-                    activeMetric={activeMetric}
-                    onSelectMetric={setActiveMetric}
-                    dailyList={dailyList}
-                    activeTab={activeTab}
-                    onChangeTab={setActiveTab}
-                    selectedDayIdx={selectedDayIdx}
-                    onSelectDay={setSelectedDayIdx}
-                    chartDataset={chartDataset}
-                    allDaysHourlyDataset={allDaysHourlyDataset}
-                    timeString={time}
-                />
-            )}
+                {localLayoutMode !== "current" && (
+                    <WeatherForecastSection
+                        isJapanese={isJapanese}
+                        activeMetric={activeMetric}
+                        onSelectMetric={setActiveMetric}
+                        dailyList={dailyList}
+                        activeTab={activeTab}
+                        onChangeTab={setActiveTab}
+                        selectedDayIdx={selectedDayIdx}
+                        onSelectDay={setSelectedDayIdx}
+                        chartDataset={chartDataset}
+                        allDaysHourlyDataset={allDaysHourlyDataset}
+                        timeString={time}
+                    />
+                )}
+            </div>
 
             {showSettings && (
                 <WeatherSettingsPanel

@@ -1,14 +1,22 @@
 .dashboard__workspace {
     display: grid;
     grid-template-columns: repeat(var(--workspace-columns), minmax(0, 1fr));
-    /* Fixed base row unit — every module's height is this unit times its
-       row-span (--module-row-span on .dashboard__cell), so modules in the
-       same row always line up instead of stretching to the tallest sibling
-       or free-floating to mismatched heights. */
-    grid-auto-rows: 220px;
-    /* dense packing so a short module doesn't leave a gap next to a
-       taller neighbour before the next row starts */
-    grid-auto-flow: row dense;
+    /* Explicit row tracks, one per configured grid row (--workspace-rows),
+       rather than letting the grid invent tracks on demand. This is what
+       makes a fully-empty trailing row actually render as blank space —
+       with implicit auto-rows, a row with no module in it simply wouldn't
+       exist as a track at all. Each track uses the same fixed base unit
+       (--cell-height), so every module's height is that unit times its own
+       row-span (--module-row-span on .dashboard__cell) and modules always
+       line up instead of stretching to the tallest sibling. Derived from
+       viewport height so the grid stays proportional on the kiosk display
+       vs. a laptop, bounded so cells never get unreadably short or
+       absurdly tall. --cell-height can still be overridden inline once a
+       per-dashboard setting exists for it. */
+    grid-template-rows: repeat(
+        var(--workspace-rows),
+        var(--cell-height, clamp(160px, 20vh, 260px))
+    );
     gap: var(--workspace-gap);
     padding: var(--workspace-padding);
     flex: 1;
@@ -17,8 +25,17 @@
 }
 
 .dashboard__cell {
-    grid-column: span var(--module-col-span, 1);
-    grid-row: span var(--module-row-span, 1);
+    /* Explicit placement at this module's stored cell_index (translated to
+       a 1-based column/row start in DashboardWorkspace.jsx), not source
+       order. Every other cell in the grid — anywhere no module's
+       start+span lands — is simply never given a grid item, which is all
+       "invisible placeholder" means: no DOM node, no visual, just the
+       grid's own blank track showing through. Placing modules explicitly
+       instead of relying on grid-auto-flow: dense is what lets an
+       intentional gap between two modules survive instead of being
+       auto-packed away. */
+    grid-column: var(--module-col-start, 1) / span var(--module-col-span, 1);
+    grid-row: var(--module-row-start, 1) / span var(--module-row-span, 1);
     min-width: 0;
     min-height: 0;
 }

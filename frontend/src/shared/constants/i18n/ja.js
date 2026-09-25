@@ -178,6 +178,7 @@ export default {
                 title: "レイアウト",
                 description: "列・間隔を設定",
                 columns: "列数",
+                rows: "行数",
                 gap: "間隔",
                 padding: "パディング",
             },
