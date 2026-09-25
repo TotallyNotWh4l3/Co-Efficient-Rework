@@ -12,6 +12,16 @@ import announcementService from "./announcementService";
 import { getSSEUrl } from "../../shared/sse/sseUrl";
 import { useRealtime } from "../../shared/sse/RealtimeContext";
 
+// Mirrors the backend's ORDER BY is_pinned DESC, created_at DESC so the
+// list stays correctly ordered after in-place SSE/local updates too, not
+// just on initial load (which is already sorted server-side).
+function sortAnnouncements(list) {
+    return [...list].sort((a, b) => {
+        if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+        return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+}
+
 export default function useAnnouncements({ recentOnly = true, live = true } = {}) {
     const [announcements, setAnnouncements] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +36,7 @@ export default function useAnnouncements({ recentOnly = true, live = true } = {}
                 const data = recentOnly
                     ? await announcementService.getRecent()
                     : await announcementService.getAll();
-                setAnnouncements(Array.isArray(data) ? data : []);
+                setAnnouncements(Array.isArray(data) ? sortAnnouncements(data) : []);
                 if (!Array.isArray(data)) {
                     console.warn("[useAnnouncements] Expected an array, got:", data);
                 }
@@ -59,14 +69,18 @@ export default function useAnnouncements({ recentOnly = true, live = true } = {}
             setAnnouncements((prev) => {
                 const list = Array.isArray(prev) ? prev : [];
                 if (list.some((a) => a.id === created.id)) return list;
-                return [created, ...list];
+                return sortAnnouncements([created, ...list]);
             });
         });
 
         const unsubUpdated = subscribe(url, "announcements:updated", (event) => {
             const updated = JSON.parse(event.data);
             setAnnouncements((prev) =>
-                (Array.isArray(prev) ? prev : []).map((a) => (a.id === updated.id ? updated : a)),
+                sortAnnouncements(
+                    (Array.isArray(prev) ? prev : []).map((a) =>
+                        a.id === updated.id ? updated : a,
+                    ),
+                ),
             );
         });
 
@@ -99,7 +113,7 @@ export default function useAnnouncements({ recentOnly = true, live = true } = {}
         setAnnouncements((prev) => {
             const list = Array.isArray(prev) ? prev : [];
             if (list.some((a) => a.id === created.id)) return list;
-            return [created, ...list];
+            return sortAnnouncements([created, ...list]);
         });
         return created;
     }, []);
@@ -107,7 +121,9 @@ export default function useAnnouncements({ recentOnly = true, live = true } = {}
     const updateAnnouncement = useCallback(async (id, payload) => {
         const updated = await announcementService.update(id, payload);
         setAnnouncements((prev) =>
-            (Array.isArray(prev) ? prev : []).map((a) => (a.id === id ? updated : a)),
+            sortAnnouncements(
+                (Array.isArray(prev) ? prev : []).map((a) => (a.id === id ? updated : a)),
+            ),
         );
         return updated;
     }, []);

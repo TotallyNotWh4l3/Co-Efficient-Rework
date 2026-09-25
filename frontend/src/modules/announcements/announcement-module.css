@@ -594,7 +594,7 @@
     inset: 0;
     background: var(--color-surface);
     backdrop-filter: blur(6px);
-    z-index: var(--z-dialog, 100);
+    z-index: var(--z-dialog);
     display: flex;
     flex-direction: column;
     padding: 18px;

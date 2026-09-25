@@ -51,7 +51,7 @@
     border-radius: 0.75rem;
     box-shadow: var(--shadow-md);
     animation: user-button-fade-in 120ms ease;
-    z-index: 9999;
+    z-index: var(--z-popover);
 }
 
 .user-button__item {

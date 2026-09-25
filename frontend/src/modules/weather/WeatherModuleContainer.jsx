@@ -11,7 +11,6 @@ import useWeather from "./useWeather";
 import { useLocation } from "../locations/useLocation";
 import { useDashboard } from "../dashboard/useDashboard";
 import { useSettings } from "../settings/useSettings";
-import { useAuth } from "../auth/useAuth";
 import { mapWeatherResponse } from "./utils/mapWeatherResponse";
 import "./weather.css";
 import { useLanguage } from "../settings/useLanguage";
@@ -35,10 +34,8 @@ export default function WeatherModuleContainer({ module }) {
     const { locationOptions } = useLocation();
     const { removeModule, updateModuleSettings } = useDashboard();
     const { settings } = useSettings();
-    const { user } = useAuth();
 
     const isJapanese = settings?.preferences?.language === "ja";
-    const userRole = user?.role;
 
     const [selectedLocationId, setSelectedLocationId] = useState(module.settings?.location);
     const lang = useLanguage();
@@ -128,7 +125,6 @@ export default function WeatherModuleContainer({ module }) {
             dailyList={mapped.dailyList}
             hourlyByDay={mapped.hourlyByDay}
             isJapanese={isJapanese}
-            userRole={userRole}
             layoutMode={module.settings?.view ?? "combined"}
             onLayoutModeChange={handleLayoutModeChange}
             onRemove={handleRemove}

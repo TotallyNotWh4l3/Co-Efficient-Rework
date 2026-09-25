@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: WeatherHeader.jsx
 // 作成日: 2026/08/27
@@ -16,7 +15,6 @@ export default function WeatherHeader({
     locationOptions = [],
     selectedLocationId,
     onLocationChange,
-    isManagerOrAbove,
     showSettings,
     onToggleSettings,
     onRemove,
@@ -63,15 +61,13 @@ export default function WeatherHeader({
             </DropdownMenu.Root>
 
             <div className="weather-header__actions">
-                {isManagerOrAbove && (
-                    <button
-                        onClick={onToggleSettings}
-                        className={`weather-header__icon-btn${showSettings ? " weather-header__icon-btn--settings-active" : ""}`}
-                        title={t.moduleSettings}
-                    >
-                        <Settings className="weather-header__pin-icon" />
-                    </button>
-                )}
+                <button
+                    onClick={onToggleSettings}
+                    className={`weather-header__icon-btn${showSettings ? " weather-header__icon-btn--settings-active" : ""}`}
+                    title={t.moduleSettings}
+                >
+                    <Settings className="weather-header__pin-icon" />
+                </button>
                 <button
                     onClick={onRemove}
                     className="weather-header__icon-btn weather-header__icon-btn--remove"

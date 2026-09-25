@@ -1,8 +1,14 @@
-
 .dashboard__workspace {
     display: grid;
     grid-template-columns: repeat(var(--workspace-columns), minmax(0, 1fr));
-    align-items: start;
+    /* Fixed base row unit — every module's height is this unit times its
+       row-span (--module-row-span on .dashboard__cell), so modules in the
+       same row always line up instead of stretching to the tallest sibling
+       or free-floating to mismatched heights. */
+    grid-auto-rows: 220px;
+    /* dense packing so a short module doesn't leave a gap next to a
+       taller neighbour before the next row starts */
+    grid-auto-flow: row dense;
     gap: var(--workspace-gap);
     padding: var(--workspace-padding);
     flex: 1;
@@ -10,9 +16,9 @@
     overflow-x: hidden;
 }
 
-.dashboard__column {
-    display: flex;
-    flex-direction: column;
-    gap: var(--workspace-gap);
+.dashboard__cell {
+    grid-column: span var(--module-col-span, 1);
+    grid-row: span var(--module-row-span, 1);
     min-width: 0;
+    min-height: 0;
 }

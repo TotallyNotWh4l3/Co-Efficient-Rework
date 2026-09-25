@@ -22,7 +22,6 @@ export default function WeatherModule({
     dailyList = [],
     hourlyByDay = {},
     isJapanese = false,
-    userRole,
     layoutMode = "combined",
     onLayoutModeChange,
     onRemove,
@@ -36,8 +35,6 @@ export default function WeatherModule({
     useEffect(() => {
         setLocalLayoutMode(layoutMode);
     }, [layoutMode]);
-
-    const isManagerOrAbove = userRole && ["manager", "admin"].includes(userRole.toLowerCase());
 
     const {
         temperature = 0,
@@ -94,7 +91,6 @@ export default function WeatherModule({
                 locationOptions={locationOptions}
                 selectedLocationId={selectedLocationId}
                 onLocationChange={onLocationChange}
-                isManagerOrAbove={isManagerOrAbove}
                 showSettings={showSettings}
                 onToggleSettings={() => setShowSettings((s) => !s)}
                 onRemove={onRemove}

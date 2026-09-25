@@ -13,11 +13,6 @@ export default function DashboardWorkspace() {
     const { dashboard, selectModule } = useDashboard();
     const columnCount = dashboard.layout.columns;
 
-    const columns = Array.from({ length: columnCount }, () => []);
-    dashboard.modules.forEach((module, index) => {
-        columns[index % columnCount].push(module);
-    });
-
     return (
         <div
             className="dashboard__workspace"
@@ -27,11 +22,16 @@ export default function DashboardWorkspace() {
                 "--workspace-padding": `${dashboard.layout.padding}px`,
             }}
         >
-            {columns.map((columnModules, colIndex) => (
-                <div className="dashboard__column" key={colIndex}>
-                    {columnModules.map((module) => (
-                        <ModuleRenderer key={module.id} module={module} onSelect={selectModule} />
-                    ))}
+            {dashboard.modules.map((module) => (
+                <div
+                    className="dashboard__cell"
+                    key={module.id}
+                    style={{
+                        "--module-col-span": module.layout?.w ?? 1,
+                        "--module-row-span": module.layout?.h ?? 1,
+                    }}
+                >
+                    <ModuleRenderer module={module} onSelect={selectModule} />
                 </div>
             ))}
         </div>

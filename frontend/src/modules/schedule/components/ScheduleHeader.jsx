@@ -8,7 +8,13 @@
 import { Calendar, Plus, X, Tags, Settings } from "lucide-react";
 import { useLanguage } from "../../settings/useLanguage";
 
-export default function ScheduleHeader({ onOpenSettings, onAdd, onManageTags, isAdmin, onRemove }) {
+export default function ScheduleHeader({
+    onOpenSettings,
+    onAdd,
+    onManageTags,
+    canManageTags,
+    onRemove,
+}) {
     const lang = useLanguage();
     const t = lang.modules.schedule.header;
 
@@ -26,7 +32,7 @@ export default function ScheduleHeader({ onOpenSettings, onAdd, onManageTags, is
                 <button className="sch-icon-toggle" onClick={onOpenSettings} title={t.settings}>
                     <Settings className="icon-xs" />
                 </button>
-                {isAdmin && (
+                {canManageTags && (
                     <button className="sch-icon-toggle" onClick={onManageTags} title={t.manageTags}>
                         <Tags className="icon-xs" />
                     </button>

@@ -1,4 +1,11 @@
 :root {
+    /* Spacing */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+
     /* Brand */
     --color-accent: #7c3aed;
     --color-accent-hover: #8b5cf6;

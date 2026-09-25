@@ -34,7 +34,7 @@ export default function ScheduleModule({ module }) {
     const lang = useLanguage();
     const t = lang.modules.schedule;
     const onRemove = () => removeModule(module.id);
-    const isAdmin = user?.role?.toLowerCase() === "admin";
+    const isManagerOrAdmin = ["admin", "manager"].includes(user?.role?.toLowerCase());
 
     // ---- View mode state ----
     const [viewMode, setViewMode] = useState("absolute"); // 'absolute' | 'relative'
@@ -182,7 +182,7 @@ export default function ScheduleModule({ module }) {
                 onOpenSettings={() => setShowSettings(true)}
                 onAdd={() => openAddForm(todayStr)}
                 onManageTags={() => setShowTagManager(true)}
-                isAdmin={isAdmin}
+                canManageTags={isManagerOrAdmin}
                 onRemove={onRemove}
             />
 

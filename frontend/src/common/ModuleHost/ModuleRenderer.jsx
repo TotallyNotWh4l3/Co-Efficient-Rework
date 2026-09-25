@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: ModuleRenderer.jsx
 // 作成日: 2026/08/27
@@ -9,6 +8,7 @@
 import WeatherModuleContainer from "../../modules/weather/WeatherModuleContainer";
 import AnnouncementCard from "../../modules/announcements/AnnouncementModule";
 import ScheduleModule from "../../modules/schedule/ScheduleModule";
+// import "./module-renderer.css";
 const MODULE_COMPONENTS = {
     weather: WeatherModuleContainer,
     announcement: AnnouncementCard,
@@ -23,7 +23,7 @@ export default function ModuleRenderer({ module, onSelect }) {
     }
 
     return (
-        <div onClick={() => onSelect(module.id)}>
+        <div className="module-renderer" onClick={() => onSelect(module.id)}>
             <Component module={module} />
         </div>
     );

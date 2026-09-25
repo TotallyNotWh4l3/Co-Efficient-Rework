@@ -5,7 +5,6 @@
 // 概要: 天気チャート コンポーネント
 // ===================================================
 
-
 import React, { useState, useRef } from "react";
 import "../weather.css";
 
@@ -73,7 +72,10 @@ export default function WeatherChart({
     // Round to whole numbers with a bit of padding, rather than snapping to
     // multiples of 5/10 — so the axis shows plain values like 21, 22, 34, 36.
     const minVal = Math.floor(rawMin - AXIS_PADDING);
-    const maxVal = Math.ceil(rawMax + AXIS_PADDING);
+    const isPercent = metricInfo.unit === "%";
+    const maxVal = isPercent
+        ? Math.min(100, Math.ceil(rawMax + AXIS_PADDING))
+        : Math.ceil(rawMax + AXIS_PADDING);
     // Only temperature can legitimately go below 0 — clamp everything else
     // (%, wind speed, etc.) so it never shows a negative axis label.
     const clampedMinVal = metricInfo.id === "temp" ? minVal : Math.max(0, minVal);

@@ -5,7 +5,6 @@
 // 概要: スケジュールの管理を行うAPIコントローラー。スケジュールイベントの作成、更新、削除、および取得などの機能を提供します。
 // ===================================================
 
-
 // backend/controllers/scheduleController.js
 import Schedule from "./Schedule.js";
 import ScheduleTag from "./ScheduleTag.js";
@@ -18,7 +17,7 @@ const canModify = (actor, event) => {
     const eventRank = ROLE_RANK[event.authorRole?.toLowerCase()] ?? 0;
     return actorRank > eventRank || event.authorId === actor.id;
 };
-const isAdmin = (user) => user.role?.toLowerCase() === "admin";
+const isManagerOrAdmin = (user) => (ROLE_RANK[user?.role?.toLowerCase()] ?? 0) >= ROLE_RANK.manager;
 
 function todayIso() {
     return new Date().toISOString().slice(0, 10);
@@ -157,10 +156,12 @@ const scheduleController = {
         }
     },
 
-    // POST /api/schedule/tags -> admin only, { id, color }
+    // POST /api/schedule/tags -> manager/admin only, { id, color }
     async upsertTag(req, res) {
-        if (!isAdmin(req.user)) {
-            return res.status(403).json({ message: "Only admins can manage tag presets." });
+        if (!isManagerOrAdmin(req.user)) {
+            return res
+                .status(403)
+                .json({ message: "Only managers and admins can manage tag presets." });
         }
         const { id, color } = req.body;
         if (!id?.trim() || !color?.trim()) {
@@ -175,10 +176,12 @@ const scheduleController = {
         }
     },
 
-    // DELETE /api/schedule/tags/:id -> admin only
+    // DELETE /api/schedule/tags/:id -> manager/admin only
     async removeTag(req, res) {
-        if (!isAdmin(req.user)) {
-            return res.status(403).json({ message: "Only admins can manage tag presets." });
+        if (!isManagerOrAdmin(req.user)) {
+            return res
+                .status(403)
+                .json({ message: "Only managers and admins can manage tag presets." });
         }
         try {
             const removed = await ScheduleTag.remove(req.params.id);
