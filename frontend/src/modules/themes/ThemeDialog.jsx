@@ -14,6 +14,7 @@ import { useAuth } from "../auth/useAuth";
 import { uuidv4 } from "../../shared/utils/uuid";
 
 import Settings from "../settings/components/SettingsComponents";
+import ThemePreview from "./ThemePreview";
 import { useRef } from "react";
 
 import {
@@ -291,60 +292,68 @@ export default function ThemeDialog({
                 </Settings.Description>
             )}
 
-            <Settings.Section className="theme-dialog__section">
-                <Settings.Row>
-                    <Settings.RowContent>
-                        <Settings.RowLabel>{t.dialog.nameLabel}</Settings.RowLabel>
-                    </Settings.RowContent>
-                </Settings.Row>
-                <Settings.TextInput
-                    className="theme-dialog__input"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    disabled={isLocked}
-                />
-            </Settings.Section>
+            <div className="theme-dialog__layout">
+                <div className="theme-dialog__controls">
+                    <Settings.Section className="theme-dialog__section">
+                        <Settings.Row>
+                            <Settings.RowContent>
+                                <Settings.RowLabel>{t.dialog.nameLabel}</Settings.RowLabel>
+                            </Settings.RowContent>
+                        </Settings.Row>
+                        <Settings.TextInput
+                            className="theme-dialog__input"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            disabled={isLocked}
+                        />
+                    </Settings.Section>
 
-            <Settings.Divider />
+                    <Settings.Divider />
 
-            {COLOR_GROUPS.map((group) => (
-                <Settings.Section key={group.key} className="theme-dialog__section">
-                    <Settings.SectionTitle>
-                        {t.dialog.groups[group.key] ?? group.key}
-                    </Settings.SectionTitle>
+                    {COLOR_GROUPS.map((group) => (
+                        <Settings.Section key={group.key} className="theme-dialog__section">
+                            <Settings.SectionTitle>
+                                {t.dialog.groups[group.key] ?? group.key}
+                            </Settings.SectionTitle>
 
-                    <div className="theme-dialog__color-grid">
-                        {group.fields.map((field) => (
-                            <ColorField
-                                key={field}
-                                label={field}
-                                value={colors[field]}
-                                onChange={(value) => updateColor(field, value)}
-                                disabled={isLocked}
-                            />
-                        ))}
-                    </div>
-                </Settings.Section>
-            ))}
-
-            <Settings.Section className="theme-dialog__section">
-                <Settings.SectionTitle>{t.dialog.groups.shadows}</Settings.SectionTitle>
-                <div className="theme-dialog__color-grid">
-                    {SHADOW_FIELDS.map((field) => (
-                        <div className="theme-dialog__shadow-field" key={field}>
-                            <span className="theme-dialog__color-label">{field}</span>
-                            <input
-                                type="text"
-                                className="theme-dialog__color-text"
-                                value={shadows[field] ?? ""}
-                                onChange={(e) => updateShadow(field, e.target.value)}
-                                spellCheck={false}
-                                disabled={isLocked}
-                            />
-                        </div>
+                            <div className="theme-dialog__color-grid">
+                                {group.fields.map((field) => (
+                                    <ColorField
+                                        key={field}
+                                        label={field}
+                                        value={colors[field]}
+                                        onChange={(value) => updateColor(field, value)}
+                                        disabled={isLocked}
+                                    />
+                                ))}
+                            </div>
+                        </Settings.Section>
                     ))}
+
+                    <Settings.Section className="theme-dialog__section">
+                        <Settings.SectionTitle>{t.dialog.groups.shadows}</Settings.SectionTitle>
+                        <div className="theme-dialog__color-grid">
+                            {SHADOW_FIELDS.map((field) => (
+                                <div className="theme-dialog__shadow-field" key={field}>
+                                    <span className="theme-dialog__color-label">{field}</span>
+                                    <input
+                                        type="text"
+                                        className="theme-dialog__color-text"
+                                        value={shadows[field] ?? ""}
+                                        onChange={(e) => updateShadow(field, e.target.value)}
+                                        spellCheck={false}
+                                        disabled={isLocked}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </Settings.Section>
                 </div>
-            </Settings.Section>
+
+                <div className="theme-dialog__preview-pane">
+                    <ThemePreview colors={colors} shadows={shadows} />
+                </div>
+            </div>
 
             <Settings.Divider />
 

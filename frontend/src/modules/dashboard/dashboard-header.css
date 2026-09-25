@@ -5,6 +5,7 @@
     justify-content: space-between;
 
     height: 4rem;
+    flex-shrink: 0;
     padding: 1rem 2rem;
 
     background: var(--color-bg-elevated);

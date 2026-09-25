@@ -79,6 +79,90 @@
     border-radius: 8px;
 }
 
+/* A module row also carrying its own size picker needs its label/remove
+   row on top and the picker below, rather than everything on one line. */
+.module-settings__list-item--stacked {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.module-settings__list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ---------- Cell-span picker ----------
+   A fixed set of pickable sizes (1x1, 2x1, 1x2, 2x2) rather than freeform
+   resize handles — simpler to build and keeps every module's size a whole
+   multiple of the shared grid unit (see dashboard-workspace.css). Reused
+   both when adding a new module and when resizing one already on the
+   dashboard. */
+.module-settings__span-label {
+    display: block;
+    margin-top: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.module-settings__span-picker {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.module-settings__span-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    background: var(--color-element);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.module-settings__span-btn:hover:not(:disabled) {
+    background: var(--color-element-hover);
+    border-color: var(--color-border-hover);
+    color: var(--color-text);
+}
+
+.module-settings__span-btn--active {
+    background: var(--color-element-selected);
+    border-color: var(--color-accent-border);
+    color: var(--color-text-accent);
+}
+
+.module-settings__span-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.module-settings__span-preview {
+    --span-unit: 7px;
+    display: block;
+    width: calc(var(--span-w, 1) * var(--span-unit));
+    height: calc(var(--span-h, 1) * var(--span-unit));
+    background: currentColor;
+    opacity: 0.7;
+    border-radius: 2px;
+}
+
+.module-settings__span-text {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
 .module-settings__list-label {
     font-size: 12px;
     font-weight: 600;

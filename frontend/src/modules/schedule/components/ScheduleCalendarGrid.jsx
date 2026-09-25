@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: ScheduleCalendarGrid.jsx
 // 作成日: 2026/08/27
@@ -19,6 +18,7 @@ import {
 export default function ScheduleCalendarGrid({
     anchorDate,
     layout,
+    weekOrientation = "vertical",
     days: daysOverride,
     onPrev,
     onNext,
@@ -36,6 +36,7 @@ export default function ScheduleCalendarGrid({
     const days =
         daysOverride ??
         (layout === "week" ? getWeekDays(anchorDate) : getMonthGridDays(anchorDate));
+    const isWeekHorizontal = layout === "week" && weekOrientation === "horizontal";
     const gridClass = layout === "week" ? "sch-grid sch-grid-week" : "sch-grid";
 
     const navLabel =
@@ -68,12 +69,13 @@ export default function ScheduleCalendarGrid({
                 </div>
             )}
 
-            <div className={gridClass}>
-                {weekdayLabels.map((label, i) => (
-                    <div key={`${label}-${i}`} className="sch-grid-weekday">
-                        {label}
-                    </div>
-                ))}
+            <div className={`${gridClass}${isWeekHorizontal ? " sch-grid-week-horizontal" : ""}`}>
+                {!isWeekHorizontal &&
+                    weekdayLabels.map((label, i) => (
+                        <div key={`${label}-${i}`} className="sch-grid-weekday">
+                            {label}
+                        </div>
+                    ))}
 
                 {days.map((day, idx) => {
                     const dayStr = formatDateStr(day);
@@ -85,15 +87,30 @@ export default function ScheduleCalendarGrid({
                     const dayEvents = eventsByDay[dayStr] || [];
                     const conflict = hasConflict(dayEvents);
 
+                    // In horizontal week orientation each day is a full-width
+                    // row instead of a narrow column, so the weekday name has
+                    // to be shown inline on the row itself rather than in a
+                    // shared header above the grid.
+                    const weekdayInlineLabel = isWeekHorizontal
+                        ? weekdaysShort[day.getDay()]
+                        : null;
+
                     return (
                         <div
                             key={idx}
                             className={`sch-grid-day${layout === "week" ? " sch-grid-day-week" : ""}${
-                                isToday ? " sch-grid-day-today" : ""
-                            }${isCurrentMonth ? "" : " sch-grid-day-outside"}`}
+                                isWeekHorizontal ? " sch-grid-day-week-horizontal" : ""
+                            }${isToday ? " sch-grid-day-today" : ""}${
+                                isCurrentMonth ? "" : " sch-grid-day-outside"
+                            }`}
                             onClick={() => onDayClick(dayStr)}
                         >
                             <div className="sch-grid-day-head">
+                                {weekdayInlineLabel && (
+                                    <span className="sch-day-weekday-inline">
+                                        {weekdayInlineLabel}
+                                    </span>
+                                )}
                                 <span
                                     className={`sch-day-number${isToday ? " sch-day-number-today" : ""}`}
                                 >
@@ -107,7 +124,11 @@ export default function ScheduleCalendarGrid({
                             </div>
 
                             {layout === "week" ? (
-                                <div className="sch-day-events-week">
+                                <div
+                                    className={`sch-day-events-week${
+                                        isWeekHorizontal ? " sch-day-events-week-horizontal" : ""
+                                    }`}
+                                >
                                     {dayEvents.map((ev) => {
                                         const color = getEventColor(ev, tagsById);
                                         return (
@@ -125,6 +146,15 @@ export default function ScheduleCalendarGrid({
                                                 }
                                             >
                                                 <span className="sch-event-line-title">
+                                                    {/* Horizontal rows have far more width per
+                                                        entry than a narrow weekday column, so the
+                                                        time can be shown alongside the title
+                                                        instead of being dropped for space. */}
+                                                    {isWeekHorizontal && (
+                                                        <span className="sch-event-line-time">
+                                                            {ev.eventTime}
+                                                        </span>
+                                                    )}
                                                     {ev.title}
                                                 </span>
                                                 {ev.subtitle && (
@@ -132,10 +162,41 @@ export default function ScheduleCalendarGrid({
                                                         {ev.subtitle}
                                                     </span>
                                                 )}
+                                                {isWeekHorizontal && ev.description && (
+                                                    <span className="sch-event-line-description">
+                                                        {ev.description}
+                                                    </span>
+                                                )}
                                             </div>
                                         );
                                     })}
                                 </div>
+                            ) : dayEvents.length === 1 ? (
+                                // A single event fits comfortably on the cell,
+                                // so show its content directly instead of a
+                                // dot the user would have to open the day list
+                                // to make sense of.
+                                (() => {
+                                    const ev = dayEvents[0];
+                                    const color = getEventColor(ev, tagsById);
+                                    return (
+                                        <div
+                                            className="sch-event-solo"
+                                            style={
+                                                color
+                                                    ? {
+                                                          background: `${color}22`,
+                                                          borderColor: `${color}55`,
+                                                          color,
+                                                      }
+                                                    : undefined
+                                            }
+                                            title={`${ev.eventTime} — ${ev.title}`}
+                                        >
+                                            <span className="sch-event-solo-title">{ev.title}</span>
+                                        </div>
+                                    );
+                                })()
                             ) : (
                                 <div className="sch-day-events">
                                     {dayEvents.slice(0, 6).map((ev) => {

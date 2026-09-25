@@ -146,9 +146,9 @@ export function useDashboardState(user) {
     // =====================================================
     // Modules
     // =====================================================
-    const addModule = useCallback(async (type, settings = {}) => {
+    const addModule = useCallback(async (type, settings = {}, layout) => {
         try {
-            const module = await dashboardService.addModule(type, settings);
+            const module = await dashboardService.addModule(type, settings, layout);
             setDashboard((prev) => {
                 if (prev.modules.some((m) => m.id === module.id)) return prev;
                 return { ...prev, modules: [...prev.modules, module] };
@@ -192,6 +192,23 @@ export function useDashboardState(user) {
         setSelectedModuleId(moduleId);
     }, []);
 
+    // =====================================================
+    // Module size (cell-span)
+    // =====================================================
+    const updateModuleLayout = useCallback(async (moduleId, layout) => {
+        try {
+            const module = await dashboardService.updateModuleLayout(moduleId, layout);
+            setDashboard((prev) => ({
+                ...prev,
+                modules: prev.modules.map((m) => (m.id === moduleId ? module : m)),
+            }));
+            return module;
+        } catch (e) {
+            console.error("[useDashboard] Failed to update module size:", e);
+            throw e;
+        }
+    }, []);
+
     return {
         dashboard,
         loading,
@@ -200,6 +217,7 @@ export function useDashboardState(user) {
         addModule,
         removeModule,
         updateModuleSettings,
+        updateModuleLayout,
         selectedModuleId,
         selectModule,
         setDashboard,

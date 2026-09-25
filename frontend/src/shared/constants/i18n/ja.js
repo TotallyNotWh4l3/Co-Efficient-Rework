@@ -101,6 +101,26 @@ export default {
                         status: "ステータス",
                         shadows: "シャドウ",
                     },
+
+                    preview: {
+                        title: "ライブプレビュー",
+                        appName: "CoEfficient",
+                        appSubtitle: "ダッシュボード",
+                        weatherTitle: "天気",
+                        weatherHint: "晴れときどき曇り",
+                        scheduleTitle: "スケジュール",
+                        eventOne: "朝会",
+                        eventTwo: "デザインレビュー",
+                        badgeSuccess: "完了",
+                        badgeWarning: "まもなく",
+                        badgeError: "期限超過",
+                        textPrimary: "主要テキスト",
+                        textSecondary: "副次テキスト",
+                        textMuted: "補助テキスト",
+                        inputPlaceholder: "入力フィールド",
+                        secondaryButton: "キャンセル",
+                        primaryButton: "保存",
+                    },
                 },
             },
 
@@ -209,6 +229,15 @@ export default {
 
             announcements: {
                 title: "お知らせ",
+            },
+
+            size: {
+                title: "サイズ",
+                label: "セルサイズ",
+                "1x1": "1×1",
+                "2x1": "2×1",
+                "1x2": "1×2",
+                "2x2": "2×2",
             },
         },
 
@@ -408,6 +437,19 @@ export default {
                     week: {
                         title: "週表示",
                         description: "1週間を表示",
+                    },
+                },
+
+                orientation: {
+                    title: "週表示の向き",
+                    horizontal: {
+                        title: "水平",
+                        description:
+                            "各日を横幅いっぱいの行にして、予定の詳細を表示しやすくします。",
+                    },
+                    vertical: {
+                        title: "垂直",
+                        description: "各日を縦の列にする、従来のカレンダー表示です。",
                     },
                 },
             },

@@ -1,7 +1,10 @@
 .dashboard {
     background-color: var(--color-bg);
     width: 100%;
-    min-height: 100vh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .dashboard__overlay {

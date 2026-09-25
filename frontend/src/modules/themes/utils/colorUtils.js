@@ -35,3 +35,26 @@ export function valueToRgbText(value) {
     if (!rgb) return "";
     return `${rgb.r}, ${rgb.g}, ${rgb.b}`;
 }
+
+function toKebabCase(value) {
+    return value.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+}
+
+// Same key mapping useTheme.js uses to apply a saved theme app-wide
+// (camelCase key -> --{prefix}-{kebab-case} custom property), but returns
+// a plain style object instead of writing to document.documentElement.
+// This lets a scoped container (like the theme editor's live preview)
+// pick up in-progress, unsaved color edits immediately, without touching
+// the real theme applied to the rest of the app.
+export function themeValuesToCssVars({ colors, shadows }) {
+    const style = {};
+    Object.entries(colors ?? {}).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") return;
+        style[`--color-${toKebabCase(key)}`] = value;
+    });
+    Object.entries(shadows ?? {}).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") return;
+        style[`--shadow-${toKebabCase(key)}`] = value;
+    });
+    return style;
+}

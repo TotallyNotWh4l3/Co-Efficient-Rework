@@ -12,12 +12,15 @@ import "../schedule-module.css";
 
 const VIEW_MODES = ["absolute", "relative"];
 const LAYOUT_MODES = ["month", "week"];
+const ORIENTATION_MODES = ["horizontal", "vertical"];
 
 export default function ScheduleSettingsPanel({
     viewMode,
     onViewModeChange,
     layout,
     onLayoutChange,
+    weekOrientation,
+    onWeekOrientationChange,
     daysBefore,
     onDaysBeforeChange,
     onClose,
@@ -140,6 +143,44 @@ export default function ScheduleSettingsPanel({
                             );
                         })}
                     </div>
+
+                    {layout === "week" && (
+                        <div className="sch-settings__subgroup">
+                            <label className="sch-settings__group-label">
+                                {t.orientation.title}
+                            </label>
+                            <div className="sch-settings__options">
+                                {ORIENTATION_MODES.map((mode) => {
+                                    const isActive = weekOrientation === mode;
+                                    const optionText = t.orientation[mode];
+                                    return (
+                                        <button
+                                            key={mode}
+                                            onClick={() =>
+                                                onWeekOrientationChange &&
+                                                onWeekOrientationChange(mode)
+                                            }
+                                            className={`sch-settings__option${isActive ? " sch-settings__option--active" : ""}`}
+                                        >
+                                            <div className="sch-settings__option-top">
+                                                <span className="sch-settings__option-name">
+                                                    {optionText.title}
+                                                </span>
+                                                {isActive && (
+                                                    <span className="sch-settings__option-active-tag">
+                                                        {t.active}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span className="sch-settings__option-desc">
+                                                {optionText.description}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -91,7 +91,12 @@ export default function DialogManager() {
                         return null;
                 }
                 return (
-                    <Dialog key={dialog.id} zIndex={zIndex} onClose={() => closeDialog(dialog.id)}>
+                    <Dialog
+                        key={dialog.id}
+                        zIndex={zIndex}
+                        onClose={() => closeDialog(dialog.id)}
+                        className={dialog.type === "theme" ? "dialog--wide" : ""}
+                    >
                         {content}
                     </Dialog>
                 );

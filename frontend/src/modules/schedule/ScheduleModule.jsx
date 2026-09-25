@@ -39,6 +39,7 @@ export default function ScheduleModule({ module }) {
     // ---- View mode state ----
     const [viewMode, setViewMode] = useState("absolute"); // 'absolute' | 'relative'
     const [layout, setLayout] = useState("month"); // 'month' | 'week'
+    const [weekOrientation, setWeekOrientation] = useState("vertical"); // 'vertical' | 'horizontal' (week layout only)
     const [anchorDate, setAnchorDate] = useState(new Date());
     const [daysBefore, setDaysBefore] = useState(0);
     const [showRelativeSettings, setShowRelativeSettings] = useState(false);
@@ -205,6 +206,7 @@ export default function ScheduleModule({ module }) {
                     <ScheduleCalendarGrid
                         anchorDate={new Date()}
                         layout={layout}
+                        weekOrientation={weekOrientation}
                         days={layout === "week" ? relativeWeekDays : relativeDays}
                         onPrev={() => {}}
                         onNext={() => {}}
@@ -218,6 +220,7 @@ export default function ScheduleModule({ module }) {
                     <ScheduleCalendarGrid
                         anchorDate={anchorDate}
                         layout={layout}
+                        weekOrientation={weekOrientation}
                         onPrev={goPrev}
                         onNext={goNext}
                         onToday={goToday}
@@ -288,6 +291,8 @@ export default function ScheduleModule({ module }) {
                     onViewModeChange={setViewMode}
                     layout={layout}
                     onLayoutChange={setLayout}
+                    weekOrientation={weekOrientation}
+                    onWeekOrientationChange={setWeekOrientation}
                     daysBefore={daysBefore}
                     onDaysBeforeChange={setDaysBefore}
                     onClose={() => setShowSettings(false)}

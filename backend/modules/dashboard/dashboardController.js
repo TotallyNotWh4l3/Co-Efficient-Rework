@@ -5,7 +5,6 @@
 // 概要: ダッシュボードの管理を行うAPIコントローラー。ユーザーのダッシュボード状態の取得、モジュールの追加・削除・設定更新などの機能を提供します。
 // ===================================================
 
-
 // backend/controllers/dashboardController.js
 import Dashboard from "./Dashboard.js";
 import { broadcastToUser } from "../../sse/SSEController.js";
@@ -38,17 +37,45 @@ const dashboardController = {
 
     // POST /api/dashboard/modules
     async addModule(req, res) {
-        const { type, settings } = req.body;
+        const { type, settings, layout } = req.body;
         if (!type) {
             return res.status(400).json({ message: "Module type is required." });
         }
         try {
-            const module = await Dashboard.addModule(req.user.id, type, settings);
+            const module = await Dashboard.addModule(req.user.id, type, settings, layout);
             broadcastToUser(req.user.id, "dashboard:module-added", module);
+            // addModule can grow the grid's row count to fit the module —
+            // push the (possibly updated) layout too, so other connected
+            // tabs pick up the extra row instead of only seeing the module.
+            const state = await Dashboard.getState(req.user.id);
+            broadcastToUser(req.user.id, "dashboard:layout-updated", state.layout);
             res.status(201).json(module);
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: "Failed to add module." });
+        }
+    },
+
+    // PATCH /api/dashboard/modules/:id/layout
+    async updateModuleLayout(req, res) {
+        const { w, h } = req.body;
+        if (!w || !h) {
+            return res.status(400).json({ message: "A width and height are required." });
+        }
+        try {
+            const module = await Dashboard.updateModuleLayout(req.user.id, req.params.id, { w, h });
+            if (!module) return res.status(404).json({ message: "Module not found." });
+
+            broadcastToUser(req.user.id, "dashboard:module-updated", module);
+            // A resize can also move the module to a new cell (if it no
+            // longer fits in place) and/or grow the grid — refresh other
+            // tabs' row count too.
+            const state = await Dashboard.getState(req.user.id);
+            broadcastToUser(req.user.id, "dashboard:layout-updated", state.layout);
+            res.json(module);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Failed to update module size." });
         }
     },
 
@@ -73,7 +100,12 @@ const dashboardController = {
             return res.status(400).json({ message: "A settings key is required." });
         }
         try {
-            const module = await Dashboard.updateModuleSettings(req.user.id, req.params.id, key, value);
+            const module = await Dashboard.updateModuleSettings(
+                req.user.id,
+                req.params.id,
+                key,
+                value,
+            );
             if (!module) return res.status(404).json({ message: "Module not found." });
 
             broadcastToUser(req.user.id, "dashboard:module-updated", module);

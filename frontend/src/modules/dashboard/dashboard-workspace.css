@@ -5,23 +5,25 @@
        rather than letting the grid invent tracks on demand. This is what
        makes a fully-empty trailing row actually render as blank space —
        with implicit auto-rows, a row with no module in it simply wouldn't
-       exist as a track at all. Each track uses the same fixed base unit
-       (--cell-height), so every module's height is that unit times its own
-       row-span (--module-row-span on .dashboard__cell) and modules always
-       line up instead of stretching to the tallest sibling. Derived from
-       viewport height so the grid stays proportional on the kiosk display
-       vs. a laptop, bounded so cells never get unreadably short or
-       absurdly tall. --cell-height can still be overridden inline once a
-       per-dashboard setting exists for it. */
-    grid-template-rows: repeat(
-        var(--workspace-rows),
-        var(--cell-height, clamp(160px, 20vh, 260px))
-    );
+       exist as a track at all.
+
+       Each track is an equal 1fr share of the workspace's own height
+       (the workspace itself fills all remaining space below the header
+       via flex: 1 on a flex-column ancestor), so the full grid always
+       fills the entire workspace regardless of how many rows are
+       configured: fewer rows means taller rows, more rows means more,
+       shorter rows — the workspace's total height never changes. A
+       module's rendered height is therefore that even share times its
+       own row-span (--module-row-span on .dashboard__cell), and modules
+       always line up instead of stretching to the tallest sibling or
+       being clipped by a fixed per-row pixel height. */
+    grid-template-rows: repeat(var(--workspace-rows), minmax(0, 1fr));
     gap: var(--workspace-gap);
     padding: var(--workspace-padding);
     flex: 1;
+    min-height: 0;
     box-sizing: border-box;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 .dashboard__cell {

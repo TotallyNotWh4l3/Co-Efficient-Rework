@@ -173,8 +173,15 @@ const Dashboard = {
      * between existing modules get filled before any new row is used, and
      * the grid only grows past its configured row count if it genuinely
      * has no room left.
+     *
+     * `layout` is the module's requested cell-span ({ w, h }), picked by
+     * the user from a fixed set of sizes (1x1, 2x1, 1x2, 2x2, ...) rather
+     * than freeform pixel dragging. Defaults to 1x1 to preserve existing
+     * behavior for any caller that doesn't pass one. Spans wider or taller
+     * than the grid itself are clamped down to fit, since a module that
+     * could never be placed would otherwise loop addModule forever.
      */
-    async addModule(userId, type, settings) {
+    async addModule(userId, type, settings, layout) {
         const settingsRow = await get(
             `SELECT columns, rows FROM dashboard_settings WHERE user_id = ?`,
             [userId],
@@ -191,8 +198,8 @@ const Dashboard = {
             layout: JSON.parse(row.layout_json || '{"w":1,"h":1}'),
         }));
 
-        const w = 1;
-        const h = 1;
+        const w = Math.max(1, Math.min(columns, layout?.w ?? 1));
+        const h = Math.max(1, layout?.h ?? 1);
         const { cellIndex, rows: neededRows } = findFirstFreeCell(
             existingModules,
             columns,
@@ -220,6 +227,83 @@ const Dashboard = {
             userId,
         ]);
         return parseModuleRow(row);
+    },
+
+    /**
+     * Changes an existing module's cell-span (e.g. 1x1 -> 2x1). Tries to
+     * keep the module at its current cell_index first — if the new span
+     * still fits there without overlapping any other module or spilling
+     * off the grid, only layout_json changes. Otherwise it's re-placed
+     * into the first free cell the new span fits in (growing the grid by
+     * a row if needed), the same rule addModule uses.
+     */
+    async updateModuleLayout(userId, moduleId, layout) {
+        const target = await get(`SELECT * FROM dashboard_modules WHERE id = ? AND user_id = ?`, [
+            moduleId,
+            userId,
+        ]);
+        if (!target) return null;
+
+        const settingsRow = await get(
+            `SELECT columns, rows FROM dashboard_settings WHERE user_id = ?`,
+            [userId],
+        );
+        const columns = settingsRow?.columns ?? 3;
+        const configuredRows = settingsRow?.rows ?? 4;
+
+        const w = Math.max(1, Math.min(columns, layout?.w ?? 1));
+        const h = Math.max(1, layout?.h ?? 1);
+
+        const otherRows = await all(
+            `SELECT cell_index, layout_json FROM dashboard_modules WHERE user_id = ? AND id != ?`,
+            [userId, moduleId],
+        );
+        const otherModules = otherRows.map((row) => ({
+            cellIndex: row.cell_index,
+            layout: JSON.parse(row.layout_json || '{"w":1,"h":1}'),
+        }));
+
+        const occupied = new Set();
+        for (const module of otherModules) {
+            for (const cell of footprint(
+                module.cellIndex,
+                module.layout?.w ?? 1,
+                module.layout?.h ?? 1,
+                columns,
+            )) {
+                occupied.add(cell);
+            }
+        }
+
+        const startCol = target.cell_index % columns;
+        const startRow = Math.floor(target.cell_index / columns);
+        const fitsInPlace =
+            startCol + w <= columns &&
+            startRow + h <= configuredRows &&
+            footprint(target.cell_index, w, h, columns).every((cell) => !occupied.has(cell));
+
+        let cellIndex = target.cell_index;
+        if (!fitsInPlace) {
+            const placed = findFirstFreeCell(otherModules, columns, configuredRows, w, h);
+            cellIndex = placed.cellIndex;
+            if (placed.rows !== configuredRows) {
+                await run(
+                    `UPDATE dashboard_settings SET rows = ?, updated_at = datetime('now') WHERE user_id = ?`,
+                    [placed.rows, userId],
+                );
+            }
+        }
+
+        await run(
+            `UPDATE dashboard_modules SET layout_json = ?, cell_index = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?`,
+            [JSON.stringify({ w, h }), cellIndex, moduleId, userId],
+        );
+
+        const updated = await get(`SELECT * FROM dashboard_modules WHERE id = ? AND user_id = ?`, [
+            moduleId,
+            userId,
+        ]);
+        return parseModuleRow(updated);
     },
 
     async removeModule(userId, moduleId) {

@@ -100,6 +100,25 @@ export default {
                         status: "Status",
                         shadows: "Shadows",
                     },
+                    preview: {
+                        title: "Live Preview",
+                        appName: "CoEfficient",
+                        appSubtitle: "Dashboard",
+                        weatherTitle: "Weather",
+                        weatherHint: "Partly cloudy",
+                        scheduleTitle: "Schedule",
+                        eventOne: "Team standup",
+                        eventTwo: "Design review",
+                        badgeSuccess: "Done",
+                        badgeWarning: "Soon",
+                        badgeError: "Overdue",
+                        textPrimary: "Primary text",
+                        textSecondary: "Secondary text",
+                        textMuted: "Muted text",
+                        inputPlaceholder: "Input field",
+                        secondaryButton: "Cancel",
+                        primaryButton: "Save",
+                    },
                 },
             },
             location: {
@@ -191,6 +210,14 @@ export default {
             },
             announcements: {
                 title: "Announcements",
+            },
+            size: {
+                title: "Size",
+                label: "Cell size",
+                "1x1": "1×1",
+                "2x1": "2×1",
+                "1x2": "1×2",
+                "2x2": "2×2",
             },
         },
         users: {
@@ -369,6 +396,19 @@ export default {
                     week: {
                         title: "Week",
                         description: "Display a single week with more detail per day.",
+                    },
+                },
+                orientation: {
+                    title: "Week Orientation",
+                    horizontal: {
+                        title: "Horizontal",
+                        description:
+                            "Each day is a full-width row, giving events more room to show detail.",
+                    },
+                    vertical: {
+                        title: "Vertical",
+                        description:
+                            "Each day is a narrow column, matching the classic weekly grid.",
                     },
                 },
             },

@@ -78,7 +78,10 @@ export default function WeatherChart({
         : Math.ceil(rawMax + AXIS_PADDING);
     // Only temperature can legitimately go below 0 — clamp everything else
     // (%, wind speed, etc.) so it never shows a negative axis label.
-    const clampedMinVal = metricInfo.id === "temp" ? minVal : Math.max(0, minVal);
+    // Percentage metrics (humidity, precipitation chance) additionally can
+    // never exceed 100 on the high end (see maxVal above), so together the
+    // axis for a % metric is always pinned to the 0–100 range.
+    const clampedMinVal = metricInfo.id === "temp" ? minVal : isPercent ? 0 : Math.max(0, minVal);
     const valRange = maxVal - clampedMinVal === 0 ? 1 : maxVal - clampedMinVal;
     const midVal = Math.round((clampedMinVal + maxVal) / 2);
 
