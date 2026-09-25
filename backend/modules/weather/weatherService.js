@@ -18,6 +18,31 @@ import { broadcast } from "../../sse/SSEController.js";
 
 const inFlightFetches = new Map();
 
+// If Open-Meteo hasn't published the newest 15-min slot yet, don't let every
+// page load hammer it — wait at least this long between upstream calls.
+const MIN_REFETCH_INTERVAL_MS = 45_000;
+
+// Fresh = the DATA's own timestamp (current.time) is at or after the latest
+// 15-min slot that should exist by now. Judging by when *we* fetched (the old
+// slot label) marked lagging data as fresh for a whole 15 minutes.
+function isRowFresh(row, currentSlot = getLatestWeatherTimestamp()) {
+    const dataTs = row?.payload?._dataTimestampUtc;
+    if (!dataTs) return false;
+    return Date.parse(dataTs) >= Date.parse(currentSlot);
+}
+
+function wasFetchedRecently(row) {
+    if (!row?.fetched_at) return false;
+    // SQLite CURRENT_TIMESTAMP is UTC "YYYY-MM-DD HH:MM:SS"
+    const fetchedMs = Date.parse(`${String(row.fetched_at).replace(" ", "T")}Z`);
+    return Date.now() - fetchedMs < MIN_REFETCH_INTERVAL_MS;
+}
+
+/** Used by the scheduler to know whether it should retry shortly. */
+export async function isWeatherCurrent(locationId) {
+    return isRowFresh(await getCachedWeatherRow(locationId));
+}
+
 /**
  * @param {{ id: string, latitude: number, longitude: number, timezone?: string }} location
  */
@@ -58,22 +83,21 @@ export async function getWeather(location) {
 
     const row = await getCachedWeatherRow(locationId);
 
-    // Freshness is judged against OUR OWN aligned slot (weather_timestamp,
-    // set from getLatestWeatherTimestamp() at the moment we cached it) —
-    // not Open-Meteo's self-reported payload._dataTimestampUtc. Open-Meteo
-    // can lag its own labeled interval by up to ~15min before publishing,
-    // so comparing against their timestamp compounds with our 15min
-    // window into an effective ~30min refresh cadence. Comparing against
-    // our own slot means we always retry right on the XX:01/16/31/46
-    // schedule regardless of Open-Meteo's internal lag.
     const currentSlot = getLatestWeatherTimestamp();
 
-    if (row?.payload && row.weather_timestamp === currentSlot) {
-        console.log("[Weather] Cache hit (still within current slot).");
+    if (isRowFresh(row, currentSlot)) {
+        console.log("[Weather] Cache hit (data is from the current slot).");
         return stripInternalFields(row.payload);
     }
 
-    console.log("[Weather] Cache is from a previous slot (or missing), refetching...");
+    const hasUsableCache = row?.payload && Object.keys(row.payload).length > 0;
+
+    if (hasUsableCache && wasFetchedRecently(row)) {
+        console.log("[Weather] Data is behind, but we just asked Open-Meteo — serving cache.");
+        return stripInternalFields(row.payload);
+    }
+
+    console.log("[Weather] Cache data is older than the current slot (or missing), refetching...");
 
     if (inFlightFetches.has(locationId)) {
         console.log("[Weather] Refetch already in flight on this instance, joining it.");
@@ -104,6 +128,7 @@ async function refetchAndCache(locationId, latitude, longitude, timezone) {
     }
 
     try {
+        const previous = await getCachedWeatherRow(locationId);
         const raw = await fetchWeather(latitude, longitude, timezone);
         const formatted = formatWeather(raw);
 
@@ -121,7 +146,10 @@ async function refetchAndCache(locationId, latitude, longitude, timezone) {
         // Locations aren't per-user private (see Location.findById's
         // comment), so this is a global broadcast, same as
         // announcements/schedule/themes/locations.
-        broadcast("weather:updated", { locationId, weather: publicPayload });
+        // (Skip if Open-Meteo handed back the same interval we already had.)
+        if (previous?.payload?._dataTimestampUtc !== formatted._dataTimestampUtc) {
+            broadcast("weather:updated", { locationId, weather: publicPayload });
+        }
 
         return publicPayload;
     } catch (error) {

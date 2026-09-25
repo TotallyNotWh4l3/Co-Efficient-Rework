@@ -9,9 +9,15 @@
 
 import Location from "../locations/Location.js";
 import { getAllCachedLocationIds } from "./weatherDataStore.js";
-import { getWeather } from "./weatherService.js";
+import { getWeather, isWeatherCurrent } from "./weatherService.js";
 
 const OFFSET_MINUTES = [1, 16, 31, 46];
+
+// Open-Meteo sometimes hasn't published the new 15-min interval at XX:01.
+// Instead of waiting for the next tick (=> 15 min of stale data), retry the
+// still-stale locations every minute until the next tick takes over.
+const RETRY_MS = 60_000;
+const MAX_RETRIES = 10;
 
 function msUntilNextTick(now = new Date()) {
     const minutes = now.getMinutes();
@@ -25,29 +31,47 @@ function msUntilNextTick(now = new Date()) {
     return nextTick.getTime() - now.getTime();
 }
 
-async function refreshAllWatchedLocations() {
-    const locationIds = await getAllCachedLocationIds();
+async function refreshLocations(locationIds) {
+    const stillStale = [];
 
     for (const locationId of locationIds) {
         try {
             const location = await Location.findById(locationId);
             if (!location) continue;
 
-            // getWeather() itself decides freshness and only hits
-            // Open-Meteo (and broadcasts) if the cached data is stale —
-            // safe to call unconditionally here.
+            // getWeather() decides freshness from the data's own timestamp
+            // and only hits Open-Meteo (and broadcasts) if it's behind.
             await getWeather(location);
+
+            if (!(await isWeatherCurrent(locationId))) stillStale.push(locationId);
         } catch (error) {
             console.error(`[weatherScheduler] Failed to refresh ${locationId}:`, error.message);
+            stillStale.push(locationId);
         }
     }
+
+    return stillStale;
 }
 
 let timer = null;
+let retryTimer = null;
+
+function scheduleRetry(locationIds, attempt) {
+    if (locationIds.length === 0 || attempt > MAX_RETRIES) return;
+
+    retryTimer = setTimeout(async () => {
+        const stale = await refreshLocations(locationIds);
+        scheduleRetry(stale, attempt + 1);
+    }, RETRY_MS);
+}
 
 export function startWeatherScheduler() {
     const tick = async () => {
-        await refreshAllWatchedLocations();
+        clearTimeout(retryTimer);
+
+        const stale = await refreshLocations(await getAllCachedLocationIds());
+        scheduleRetry(stale, 1);
+
         timer = setTimeout(tick, msUntilNextTick());
     };
 
@@ -57,4 +81,5 @@ export function startWeatherScheduler() {
 
 export function stopWeatherScheduler() {
     clearTimeout(timer);
+    clearTimeout(retryTimer);
 }
