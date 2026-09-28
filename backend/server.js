@@ -1,7 +1,7 @@
 // ===================================================
 // ファイル名: server.js
 // 作成日: 2026/08/27
-// 作成者: ゴンザガ　ウェイン
+// 作成者: ゴンザガ ウェイン
 // 概要: サーバーのエントリーポイント (フルローカル版)
 // ===================================================
 
@@ -37,7 +37,22 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
-app.use(helmet());
+// The dashboard is served over plain HTTP on the LAN (e.g. http://192.168.x.x:3001),
+// which isn't a "trustworthy origin". Helmet's defaults assume HTTPS and break that:
+//  - CSP `upgrade-insecure-requests` rewrites asset URLs to https:// -> ERR_SSL_PROTOCOL_ERROR
+//  - HSTS would pin the host to https
+//  - COOP / Origin-Agent-Cluster are ignored (console noise) on untrusted origins
+// Everything else in helmet's defaults stays on.
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: { "upgrade-insecure-requests": null },
+        },
+        strictTransportSecurity: false,
+        crossOriginOpenerPolicy: false,
+        originAgentCluster: false,
+    }),
+);
 
 // In production the frontend is served statically by this same Express
 // process (see below), so it's same-origin and needs no CORS at all.

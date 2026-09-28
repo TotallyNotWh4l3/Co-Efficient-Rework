@@ -67,7 +67,7 @@ export default function WeatherForecastSection({
                 isHourly={activeTab === "hourly"}
                 allDaysDataset={activeTab === "hourly" ? allDaysHourlyDataset : undefined}
             />
-
+            
             {/* <div className="weather-updated">
                 <div className="weather-updated__inner">
                     <Clock className="weather-updated__icon" />
