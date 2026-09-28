@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: WeatherMetricSelector.jsx
 // 作成日: 2026/08/27
@@ -27,13 +26,19 @@ export default function WeatherMetricSelector({ activeMetric, onSelectMetric, is
                         key={metric.id}
                         onClick={() => onSelectMetric(metric.id)}
                         className={`weather-metrics__btn${isActive ? " weather-metrics__btn--active" : ""}`}
-                        style={{ boxShadow: isActive ? `0 0 10px ${metric.color}25` : "none" }}
+                        style={{
+                            boxShadow: isActive
+                                ? `0 0 calc(0.625 * var(--u)) ${metric.color}25`
+                                : "none",
+                        }}
                     >
                         <IconComp
                             className="weather-metrics__icon"
                             style={{
                                 color: isActive ? "#fff" : metric.color,
-                                filter: isActive ? `drop-shadow(0 0 4px ${metric.color})` : "none",
+                                filter: isActive
+                                    ? `drop-shadow(0 0 calc(0.25 * var(--u)) ${metric.color})`
+                                    : "none",
                             }}
                         />
                         {/* <span

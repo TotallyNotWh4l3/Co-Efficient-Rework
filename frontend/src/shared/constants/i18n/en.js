@@ -214,10 +214,8 @@ export default {
             size: {
                 title: "Size",
                 label: "Cell size",
-                "1x1": "1×1",
-                "2x1": "2×1",
-                "1x2": "1×2",
-                "2x2": "2×2",
+                width: "Width",
+                height: "Height",
             },
         },
         users: {

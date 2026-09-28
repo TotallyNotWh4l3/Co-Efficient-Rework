@@ -7,7 +7,7 @@
 
 import "./module-settings.css";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Blocks, Plus, Trash2 } from "lucide-react";
 
 import { useDashboard } from "../../dashboard/useDashboard";
@@ -16,43 +16,71 @@ import { useLanguage } from "../useLanguage";
 
 import Settings from "../components/SettingsComponents";
 
-// A module's cell-span is picked from a fixed set of sizes rather than
-// freeform pixel dragging — far simpler to build and keeps every module
-// aligned to the same shared grid unit (see dashboard-workspace.css).
-const SPAN_OPTIONS = [
-    { w: 1, h: 1, key: "1x1" },
-    { w: 2, h: 1, key: "2x1" },
-    { w: 1, h: 2, key: "1x2" },
-    { w: 2, h: 2, key: "2x2" },
-];
+// A module's cell-span is entered as a width and height (in grid cells)
+// rather than picked from a fixed set of buttons, so any size the grid can
+// hold is available. Values are clamped to 1..columns / 1..rows on commit
+// (blur or Enter), which lets the user type freely without the field
+// fighting them mid-edit.
+function SizeField({ label, value, min, max, onCommit, disabled }) {
+    const [draft, setDraft] = useState(String(value));
 
-function SpanPicker({ value, onChange, labels, disabled }) {
+    // Keep the field in step when the size changes from elsewhere (SSE
+    // sync from another tab, or a view change auto-growing the module).
+    useEffect(() => {
+        setDraft(String(value));
+    }, [value]);
+
+    const commit = () => {
+        const parsed = Math.round(Number(draft));
+        const next = Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : value;
+        setDraft(String(next));
+        if (next !== value) onCommit(next);
+    };
+
     return (
-        <div className="module-settings__span-picker">
-            {SPAN_OPTIONS.map((span) => {
-                const isActive = value?.w === span.w && value?.h === span.h;
-                return (
-                    <button
-                        key={span.key}
-                        type="button"
-                        className={`module-settings__span-btn${isActive ? " module-settings__span-btn--active" : ""}`}
-                        onClick={() => onChange(span)}
-                        disabled={disabled}
-                        title={labels?.[span.key] ?? span.key}
-                    >
-                        {/* A tiny w x h block preview, scaled to the option's
-                            own ratio, so the shape reads at a glance instead
-                            of relying purely on the "2×1" text. */}
-                        <span
-                            className="module-settings__span-preview"
-                            style={{ "--span-w": span.w, "--span-h": span.h }}
-                        />
-                        <span className="module-settings__span-text">
-                            {labels?.[span.key] ?? span.key}
-                        </span>
-                    </button>
-                );
-            })}
+        <label className="module-settings__size-field">
+            <span className="module-settings__size-field-label">{label}</span>
+            <input
+                type="number"
+                className="module-settings__size-input"
+                min={min}
+                max={max}
+                step={1}
+                value={draft}
+                disabled={disabled}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                }}
+            />
+        </label>
+    );
+}
+
+function SizeInputs({ value, onChange, maxW, maxH, labels, disabled }) {
+    const w = value?.w ?? 1;
+    const h = value?.h ?? 1;
+
+    return (
+        <div className="module-settings__size-inputs">
+            <SizeField
+                label={labels?.width ?? "Width"}
+                value={w}
+                min={1}
+                max={maxW}
+                disabled={disabled}
+                onCommit={(nextW) => onChange({ w: nextW, h })}
+            />
+            <span className="module-settings__size-times">×</span>
+            <SizeField
+                label={labels?.height ?? "Height"}
+                value={h}
+                min={1}
+                max={maxH}
+                disabled={disabled}
+                onCommit={(nextH) => onChange({ w, h: nextH })}
+            />
         </div>
     );
 }
@@ -60,11 +88,13 @@ function SpanPicker({ value, onChange, labels, disabled }) {
 export default function ModuleSettings() {
     const { dashboard, addModule, removeModule, updateModuleLayout } = useDashboard();
     const { settings, loading } = useSettings();
-    const [pendingSpan, setPendingSpan] = useState(SPAN_OPTIONS[0]);
+    const [pendingSpan, setPendingSpan] = useState({ w: 1, h: 1 });
 
     const T = useLanguage();
     const copy = T?.settings?.modules ?? {};
     const sizeCopy = copy.size ?? {};
+    const maxW = dashboard.layout?.columns ?? 3;
+    const maxH = dashboard.layout?.rows ?? 4;
 
     // Mirrors ModuleManager.jsx's list — kept here too since this page owns
     // the "add module" UI now. If you add a new module type, add it in both
@@ -113,7 +143,13 @@ export default function ModuleSettings() {
                 </Settings.Description>
 
                 <span className="module-settings__span-label">{sizeCopy.label ?? "Cell size"}</span>
-                <SpanPicker value={pendingSpan} onChange={setPendingSpan} labels={sizeCopy} />
+                <SizeInputs
+                    value={pendingSpan}
+                    onChange={setPendingSpan}
+                    maxW={maxW}
+                    maxH={maxH}
+                    labels={sizeCopy}
+                />
 
                 <div className="module-settings__grid">
                     {AVAILABLE_MODULES.map((module) => (
@@ -188,8 +224,10 @@ export default function ModuleSettings() {
                                         </button>
                                     </div>
 
-                                    <SpanPicker
+                                    <SizeInputs
                                         value={module.layout}
+                                        maxW={maxW}
+                                        maxH={maxH}
                                         onChange={(span) =>
                                             updateModuleLayout(module.id, {
                                                 w: span.w,

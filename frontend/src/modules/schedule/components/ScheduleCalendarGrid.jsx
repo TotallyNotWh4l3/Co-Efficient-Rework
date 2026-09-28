@@ -209,7 +209,7 @@ export default function ScheduleCalendarGrid({
                                                     color
                                                         ? {
                                                               background: color,
-                                                              boxShadow: `0 0 4px ${color}88`,
+                                                              boxShadow: `0 0 calc(0.25 * var(--u)) ${color}88`,
                                                           }
                                                         : undefined
                                                 }

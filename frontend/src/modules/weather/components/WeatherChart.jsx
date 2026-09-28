@@ -189,7 +189,7 @@ export default function WeatherChart({
                         className="weather-chart__dot"
                         style={{
                             backgroundColor: metricInfo.color,
-                            boxShadow: `0 0 8px ${metricInfo.color}`,
+                            boxShadow: `0 0 calc(0.5 * var(--u)) ${metricInfo.color}`,
                         }}
                     ></span>
                     {isJapanese ? metricInfo.labelJa : metricInfo.labelEn} ({metricInfo.unit})
@@ -285,7 +285,7 @@ export default function WeatherChart({
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     style={{
-                                        filter: "drop-shadow(0 1px 4px rgba(96, 165, 250, 0.2))",
+                                        filter: "drop-shadow(0 var(--hairline) calc(0.25 * var(--u)) rgba(96, 165, 250, 0.2))",
                                     }}
                                 />
                             )}
@@ -298,7 +298,7 @@ export default function WeatherChart({
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     style={{
-                                        filter: "drop-shadow(0 1px 4px rgba(248, 113, 113, 0.2))",
+                                        filter: "drop-shadow(0 var(--hairline) calc(0.25 * var(--u)) rgba(248, 113, 113, 0.2))",
                                     }}
                                 />
                             )}
@@ -312,7 +312,9 @@ export default function WeatherChart({
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                style={{ filter: `drop-shadow(0 1px 4px ${metricInfo.color}30)` }}
+                                style={{
+                                    filter: `drop-shadow(0 var(--hairline) calc(0.25 * var(--u)) ${metricInfo.color}30)`,
+                                }}
                             />
                         )
                     )}

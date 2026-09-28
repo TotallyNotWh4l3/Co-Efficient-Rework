@@ -32,7 +32,7 @@ import { useLanguage } from "../settings/useLanguage";
  */
 export default function WeatherModuleContainer({ module }) {
     const { locationOptions } = useLocation();
-    const { removeModule, updateModuleSettings } = useDashboard();
+    const { removeModule, updateModuleSettings, ensureModuleMinSize } = useDashboard();
     const { settings } = useSettings();
 
     const isJapanese = settings?.preferences?.language === "ja";
@@ -68,6 +68,7 @@ export default function WeatherModuleContainer({ module }) {
 
     const handleLayoutModeChange = (mode) => {
         updateModuleSettings(module.id, "view", mode);
+        ensureModuleMinSize(module.id, mode);
     };
 
     const handleRemove = () => {

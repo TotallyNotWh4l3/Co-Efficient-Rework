@@ -29,7 +29,7 @@ import {
 import "./schedule-module.css";
 
 export default function ScheduleModule({ module }) {
-    const { removeModule } = useDashboard();
+    const { removeModule, ensureModuleMinSize } = useDashboard();
     const { user } = useAuth();
     const lang = useLanguage();
     const t = lang.modules.schedule;
@@ -38,7 +38,13 @@ export default function ScheduleModule({ module }) {
 
     // ---- View mode state ----
     const [viewMode, setViewMode] = useState("absolute"); // 'absolute' | 'relative'
-    const [layout, setLayout] = useState("month"); // 'month' | 'week'
+    const [layout, setLayoutState] = useState("month"); // 'month' | 'week'
+    // Switching month <-> week grows the module only if it's below that
+    // layout's minimum size (see moduleSizes.js) — never shrinks it.
+    const setLayout = (next) => {
+        setLayoutState(next);
+        ensureModuleMinSize(module.id, next);
+    };
     const [weekOrientation, setWeekOrientation] = useState("vertical"); // 'vertical' | 'horizontal' (week layout only)
     const [anchorDate, setAnchorDate] = useState(new Date());
     const [daysBefore, setDaysBefore] = useState(0);

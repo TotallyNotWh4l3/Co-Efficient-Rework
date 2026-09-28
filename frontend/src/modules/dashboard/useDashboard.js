@@ -7,11 +7,12 @@
 //       (ユーザー単位配信 — 同じユーザーの他タブ/他端末との同期用)
 // ===================================================
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useDashboardContext } from "./DashboardContext";
 import dashboardService from "./dashboardService";
 import { getSSEUrl } from "../../shared/sse/sseUrl";
 import { useRealtime } from "../../shared/sse/RealtimeContext";
+import { getMinSize, growToMinSize } from "../../common/ModuleHost/moduleSizes";
 
 const EMPTY_DASHBOARD = {
     id: "main",
@@ -209,6 +210,36 @@ export function useDashboardState(user) {
         }
     }, []);
 
+    // A view-mode change calls this so the module is never left too small
+    // for the view it just switched to. It only ever GROWS a module that's
+    // below that view's minimum (see moduleSizes.js); a module already at
+    // or above it keeps the user's chosen size untouched.
+    const dashboardRef = useRef(dashboard);
+    dashboardRef.current = dashboard;
+
+    const ensureModuleMinSize = useCallback(
+        async (moduleId, view) => {
+            const { modules, layout } = dashboardRef.current;
+            const module = modules.find((m) => m.id === moduleId);
+            if (!module) return;
+
+            const next = growToMinSize(
+                module.layout,
+                getMinSize(module.type, view),
+                layout.columns,
+                layout.rows,
+            );
+            if (!next) return;
+
+            try {
+                await updateModuleLayout(moduleId, next);
+            } catch {
+                // updateModuleLayout already logged it; the view change itself still applies.
+            }
+        },
+        [updateModuleLayout],
+    );
+
     return {
         dashboard,
         loading,
@@ -218,6 +249,7 @@ export function useDashboardState(user) {
         removeModule,
         updateModuleSettings,
         updateModuleLayout,
+        ensureModuleMinSize,
         selectedModuleId,
         selectModule,
         setDashboard,

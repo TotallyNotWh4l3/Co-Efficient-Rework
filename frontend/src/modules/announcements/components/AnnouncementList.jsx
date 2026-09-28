@@ -11,7 +11,6 @@ import AnnouncementItem from "./AnnouncementItem";
 
 export default function AnnouncementList({
     isJapanese,
-    isExtended,
     isLoading,
     error,
     filtered,
@@ -24,7 +23,7 @@ export default function AnnouncementList({
     const t = lang.modules.announcement.list;
 
     return (
-        <div className="ann-list" style={{ maxHeight: isExtended ? "480px" : "none" }}>
+        <div className="ann-list">
             {isLoading && <p className="ann-empty-text">{t.loading}</p>}
             {error && <p className="ann-empty-text ann-error-text">{error}</p>}
 

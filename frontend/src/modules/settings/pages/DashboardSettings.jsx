@@ -63,7 +63,7 @@ export default function DashboardSettings() {
                     </Settings.RowContent>
                     <Settings.Slider
                         min={1}
-                        max={6}
+                        max={12}
                         value={layout.columns}
                         onChange={(e) => updateLayout("columns", Number(e.target.value))}
                     />
@@ -76,7 +76,7 @@ export default function DashboardSettings() {
                     </Settings.RowContent>
                     <Settings.Slider
                         min={1}
-                        max={8}
+                        max={16}
                         value={layout.rows}
                         onChange={(e) => updateLayout("rows", Number(e.target.value))}
                     />

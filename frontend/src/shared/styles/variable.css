@@ -1,4 +1,18 @@
 :root {
+    /* Module sizing unit.
+       Module CSS uses NO raw px/rem — every length is a multiple of --u,
+       e.g. calc(0.75 * var(--u)). --u equals --ui-base outside a dashboard
+       cell (dialogs, portals, dropdowns) and is re-derived from the cell's
+       size inside one (see common/ModuleHost/module-renderer.css). These
+       are the only raw sizes; tune the whole scale from here. */
+    --ui-base: 16px; /* one unit at the reference cell size */
+    --ui-scale-min: 0.9; /* smallest --u, as a multiple of --ui-base */
+    --ui-scale-max: 1.75; /* largest --u, as a multiple of --ui-base */
+    --ui-cq-per-unit: 3.4; /* cqmin of the cell that equals one unit */
+    --u: var(--ui-base);
+    --hairline: 1px;
+    --radius-full: 9999px;
+
     /* Spacing */
     --space-xs: 4px;
     --space-sm: 8px;

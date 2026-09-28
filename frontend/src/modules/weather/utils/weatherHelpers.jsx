@@ -167,7 +167,7 @@ export function WeatherVisualIcon({ code, isDay, className = "" }) {
                     className={className}
                     style={{
                         color: "#facc15",
-                        filter: "drop-shadow(0 0 10px rgba(250,204,21,0.5))",
+                        filter: "drop-shadow(0 0 calc(0.625 * var(--u)) rgba(250,204,21,0.5))",
                     }}
                 />
             );

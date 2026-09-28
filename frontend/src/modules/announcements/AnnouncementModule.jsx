@@ -22,7 +22,7 @@ import AnnouncementArchiveModal from "./AnnouncementArchiveModal";
 import "./announcement-module.css";
 
 export default function AnnouncementModule({ module }) {
-    const { removeModule, updateModuleSettings } = useDashboard();
+    const { removeModule, updateModuleSettings, ensureModuleMinSize } = useDashboard();
     const { settings } = useSettings();
     const { user } = useAuth();
     const lang = useLanguage();
@@ -33,8 +33,11 @@ export default function AnnouncementModule({ module }) {
     const currentUser = user ? { id: user.id, name: user.username, role: user.role } : null;
 
     const isExtended = module.settings?.view === "extended";
-    const setIsExtended = (next) =>
-        updateModuleSettings(module.id, "view", next ? "extended" : "compact");
+    const setIsExtended = (next) => {
+        const view = next ? "extended" : "compact";
+        updateModuleSettings(module.id, "view", view);
+        ensureModuleMinSize(module.id, view);
+    };
     const onRemove = () => removeModule(module.id);
 
     const {
