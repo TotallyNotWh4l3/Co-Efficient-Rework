@@ -5,7 +5,6 @@
     border-radius: calc(1 * var(--u));
     padding: calc(1.25 * var(--u));
     transition:
-        box-shadow 0.3s ease,
         transform 0.3s ease;
     overflow: hidden;
     display: flex;
@@ -14,7 +13,6 @@
     height: 100%;
     min-height: 0;
     border: var(--hairline) solid rgba(255, 255, 255, 0.15);
-    box-shadow: var(--shadow-lg);
     font-family: inherit;
 }
 
@@ -88,6 +86,14 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    /* overflow-y:auto makes overflow-x compute to auto as well. Active buttons
+       use transform: scale(), which pokes a pixel or two past the right edge
+       (rightmost metric, last day) and summons a horizontal scrollbar. Clip
+       x instead, and widen the clip box into the card padding by the same
+       amount (negative margin cancels the padding) so nothing gets cut. */
+    overflow-x: hidden;
+    padding-inline: calc(0.125 * var(--u));
+    margin-inline: calc(-0.125 * var(--u));
     justify-content: space-between;
 }
 
@@ -98,7 +104,7 @@
     align-items: center;
     z-index: 10;
     width: 100%;
-    margin-bottom: calc(0.75 * var(--u));
+    margin-bottom: calc(0.5 * var(--u));
 }
 
 .weather-header__location {
@@ -403,9 +409,9 @@
     display: flex;
     align-items: center;
     gap: calc(0.375 * var(--u));
-    margin-top: calc(0.625 * var(--u));
-    padding-top: calc(0.625 * var(--u));
-    border-top: var(--hairline) solid rgba(255, 255, 255, 0.1);
+    /* margin-top: calc(0.625 * var(--u)); */
+    /* padding-top: calc(0.625 * var(--u));
+    border-top: var(--hairline) solid rgba(255, 255, 255, 0.1); */
     z-index: 10;
     font-size: calc(0.5625 * var(--u));
     font-weight: 700;
@@ -568,7 +574,7 @@
 
 .weather-days__temps {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     gap: calc(0.125 * var(--u));
     margin-top: calc(0.25 * var(--u));
@@ -678,7 +684,6 @@
     transition: all 0.3s ease;
     width: 100%;
     z-index: 10;
-    box-shadow: var(--shadow-md);
 }
 
 .weather-chart__header {
@@ -706,7 +711,7 @@
 }
 
 .weather-chart__range {
-    font-size: calc(0.5625 * var(--u));
+    font-size: calc(0.625 * var(--u));
     font-family: "JetBrains Mono", monospace;
     color: rgba(255, 255, 255, 0.4);
 }

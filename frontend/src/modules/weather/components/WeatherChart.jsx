@@ -5,7 +5,7 @@
 // 概要: 天気チャート コンポーネント
 // ===================================================
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "../weather.css";
 
 import { useLanguage } from "../../settings/useLanguage";
@@ -34,15 +34,42 @@ export default function WeatherChart({
 }) {
     const [hoveredIdx, setHoveredIdx] = useState(null);
     const svgRef = useRef(null);
+    const wrapRef = useRef(null);
+    // Measured size of the SVG wrapper. The viewBox is built from this
+    // aspect ratio so the drawing always fills the wrapper. With a fixed
+    // 500x110 viewBox the SVG letterboxes (xMidYMid meet) whenever the
+    // wrapper is taller than that ratio, leaving empty bands above and below.
+    const [box, setBox] = useState(null);
     const lang = useLanguage();
     const t = lang.modules.weather.chart;
+
+    useEffect(() => {
+        const el = wrapRef.current;
+        if (!el || typeof ResizeObserver === "undefined") return;
+        const ro = new ResizeObserver(([entry]) => {
+            const { width: w, height: h } = entry.contentRect;
+            if (w > 0 && h > 0) {
+                setBox((prev) =>
+                    prev && Math.abs(prev.w - w) < 0.5 && Math.abs(prev.h - h) < 0.5
+                        ? prev
+                        : { w, h },
+                );
+            }
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [dataset]);
 
     if (!dataset || dataset.length === 0) return null;
 
     const width = 500;
-    const height = 110;
+    // Height follows the wrapper's aspect ratio (falls back to 110 before the
+    // first measurement). Text scales with width, so it looks the same as before.
+    const height = box ? Math.max(50, Math.round(width * (box.h / box.w))) : 110;
     const paddingX = 0;
-    const paddingY = 15;
+    const paddingTop = 8;
+    // Bottom strip holds the hour labels (drawn at height - 3).
+    const paddingBottom = 13;
     // Reserved space on the left for the max/mid/min value labels, so the
     // curve/line itself starts to the right of the text instead of under it.
     const paddingLeft = 26;
@@ -93,8 +120,8 @@ export default function WeatherChart({
                 (idx / (dataset.length - 1)) * (width - 2 * paddingX - paddingLeft);
             const y =
                 height -
-                paddingY -
-                ((pickValue(d) - clampedMinVal) / valRange) * (height - 2 * paddingY);
+                paddingBottom -
+                ((pickValue(d) - clampedMinVal) / valRange) * (height - paddingTop - paddingBottom);
             const hour = d.label.slice(0, 2);
             return {
                 x,
@@ -130,7 +157,7 @@ export default function WeatherChart({
 
     const getAreaPath = (pts, pathD) => {
         if (pts.length === 0) return "";
-        return `${pathD} L ${pts[pts.length - 1].x} ${height - paddingY} L ${pts[0].x} ${height - paddingY} Z`;
+        return `${pathD} L ${pts[pts.length - 1].x} ${height - paddingBottom} L ${pts[0].x} ${height - paddingBottom} Z`;
     };
 
     const pathMaxD = getBezierPath(pointsMax);
@@ -199,7 +226,7 @@ export default function WeatherChart({
                 </span>
             </div>
 
-            <div className="weather-chart__svg-wrap">
+            <div className="weather-chart__svg-wrap" ref={wrapRef}>
                 <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`} className="weather-chart__svg">
                     <defs>
                         <linearGradient id="grad-temp-max" x1="0" y1="0" x2="0" y2="1">
@@ -218,17 +245,17 @@ export default function WeatherChart({
 
                     <line
                         x1={paddingX + paddingLeft}
-                        y1={paddingY}
+                        y1={paddingTop}
                         x2={width - paddingX}
-                        y2={paddingY}
+                        y2={paddingTop}
                         stroke="rgba(255,255,255,0.05)"
                         strokeDasharray="2 2"
                     />
                     <line
                         x1={paddingX + paddingLeft}
-                        y1={height - paddingY}
+                        y1={height - paddingBottom}
                         x2={width - paddingX}
-                        y2={height - paddingY}
+                        y2={height - paddingBottom}
                         stroke="rgba(255,255,255,0.12)"
                     />
 
@@ -236,7 +263,7 @@ export default function WeatherChart({
                         paddingLeft strip, clear of the curve/lines */}
                     <text
                         x={paddingX}
-                        y={paddingY + 3}
+                        y={paddingTop + 3}
                         fill="rgba(255,255,255,0.35)"
                         fontFamily="JetBrains Mono, monospace"
                         fontSize="8px"
@@ -256,7 +283,7 @@ export default function WeatherChart({
                     </text>
                     <text
                         x={paddingX}
-                        y={height - paddingY - 2}
+                        y={height - paddingBottom - 2}
                         fill="rgba(255,255,255,0.35)"
                         fontFamily="JetBrains Mono, monospace"
                         fontSize="8px"
@@ -326,9 +353,9 @@ export default function WeatherChart({
                                 {isHovered && (
                                     <line
                                         x1={pt.x}
-                                        y1={paddingY}
+                                        y1={paddingTop}
                                         x2={pt.x}
-                                        y2={height - paddingY}
+                                        y2={height - paddingBottom}
                                         stroke="rgba(255,255,255,0.15)"
                                         strokeDasharray="2 2"
                                     />

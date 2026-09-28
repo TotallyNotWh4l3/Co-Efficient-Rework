@@ -1,11 +1,12 @@
 // ===================================================
 // ファイル名: ModulePositionPreview.jsx
-// 概要: モジュール配置プレビュー — グリッド上でモジュールの位置を確認・移動する
+// 概要: モジュール配置プレビュー — グリッド上でモジュールの位置・サイズ・削除を行う
 // ===================================================
 
 import "./module-position-preview.css";
 
 import { useEffect, useRef, useState } from "react";
+import { Check, Trash2, X } from "lucide-react";
 
 import { canPlaceAt } from "../../../../../shared/utils/grid";
 
@@ -40,7 +41,15 @@ function useWorkspaceSize() {
     return size;
 }
 
-export default function ModulePositionPreview({ layout, modules, labelFor, onMove, copy = {} }) {
+export default function ModulePositionPreview({
+    layout,
+    modules,
+    labelFor,
+    onMove,
+    onResize,
+    onRemove,
+    copy = {},
+}) {
     const { columns, rows, gap = 0, padding = 0 } = layout;
 
     const gridRef = useRef(null);
@@ -48,6 +57,11 @@ export default function ModulePositionPreview({ layout, modules, labelFor, onMov
     const [drag, setDrag] = useState(null); // { id, dc, dr } — which cell of the module was grabbed
     const [hover, setHover] = useState(null); // { col, row } — cell under the pointer
     const [message, setMessage] = useState(null);
+    // { id, w, h, ok, validW, validH } — w/h is what the pointer asks for,
+    // validW/validH the last size that fit (what the block actually shows).
+    const [resize, setResize] = useState(null);
+    const [confirmRemoveId, setConfirmRemoveId] = useState(null); // module awaiting "remove?" confirmation
+    const resizingRef = useRef(false); // set synchronously so a native drag can't start mid-resize
 
     const workspace = useWorkspaceSize();
 
@@ -109,8 +123,84 @@ export default function ModulePositionPreview({ layout, modules, labelFor, onMov
         }
     };
 
+    // ---------- Remove (trash button -> inline confirm) ----------
+    const confirmRemove = async (module) => {
+        setConfirmRemoveId(null);
+        try {
+            await onRemove(module.id);
+            setSelectedId((prev) => (prev === module.id ? null : prev));
+            setMessage(null);
+        } catch {
+            setMessage(copy.removeFailed ?? "Couldn't remove the module. Try again.");
+        }
+    };
+
+    // ---------- Resize (drag a block's edge / corner) ----------
+    const startResize = (event, module, axis) => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        resizingRef.current = true;
+
+        const w = module.layout?.w ?? 1;
+        const h = module.layout?.h ?? 1;
+        setSelectedId(null);
+        setHover(null);
+        setMessage(null);
+        setResize({ id: module.id, axis, w, h, ok: true, validW: w, validH: h });
+    };
+
+    const moveResize = (event, module) => {
+        if (!resize || resize.id !== module.id) return;
+
+        const cell = cellFromEvent(event);
+        const col = module.cellIndex % columns;
+        const row = Math.floor(module.cellIndex / columns);
+        const w = resize.axis === "s" ? (module.layout?.w ?? 1) : Math.max(1, cell.col - col + 1);
+        const h = resize.axis === "e" ? (module.layout?.h ?? 1) : Math.max(1, cell.row - row + 1);
+
+        if (w === resize.w && h === resize.h) return;
+
+        const others = modules.filter((m) => m.id !== module.id);
+        const check = canPlaceAt({ col, row, w, h, columns, rows, others });
+        setResize((prev) => ({
+            ...prev,
+            w,
+            h,
+            ok: check.ok,
+            validW: check.ok ? w : prev.validW,
+            validH: check.ok ? h : prev.validH,
+        }));
+    };
+
+    const endResize = async (module, commit) => {
+        if (!resizingRef.current) return; // pointerup and lostpointercapture both land here
+        const current = resize;
+        resizingRef.current = false;
+        setResize(null);
+        if (!commit || !current || current.id !== module.id) return;
+
+        const w = module.layout?.w ?? 1;
+        const h = module.layout?.h ?? 1;
+        if (current.validW === w && current.validH === h) {
+            if (!current.ok) setMessage(copy.resizeBlocked ?? "There's no room to grow that way.");
+            return;
+        }
+
+        try {
+            await onResize(module.id, { w: current.validW, h: current.validH });
+            setMessage(null);
+        } catch {
+            setMessage(copy.resizeFailed ?? "Couldn't resize the module. Try again.");
+        }
+    };
+
     // ---------- Drag & drop ----------
     const handleDragStart = (event, module) => {
+        if (resizingRef.current) {
+            event.preventDefault();
+            return;
+        }
         const cell = cellFromEvent(event);
         const startCol = module.cellIndex % columns;
         const startRow = Math.floor(module.cellIndex / columns);
@@ -183,6 +273,16 @@ export default function ModulePositionPreview({ layout, modules, labelFor, onMov
               }
             : null;
 
+    const resizeGhost =
+        resize && !resize.ok
+            ? {
+                  col: modules.find((m) => m.id === resize.id).cellIndex % columns,
+                  row: Math.floor(modules.find((m) => m.id === resize.id).cellIndex / columns),
+                  w: Math.min(resize.w, columns),
+                  h: Math.min(resize.h, rows),
+              }
+            : null;
+
     const cellWidth = Math.round((workspace.w - padding * 2 - gap * (columns - 1)) / columns);
     const cellHeight = Math.round((workspace.h - padding * 2 - gap * (rows - 1)) / rows);
 
@@ -220,8 +320,9 @@ export default function ModulePositionPreview({ layout, modules, labelFor, onMov
                 ))}
 
                 {modules.map((module) => {
-                    const w = module.layout?.w ?? 1;
-                    const h = module.layout?.h ?? 1;
+                    const isResizing = resize?.id === module.id;
+                    const w = isResizing ? resize.validW : (module.layout?.w ?? 1);
+                    const h = isResizing ? resize.validH : (module.layout?.h ?? 1);
                     const col = module.cellIndex % columns;
                     const row = Math.floor(module.cellIndex / columns);
                     const isSelected = selectedId === module.id;
@@ -235,12 +336,13 @@ export default function ModulePositionPreview({ layout, modules, labelFor, onMov
                                 `mpp__module--${module.type}`,
                                 isSelected ? "mpp__module--selected" : "",
                                 isDragging ? "mpp__module--dragging" : "",
+                                isResizing ? "mpp__module--resizing" : "",
                             ].join(" ")}
                             style={{
                                 gridColumn: `${col + 1} / span ${w}`,
                                 gridRow: `${row + 1} / span ${h}`,
                             }}
-                            draggable
+                            draggable={!resize}
                             role="button"
                             tabIndex={0}
                             aria-pressed={isSelected}
@@ -263,9 +365,80 @@ export default function ModulePositionPreview({ layout, modules, labelFor, onMov
                                     {w}×{h}
                                 </span>
                             </div>
+
+                            {confirmRemoveId === module.id ? (
+                                <div
+                                    className="mpp__confirm"
+                                    role="alertdialog"
+                                    onClick={(event) => event.stopPropagation()}
+                                >
+                                    <span className="mpp__confirm-text">
+                                        {copy.removeConfirm ?? "Remove?"}
+                                    </span>
+                                    <div className="mpp__confirm-actions">
+                                        <button
+                                            type="button"
+                                            className="mpp__icon-btn mpp__icon-btn--danger"
+                                            title={copy.removeYes ?? "Remove"}
+                                            onClick={() => confirmRemove(module)}
+                                        >
+                                            <Check size={14} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="mpp__icon-btn"
+                                            title={copy.removeNo ?? "Cancel"}
+                                            onClick={() => setConfirmRemoveId(null)}
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    className="mpp__remove"
+                                    title={copy.remove ?? "Remove"}
+                                    aria-label={copy.remove ?? "Remove"}
+                                    draggable={false}
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        setConfirmRemoveId(module.id);
+                                        setSelectedId(null);
+                                    }}
+                                >
+                                    <Trash2 size={13} />
+                                </button>
+                            )}
+
+                            <span
+                                className="mpp__grip"
+                                role="presentation"
+                                title={copy.resizeBoth ?? "Drag to resize"}
+                                draggable={false}
+                                onPointerDown={(event) => startResize(event, module, "se")}
+                                onPointerMove={(event) => moveResize(event, module)}
+                                onPointerUp={() => endResize(module, true)}
+                                onPointerCancel={() => endResize(module, false)}
+                                onLostPointerCapture={() => endResize(module, false)}
+                                onDragStart={(event) => event.preventDefault()}
+                                onClick={(event) => event.stopPropagation()}
+                            >
+                                <span className="mpp__grip-dots" />
+                            </span>
                         </div>
                     );
                 })}
+
+                {resizeGhost && (
+                    <div
+                        className="mpp__ghost mpp__ghost--bad"
+                        style={{
+                            gridColumn: `${resizeGhost.col + 1} / span ${resizeGhost.w}`,
+                            gridRow: `${resizeGhost.row + 1} / span ${resizeGhost.h}`,
+                        }}
+                    />
+                )}
 
                 {ghost && (
                     <div
@@ -295,7 +468,7 @@ export default function ModulePositionPreview({ layout, modules, labelFor, onMov
                     {message ??
                         (selectedId
                             ? (copy.selectedHint ?? "Click a cell to place the module there.")
-                            : (copy.hint ?? "Drag a module, or click it and then a cell."))}
+                            : (copy.hint ?? "Drag a module to move it, drag its edge to resize."))}
                 </span>
             </div>
         </div>

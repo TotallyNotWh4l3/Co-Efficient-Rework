@@ -8,7 +8,7 @@
 import "./module-settings.css";
 
 import { useState, useEffect } from "react";
-import { Blocks, Plus, Trash2 } from "lucide-react";
+import { Blocks, Plus } from "lucide-react";
 
 import { useDashboard } from "../../dashboard/useDashboard";
 import { useSettings } from "../useSettings";
@@ -117,12 +117,6 @@ export default function ModuleSettings() {
         return <div className="module-settings">Unable to load settings.</div>;
     }
 
-    const activeModules = dashboard.modules ?? [];
-    const activeTypeCounts = activeModules.reduce((counts, module) => {
-        counts[module.type] = (counts[module.type] ?? 0) + 1;
-        return counts;
-    }, {});
-
     return (
         <div className="module-settings">
             <Settings.Title Icon={Blocks}>{copy.title ?? "Modules"}</Settings.Title>
@@ -199,77 +193,10 @@ export default function ModuleSettings() {
                         module.type
                     }
                     onMove={moveModule}
+                    onResize={updateModuleLayout}
+                    onRemove={removeModule}
                     copy={positionCopy}
                 />
-            </Settings.Section>
-
-            <Settings.Divider />
-
-            {/* =======================
-                CURRENT MODULES
-            ======================== */}
-
-            <Settings.Section>
-                <Settings.SectionTitle>{copy.current ?? "Current Modules"}</Settings.SectionTitle>
-
-                <Settings.Description>
-                    {copy.currentDescription ?? "Modules currently on your dashboard."}
-                </Settings.Description>
-
-                {activeModules.length === 0 ? (
-                    <p className="module-settings__empty">
-                        {copy.empty ?? "No modules added yet — pick one above to get started."}
-                    </p>
-                ) : (
-                    <ul className="module-settings__list">
-                        {activeModules.map((module) => {
-                            const meta = AVAILABLE_MODULES.find((m) => m.type === module.type);
-                            const label = meta?.name ?? module.type;
-                            const count = activeTypeCounts[module.type];
-
-                            return (
-                                <li
-                                    key={module.id}
-                                    className="module-settings__list-item module-settings__list-item--stacked"
-                                >
-                                    <div className="module-settings__list-row">
-                                        <span className="module-settings__list-label">
-                                            {module.settings?.title || label}
-                                            {count > 1 && (
-                                                <span className="module-settings__list-type">
-                                                    {" "}
-                                                    ({label})
-                                                </span>
-                                            )}
-                                        </span>
-
-                                        <button
-                                            type="button"
-                                            className="module-settings__remove-btn"
-                                            onClick={() => removeModule(module.id)}
-                                            title={copy.remove ?? "Remove"}
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-
-                                    <SizeInputs
-                                        value={module.layout}
-                                        maxW={maxW}
-                                        maxH={maxH}
-                                        onChange={(span) =>
-                                            updateModuleLayout(module.id, {
-                                                w: span.w,
-                                                h: span.h,
-                                            })
-                                        }
-                                        labels={sizeCopy}
-                                    />
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
             </Settings.Section>
         </div>
     );

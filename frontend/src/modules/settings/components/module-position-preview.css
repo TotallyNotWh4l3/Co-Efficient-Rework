@@ -101,6 +101,127 @@
     letter-spacing: 0.03em;
 }
 
+/* ---------- Remove button + inline confirm ---------- */
+.mpp__remove,
+.mpp__icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(1.25 * var(--u));
+    height: calc(1.25 * var(--u));
+    min-width: 20px;
+    min-height: 20px;
+    padding: 0;
+    box-sizing: border-box;
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.375 * var(--u));
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.mpp__remove {
+    position: absolute;
+    top: calc(0.375 * var(--u));
+    right: calc(0.375 * var(--u));
+    z-index: 3;
+}
+
+.mpp__remove:hover,
+.mpp__icon-btn--danger:hover {
+    color: var(--color-error);
+    background: var(--color-error-bg);
+    border-color: var(--color-error);
+}
+
+.mpp__icon-btn:hover {
+    background: var(--color-element-hover);
+    color: var(--color-text);
+}
+
+.mpp__confirm {
+    position: absolute;
+    inset: calc(0.1875 * var(--u));
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(0.375 * var(--u));
+    border-radius: calc(0.5 * var(--u));
+    background: color-mix(in srgb, var(--color-error) 18%, var(--color-surface));
+    border: var(--hairline) solid var(--color-error);
+    cursor: default;
+}
+
+.mpp__confirm-text {
+    font-size: calc(0.6875 * var(--u));
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.mpp__confirm-actions {
+    display: flex;
+    gap: calc(0.375 * var(--u));
+}
+
+/* Keep the title clear of the trash button */
+.mpp__module-title {
+    padding-right: calc(1.5 * var(--u));
+}
+
+/* ---------- Resize grip ----------
+   A visible box in each block's bottom-right corner: press, hold and drag
+   to stretch or shrink the module. Always shown so it's easy to find. */
+.mpp__grip {
+    position: absolute;
+    right: calc(0.375 * var(--u));
+    bottom: calc(0.375 * var(--u));
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(1.5 * var(--u));
+    height: calc(1.5 * var(--u));
+    min-width: 20px;
+    min-height: 20px;
+    box-sizing: border-box;
+    background: var(--mpp-accent);
+    border-radius: calc(0.375 * var(--u));
+    box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+    cursor: nwse-resize;
+    touch-action: none;
+    user-select: none;
+    transition: transform 0.12s ease;
+}
+
+.mpp__grip:hover,
+.mpp__module--resizing .mpp__grip {
+    transform: scale(1.15);
+}
+
+/* Diagonal grip lines */
+.mpp__grip-dots {
+    width: 55%;
+    height: 55%;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        135deg,
+        transparent 0 22%,
+        rgb(255 255 255 / 90%) 22% 34%
+    );
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.mpp__module--resizing {
+    z-index: 2;
+    cursor: nwse-resize;
+}
+
 /* ---------- Drop / move ghost ---------- */
 .mpp__ghost {
     z-index: 2;
