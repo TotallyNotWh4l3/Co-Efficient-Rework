@@ -1,0 +1,141 @@
+/* Module position preview — a miniature of the dashboard grid.
+   Sizes are multiples of --u (see variable.css); no raw px/rem. */
+
+.mpp {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.5 * var(--u));
+    margin-top: calc(0.75 * var(--u));
+}
+
+.mpp__grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--mpp-cols), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--mpp-rows), minmax(0, 1fr));
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--color-bg-elevated);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.75 * var(--u));
+    overflow: hidden;
+    user-select: none;
+}
+
+.mpp__cell {
+    border-right: var(--hairline) dashed var(--color-border);
+    border-bottom: var(--hairline) dashed var(--color-border);
+    min-width: 0;
+    min-height: 0;
+}
+
+/* ---------- Modules ---------- */
+.mpp__module {
+    --mpp-accent: var(--color-accent);
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    min-height: 0;
+    padding: calc(0.1875 * var(--u));
+    cursor: grab;
+}
+
+.mpp__module:active {
+    cursor: grabbing;
+}
+
+.mpp__module--weather {
+    --mpp-accent: hsl(200 80% 55%);
+}
+
+.mpp__module--schedule {
+    --mpp-accent: hsl(150 60% 45%);
+}
+
+.mpp__module--announcement {
+    --mpp-accent: hsl(30 90% 55%);
+}
+
+/* Flex column + space-between: title pinned to the top, size to the
+   bottom, so there's never dead space left over inside a block. */
+.mpp__module-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    box-sizing: border-box;
+    padding: calc(0.375 * var(--u));
+    border: var(--hairline) solid var(--mpp-accent);
+    border-radius: calc(0.5 * var(--u));
+    background: color-mix(in srgb, var(--mpp-accent) 22%, var(--color-surface));
+    color: var(--color-text);
+    overflow: hidden;
+    transition: box-shadow 0.15s ease;
+}
+
+.mpp__module:hover .mpp__module-body {
+    box-shadow: 0 0 0 calc(0.125 * var(--u)) var(--mpp-accent);
+}
+
+.mpp__module--selected .mpp__module-body {
+    box-shadow: 0 0 0 calc(0.1875 * var(--u)) var(--color-accent);
+}
+
+.mpp__module--dragging {
+    opacity: 0.4;
+}
+
+.mpp__module-title {
+    font-size: calc(0.6875 * var(--u));
+    font-weight: 700;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mpp__module-size {
+    font-size: calc(0.5625 * var(--u));
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.03em;
+}
+
+/* ---------- Drop / move ghost ---------- */
+.mpp__ghost {
+    z-index: 2;
+    margin: calc(0.1875 * var(--u));
+    border-radius: calc(0.5 * var(--u));
+    border: calc(0.125 * var(--u)) dashed;
+    pointer-events: none;
+}
+
+.mpp__ghost--ok {
+    border-color: var(--color-success);
+    background: var(--color-success-bg);
+}
+
+.mpp__ghost--bad {
+    border-color: var(--color-error);
+    background: var(--color-error-bg);
+}
+
+/* ---------- Footer ---------- */
+.mpp__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: calc(0.5 * var(--u));
+}
+
+.mpp__caption,
+.mpp__status {
+    font-size: calc(0.6875 * var(--u));
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.mpp__status--error {
+    color: var(--color-error);
+}

@@ -79,6 +79,33 @@ const dashboardController = {
         }
     },
 
+    // PATCH /api/dashboard/modules/:id/position
+    async moveModule(req, res) {
+        const cellIndex = Number(req.body?.cellIndex);
+        if (!Number.isInteger(cellIndex) || cellIndex < 0) {
+            return res.status(400).json({ message: "A valid cell index is required." });
+        }
+        try {
+            const result = await Dashboard.moveModule(req.user.id, req.params.id, cellIndex);
+            if (!result) return res.status(404).json({ message: "Module not found." });
+            if (result.error) {
+                return res.status(409).json({
+                    message:
+                        result.error === "occupied"
+                            ? "That position is already taken by another module."
+                            : "The module doesn't fit at that position.",
+                    reason: result.error,
+                });
+            }
+
+            broadcastToUser(req.user.id, "dashboard:module-updated", result.module);
+            res.json(result.module);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Failed to move module." });
+        }
+    },
+
     // DELETE /api/dashboard/modules/:id
     async removeModule(req, res) {
         try {

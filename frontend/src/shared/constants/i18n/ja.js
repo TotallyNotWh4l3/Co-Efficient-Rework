@@ -237,6 +237,18 @@ export default {
                 width: "幅",
                 height: "高さ",
             },
+            position: {
+                title: "配置",
+                description:
+                    "ダッシュボードのグリッドを縮小表示します。各モジュールのセルとサイズを確認しながら、位置を移動できます。",
+                gridLabel: "グリッド",
+                cellApprox: "1セル ≈",
+                hint: "モジュールをドラッグ、またはクリックしてからセルをクリック",
+                selectedHint: "配置したいセルをクリックしてください。",
+                occupied: "その場所は他のモジュールが使用中です。",
+                outOfBounds: "その位置にはモジュールが収まりません。",
+                moveFailed: "モジュールを移動できませんでした。もう一度お試しください。",
+            },
         },
 
         users: {

@@ -15,6 +15,7 @@ import { useSettings } from "../useSettings";
 import { useLanguage } from "../useLanguage";
 
 import Settings from "../components/SettingsComponents";
+import ModulePositionPreview from "../components/ModulePositionPreview";
 
 // A module's cell-span is entered as a width and height (in grid cells)
 // rather than picked from a fixed set of buttons, so any size the grid can
@@ -86,13 +87,14 @@ function SizeInputs({ value, onChange, maxW, maxH, labels, disabled }) {
 }
 
 export default function ModuleSettings() {
-    const { dashboard, addModule, removeModule, updateModuleLayout } = useDashboard();
+    const { dashboard, addModule, removeModule, updateModuleLayout, moveModule } = useDashboard();
     const { settings, loading } = useSettings();
     const [pendingSpan, setPendingSpan] = useState({ w: 1, h: 1 });
 
     const T = useLanguage();
     const copy = T?.settings?.modules ?? {};
     const sizeCopy = copy.size ?? {};
+    const positionCopy = copy.position ?? {};
     const maxW = dashboard.layout?.columns ?? 3;
     const maxH = dashboard.layout?.rows ?? 4;
 
@@ -172,6 +174,33 @@ export default function ModuleSettings() {
                         </button>
                     ))}
                 </div>
+            </Settings.Section>
+
+            <Settings.Divider />
+
+            {/* =======================
+                POSITION PREVIEW
+            ======================== */}
+
+            <Settings.Section>
+                <Settings.SectionTitle>{positionCopy.title ?? "Position"}</Settings.SectionTitle>
+
+                <Settings.Description>
+                    {positionCopy.description ??
+                        "A miniature of your dashboard grid. Move modules around to change where they sit."}
+                </Settings.Description>
+
+                <ModulePositionPreview
+                    layout={dashboard.layout}
+                    modules={dashboard.modules ?? []}
+                    labelFor={(module) =>
+                        module.settings?.title ||
+                        AVAILABLE_MODULES.find((m) => m.type === module.type)?.name ||
+                        module.type
+                    }
+                    onMove={moveModule}
+                    copy={positionCopy}
+                />
             </Settings.Section>
 
             <Settings.Divider />

@@ -20,6 +20,8 @@ const dashboardService = {
         apiClient.patch(`${BASE}/modules/${id}/settings`, { key, value }).then((r) => r.data),
     updateModuleLayout: (id, layout) =>
         apiClient.patch(`${BASE}/modules/${id}/layout`, layout).then((r) => r.data),
+    moveModule: (id, cellIndex) =>
+        apiClient.patch(`${BASE}/modules/${id}/position`, { cellIndex }).then((r) => r.data),
     /** @deprecated use getSSEUrl() directly — kept for callers still using this shape. */
     streamUrl: getSSEUrl,
 };

@@ -210,6 +210,23 @@ export function useDashboardState(user) {
         }
     }, []);
 
+    // =====================================================
+    // Module position (top-left cell)
+    // =====================================================
+    const moveModule = useCallback(async (moduleId, cellIndex) => {
+        try {
+            const module = await dashboardService.moveModule(moduleId, cellIndex);
+            setDashboard((prev) => ({
+                ...prev,
+                modules: prev.modules.map((m) => (m.id === moduleId ? module : m)),
+            }));
+            return module;
+        } catch (e) {
+            console.error("[useDashboard] Failed to move module:", e);
+            throw e;
+        }
+    }, []);
+
     // A view-mode change calls this so the module is never left too small
     // for the view it just switched to. It only ever GROWS a module that's
     // below that view's minimum (see moduleSizes.js); a module already at
@@ -249,6 +266,7 @@ export function useDashboardState(user) {
         removeModule,
         updateModuleSettings,
         updateModuleLayout,
+        moveModule,
         ensureModuleMinSize,
         selectedModuleId,
         selectModule,

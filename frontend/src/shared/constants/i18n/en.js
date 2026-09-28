@@ -217,6 +217,18 @@ export default {
                 width: "Width",
                 height: "Height",
             },
+            position: {
+                title: "Position",
+                description:
+                    "A miniature of your dashboard grid showing each module's cell and size. Move modules around to change where they sit.",
+                gridLabel: "Grid",
+                cellApprox: "Each cell ≈",
+                hint: "Drag a module, or click it and then a cell.",
+                selectedHint: "Click a cell to place the module there.",
+                occupied: "That spot is already taken.",
+                outOfBounds: "The module doesn't fit there.",
+                moveFailed: "Couldn't move the module. Try again.",
+            },
         },
         users: {
             title: "User Management",

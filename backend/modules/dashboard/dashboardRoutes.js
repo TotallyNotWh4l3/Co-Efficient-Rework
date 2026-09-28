@@ -19,5 +19,6 @@ router.post("/modules", dashboardController.addModule);
 router.delete("/modules/:id", dashboardController.removeModule);
 router.patch("/modules/:id/settings", dashboardController.updateModuleSettings);
 router.patch("/modules/:id/layout", dashboardController.updateModuleLayout);
+router.patch("/modules/:id/position", dashboardController.moveModule);
 
 export default router;

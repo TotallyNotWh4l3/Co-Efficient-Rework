@@ -7,6 +7,7 @@
 
 import { run, get, all } from "../../shared/db/dbHelpers.js";
 import { DEFAULT_DASHBOARD } from "../../../shared/constants/defaults/defaultDashboard.js";
+import { footprint, canPlaceAt } from "../../../shared/utils/grid.js";
 
 function parseModuleRow(row) {
     return {
@@ -16,25 +17,6 @@ function parseModuleRow(row) {
         layout: JSON.parse(row.layout_json || '{"w":1,"h":1}'),
         cellIndex: row.cell_index,
     };
-}
-
-/**
- * Expands a module's footprint (its top-left cell_index plus its w/h span)
- * into the individual cell indices it occupies, row-major, wrapping at
- * `columns`. This is the one place that knows how a span maps onto cells —
- * both findFirstFreeCell and anything else that needs to know "what's
- * occupied" should go through this rather than re-deriving it.
- */
-function footprint(cellIndex, w, h, columns) {
-    const startRow = Math.floor(cellIndex / columns);
-    const startCol = cellIndex % columns;
-    const cells = [];
-    for (let dr = 0; dr < h; dr += 1) {
-        for (let dc = 0; dc < w; dc += 1) {
-            cells.push((startRow + dr) * columns + (startCol + dc));
-        }
-    }
-    return cells;
 }
 
 /**
@@ -304,6 +286,64 @@ const Dashboard = {
             userId,
         ]);
         return parseModuleRow(updated);
+    },
+
+    /**
+     * Moves a module's top-left corner to `cellIndex` without changing its
+     * size. The destination has to fit entirely inside the current
+     * columns x rows grid and not overlap any other module — unlike a
+     * resize, a move never grows the grid or bumps another module, so what
+     * the user picked in the position preview is exactly where it lands.
+     *
+     * Returns null (module not found), { error: "out_of_bounds" | "occupied" },
+     * or { module }.
+     */
+    async moveModule(userId, moduleId, cellIndex) {
+        const target = await get(`SELECT * FROM dashboard_modules WHERE id = ? AND user_id = ?`, [
+            moduleId,
+            userId,
+        ]);
+        if (!target) return null;
+
+        const settingsRow = await get(
+            `SELECT columns, rows FROM dashboard_settings WHERE user_id = ?`,
+            [userId],
+        );
+        const columns = settingsRow?.columns ?? 3;
+        const rows = settingsRow?.rows ?? 4;
+
+        const { w = 1, h = 1 } = JSON.parse(target.layout_json || '{"w":1,"h":1}');
+
+        const otherRows = await all(
+            `SELECT cell_index, layout_json FROM dashboard_modules WHERE user_id = ? AND id != ?`,
+            [userId, moduleId],
+        );
+        const others = otherRows.map((row) => ({
+            cellIndex: row.cell_index,
+            layout: JSON.parse(row.layout_json || '{"w":1,"h":1}'),
+        }));
+
+        const check = canPlaceAt({
+            col: cellIndex % columns,
+            row: Math.floor(cellIndex / columns),
+            w,
+            h,
+            columns,
+            rows,
+            others,
+        });
+        if (!check.ok) return { error: check.reason };
+
+        await run(
+            `UPDATE dashboard_modules SET cell_index = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?`,
+            [cellIndex, moduleId, userId],
+        );
+
+        const updated = await get(`SELECT * FROM dashboard_modules WHERE id = ? AND user_id = ?`, [
+            moduleId,
+            userId,
+        ]);
+        return { module: parseModuleRow(updated) };
     },
 
     async removeModule(userId, moduleId) {
