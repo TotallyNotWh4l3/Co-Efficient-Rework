@@ -765,15 +765,75 @@
     color: var(--color-text-muted);
 }
 .sch-day-events-week-horizontal {
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex-direction: column;
+    flex-wrap: nowrap;
     flex: 1;
     min-width: 0;
-    overflow-y: visible;
+    min-height: 0;
+    align-self: stretch;
+    margin-top: 0;
+    overflow-y: auto;
 }
-.sch-day-events-week-horizontal .sch-event-line {
-    flex: 1 1 calc(13.75 * var(--u));
-    max-width: calc(22.5 * var(--u));
+/* The row itself must clip: without this an entry taller than the row's
+   share of the module spilled over the next day's row. */
+.sch-grid-day-week-horizontal {
+    overflow: hidden;
+}
+
+/* One event: takes the whole item space (full width and height of the row). */
+.sch-day-events-week-horizontal--solo {
+    overflow: hidden;
+}
+.sch-day-events-week-horizontal--solo .sch-event-line {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-width: none;
+    justify-content: center;
+    overflow: hidden;
+}
+.sch-day-events-week-horizontal--solo .sch-event-line-description {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+}
+
+/* Two or more: thin "[Title bold] [Subtitle gray]" lines, scrollable inside the
+   row. Lines never shrink, so text is never squashed or drawn over the next
+   day — the row's own scroll area clips whatever doesn't fit. */
+.sch-day-events-week-horizontal--multi {
+    gap: calc(0.125 * var(--u));
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+    overscroll-behavior: contain;
+}
+.sch-event-line--compact {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: baseline;
+    gap: calc(0.375 * var(--u));
+    padding: calc(0.125 * var(--u)) calc(0.375 * var(--u));
+    min-width: 0;
+}
+/* Time sits on the left, fixed-width digits so titles line up down the list. */
+.sch-event-line--compact .sch-event-line-time {
+    flex-shrink: 0;
+    margin-right: 0;
+    font-size: calc(0.5312 * var(--u));
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+}
+.sch-event-line--compact .sch-event-line-title {
+    flex: 0 1 auto;
+    max-width: 65%;
+    min-width: 0;
+    line-height: 1.25;
+}
+.sch-event-line--compact .sch-event-line-subtitle {
+    flex: 1 1 0;
+    min-width: 0;
+    line-height: 1.25;
+    font-weight: 500;
+    opacity: 1;
+    color: var(--color-text-muted);
 }
 .sch-event-line-time {
     font-weight: 900;

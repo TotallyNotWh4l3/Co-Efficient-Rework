@@ -241,6 +241,14 @@ export default {
                 title: "スケジュール",
             },
 
+            todaySchedule: {
+                title: "今日・明日の予定",
+            },
+
+            clock: {
+                title: "時計",
+            },
+
             announcements: {
                 title: "お知らせ",
             },
@@ -422,6 +430,30 @@ export default {
             },
         },
 
+        clock: {
+            am: "午前",
+            pm: "午後",
+            options: {
+                title: "時計の設定",
+                hour12: "12時間表示",
+                showSeconds: "秒",
+                showDate: "日付",
+            },
+        },
+        todaySchedule: {
+            header: {
+                title: "今日・明日の予定",
+            },
+            today: "今日",
+            tomorrow: "明日",
+            emptyToday: "今日の予定はありません。",
+            emptyTomorrow: "明日の予定はありません。",
+            status: {
+                loading: "スケジュールを読み込み中...",
+                errorTitle: "スケジュールを読み込めませんでした",
+                retry: "再試行",
+            },
+        },
         schedule: {
             header: {
                 title: "スケジュール",

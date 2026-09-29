@@ -106,6 +106,8 @@ export default function ModuleSettings() {
     const AVAILABLE_MODULES = [
         { type: "weather", name: copy.weather?.title ?? "Weather" },
         { type: "schedule", name: copy.schedule?.title ?? "Schedule" },
+        { type: "todaySchedule", name: copy.todaySchedule?.title ?? "Today & Tomorrow" },
+        { type: "clock", name: copy.clock?.title ?? "Clock" },
         { type: "announcement", name: copy.announcements?.title ?? "Announcements" },
     ];
 

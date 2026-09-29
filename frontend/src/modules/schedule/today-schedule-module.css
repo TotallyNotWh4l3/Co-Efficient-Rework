@@ -1,0 +1,188 @@
+/* Today / Tomorrow schedule module.
+   Reuses the .sch-* card, header and modal primitives from schedule-module.css;
+   everything here is sized in multiples of --u like the other modules.
+
+   Layout: Today is the main event and gets ~70% of the body; Tomorrow gets the
+   remaining ~30%. If Tomorrow is empty it shrinks to just its heading and
+   Today takes the rest (so Today never drops below 70%). Each section scrolls
+   on its own instead of pushing the other one around. */
+
+.tsm-sections {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 7fr) minmax(0, 3fr);
+    gap: calc(0.75 * var(--u));
+}
+.tsm-sections--tomorrow-empty {
+    grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.tsm-section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+}
+.tsm-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+    overscroll-behavior: contain;
+}
+
+.tsm-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: calc(0.5 * var(--u));
+    margin-bottom: calc(0.375 * var(--u));
+    flex-shrink: 0;
+}
+.tsm-section-label {
+    font-size: calc(0.6875 * var(--u));
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-accent);
+}
+.tsm-section--today .tsm-section-label {
+    font-size: calc(0.875 * var(--u));
+}
+.tsm-section-date {
+    font-size: calc(0.5625 * var(--u));
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------- Rows (Today, and Tomorrow when it has a single event) ---------- */
+.tsm-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.25 * var(--u));
+}
+
+.tsm-row {
+    display: flex;
+    align-items: center;
+    gap: calc(0.625 * var(--u));
+    width: 100%;
+    min-width: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.625 * var(--u));
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.tsm-row:hover {
+    background: var(--color-surface-elevated);
+}
+.tsm-row--large {
+    padding: calc(0.625 * var(--u)) calc(0.75 * var(--u));
+    gap: calc(0.75 * var(--u));
+}
+.tsm-row--small {
+    padding: calc(0.375 * var(--u)) calc(0.625 * var(--u));
+}
+.tsm-row--past {
+    opacity: 0.5;
+}
+.tsm-row--next {
+    border-color: var(--color-text-accent);
+    background: var(--color-accent-muted);
+}
+
+.tsm-time {
+    font-size: calc(0.625 * var(--u));
+    font-weight: 800;
+    color: var(--color-text-accent);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+.tsm-row--large .tsm-time {
+    font-size: calc(0.875 * var(--u));
+}
+
+.tsm-title {
+    font-size: calc(0.6875 * var(--u));
+    font-weight: 600;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tsm-row--large .tsm-title {
+    font-size: calc(0.9375 * var(--u));
+    font-weight: 700;
+}
+.tsm-subtitle {
+    font-size: calc(0.5625 * var(--u));
+    color: var(--color-text-muted);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tsm-row--large .tsm-subtitle {
+    font-size: calc(0.75 * var(--u));
+}
+
+/* ---------- Box grid (Tomorrow with 2+ events) ---------- */
+.tsm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(calc(7 * var(--u)), 1fr));
+    gap: calc(0.375 * var(--u));
+}
+.tsm-box {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.125 * var(--u));
+    min-width: 0;
+    padding: calc(0.375 * var(--u)) calc(0.5 * var(--u));
+    font: inherit;
+    text-align: left;
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.5 * var(--u));
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.tsm-box:hover {
+    background: var(--color-surface-elevated);
+}
+.tsm-box-time {
+    font-size: calc(0.5625 * var(--u));
+    font-weight: 800;
+    color: var(--color-text-accent);
+    font-variant-numeric: tabular-nums;
+}
+.tsm-box-title {
+    font-size: calc(0.625 * var(--u));
+    font-weight: 700;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+.tsm-empty {
+    margin: 0;
+    padding: calc(0.375 * var(--u)) calc(0.125 * var(--u));
+    font-size: calc(0.625 * var(--u));
+    color: var(--color-text-muted);
+}

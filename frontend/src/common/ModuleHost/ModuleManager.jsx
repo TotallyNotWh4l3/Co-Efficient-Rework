@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: ModuleManager.jsx
 // 作成日: 2026/08/27
@@ -17,6 +16,14 @@ const AVAILABLE_MODULES = [
     {
         type: "schedule",
         name: "Schedule",
+    },
+    {
+        type: "todaySchedule",
+        name: "Today & Tomorrow",
+    },
+    {
+        type: "clock",
+        name: "Clock",
     },
     {
         type: "announcement",

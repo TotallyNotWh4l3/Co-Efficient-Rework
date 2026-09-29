@@ -1,0 +1,123 @@
+/* Clock module. Type is sized from the dashboard cell itself (cqw/cqh resolve
+   against .dashboard__cell, which is a size container), so the time fills a
+   1x1 and a 3x2 cell alike instead of being pinned to one pixel size. Spacing
+   and small text still use the shared --u unit. */
+
+.icon-xs {
+    width: calc(0.875 * var(--u));
+    height: calc(0.875 * var(--u));
+}
+
+.clk-card {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: calc(1.25 * var(--u));
+    color: var(--color-text);
+    background: linear-gradient(135deg, var(--color-bg-elevated) 0%, var(--color-surface) 100%);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(1 * var(--u));
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.clk-face {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(0.5 * var(--u));
+    max-width: 100%;
+    min-width: 0;
+}
+
+.clk-time {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    /* HH:MM is ~2.9em wide, HH:MM:SS ~4.5em; height caps it in short cells. */
+    font-size: min(27cqw, 42cqh);
+}
+.clk-time--seconds {
+    font-size: min(17cqw, 42cqh);
+}
+.clk-sep {
+    opacity: 0.55;
+    padding: 0 0.04em;
+}
+.clk-meridiem {
+    margin-left: 0.25em;
+    font-size: 0.32em;
+    font-weight: 700;
+    color: var(--color-text-accent);
+}
+
+.clk-date {
+    font-size: calc(0.75 * var(--u));
+    color: var(--color-text-secondary);
+    text-align: center;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.clk-gear {
+    position: absolute;
+    top: calc(0.5 * var(--u));
+    right: calc(0.5 * var(--u));
+    display: grid;
+    place-items: center;
+    padding: calc(0.375 * var(--u));
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: calc(0.5 * var(--u));
+    cursor: pointer;
+    opacity: 0.6;
+    transition:
+        opacity 0.15s ease,
+        background 0.15s ease;
+    z-index: 2;
+}
+.clk-gear:hover {
+    opacity: 1;
+    background: var(--color-element-hover);
+}
+
+.clk-options {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: calc(0.375 * var(--u));
+    padding: calc(0.625 * var(--u));
+    background: var(--color-bg-elevated);
+    border-top: var(--hairline) solid var(--color-border);
+    z-index: 1;
+}
+.clk-chip {
+    padding: calc(0.25 * var(--u)) calc(0.625 * var(--u));
+    font-size: calc(0.625 * var(--u));
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(1 * var(--u));
+    cursor: pointer;
+}
+.clk-chip--on {
+    color: var(--color-text-accent);
+    background: var(--color-accent-muted);
+    border-color: var(--color-text-accent);
+}

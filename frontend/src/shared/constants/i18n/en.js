@@ -222,6 +222,12 @@ export default {
             schedule: {
                 title: "Schedule",
             },
+            todaySchedule: {
+                title: "Today & Tomorrow",
+            },
+            clock: {
+                title: "Clock",
+            },
             announcements: {
                 title: "Announcements",
             },
@@ -386,6 +392,30 @@ export default {
                 selectLocation: "Select location",
                 moduleSettings: "Module Settings",
                 remove: "Remove from board",
+            },
+        },
+        clock: {
+            am: "AM",
+            pm: "PM",
+            options: {
+                title: "Clock options",
+                hour12: "12-hour",
+                showSeconds: "Seconds",
+                showDate: "Date",
+            },
+        },
+        todaySchedule: {
+            header: {
+                title: "Today & Tomorrow",
+            },
+            today: "Today",
+            tomorrow: "Tomorrow",
+            emptyToday: "Nothing scheduled today.",
+            emptyTomorrow: "Nothing scheduled tomorrow.",
+            status: {
+                loading: "Loading schedule...",
+                errorTitle: "Couldn't load the schedule",
+                retry: "Retry",
             },
         },
         schedule: {

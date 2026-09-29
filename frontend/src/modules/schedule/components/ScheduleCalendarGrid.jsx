@@ -87,6 +87,13 @@ export default function ScheduleCalendarGrid({
                     const dayEvents = eventsByDay[dayStr] || [];
                     const conflict = hasConflict(dayEvents);
 
+                    // Horizontal week: one event fills the whole row with full
+                    // detail; two or more collapse to thin title+subtitle lines
+                    // that scroll inside the row instead of spilling into the
+                    // next day.
+                    const isSolo = isWeekHorizontal && dayEvents.length === 1;
+                    const isCompact = isWeekHorizontal && dayEvents.length > 1;
+
                     // In horizontal week orientation each day is a full-width
                     // row instead of a narrow column, so the weekday name has
                     // to be shown inline on the row itself rather than in a
@@ -127,10 +134,46 @@ export default function ScheduleCalendarGrid({
                                 <div
                                     className={`sch-day-events-week${
                                         isWeekHorizontal ? " sch-day-events-week-horizontal" : ""
+                                    }${isSolo ? " sch-day-events-week-horizontal--solo" : ""}${
+                                        isCompact ? " sch-day-events-week-horizontal--multi" : ""
                                     }`}
                                 >
                                     {dayEvents.map((ev) => {
                                         const color = getEventColor(ev, tagsById);
+                                        if (isCompact) {
+                                            return (
+                                                <div
+                                                    key={ev.id}
+                                                    className="sch-event-line sch-event-line--compact"
+                                                    style={
+                                                        color
+                                                            ? {
+                                                                  background: `${color}22`,
+                                                                  borderColor: `${color}55`,
+                                                                  color,
+                                                              }
+                                                            : undefined
+                                                    }
+                                                    title={
+                                                        ev.subtitle
+                                                            ? `${ev.title} — ${ev.subtitle}`
+                                                            : ev.title
+                                                    }
+                                                >
+                                                    <span className="sch-event-line-time">
+                                                        {ev.eventTime}
+                                                    </span>
+                                                    <span className="sch-event-line-title">
+                                                        {ev.title}
+                                                    </span>
+                                                    {ev.subtitle && (
+                                                        <span className="sch-event-line-subtitle">
+                                                            {ev.subtitle}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        }
                                         return (
                                             <div
                                                 key={ev.id}
