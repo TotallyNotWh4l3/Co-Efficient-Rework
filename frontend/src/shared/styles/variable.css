@@ -93,6 +93,9 @@
     /* Dashboard */
     --z-dashboard: 0;
 
+    /* Sidebar navigation (toggle, backdrop, panel) */
+    --z-sidebar: 50;
+
     /* Hover UIs */
     --z-popover: 100;
 

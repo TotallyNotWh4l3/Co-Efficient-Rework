@@ -31,6 +31,20 @@ export default {
             subTitle: "更新情報",
         },
     },
+    sidebar: {
+        toggle: "ナビゲーションを切り替え",
+        lock: "サイドバーを固定",
+        unlock: "サイドバーの固定を解除",
+        settings: "設定",
+        login: "ログイン",
+        logout: "サインアウト",
+        soon: "近日公開",
+        comingSoon: "このセクションはまだ準備中です。近日公開予定です。",
+        sections: {
+            dashboard: "ダッシュボード",
+            attendance: "出席",
+        },
+    },
 
     settings: {
         title: "設定",

@@ -5,20 +5,26 @@
 // 概要: ダッシュボードコンポーネント
 // ===================================================
 
-
 import { useState } from "react";
 
-import DashboardHeader from "./DashboardHeader";
 import DashboardWorkspace from "./DashboardWorkspace";
+import Sidebar from "../sidebar/Sidebar";
+import PlaceholderPage from "../sidebar/PlaceholderPage";
+import { useSidebar } from "../sidebar/useSidebar";
 
 import Settings from "../settings/Settings";
+import { useAuth } from "../auth/useAuth";
 
 import "./dashboard.css";
 import { useLocation } from "../locations/useLocation";
 
 export default function Dashboard() {
+    const { user } = useAuth();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSettingsClosing, setIsSettingsClosing] = useState(false);
+    const [activeSection, setActiveSection] = useState("dashboard");
+
+    const sidebar = useSidebar(user);
 
     const closeSettings = () => {
         setIsSettingsClosing(true);
@@ -47,11 +53,30 @@ export default function Dashboard() {
         }
     }
 
-    return (
-        <div className="dashboard">
-            <DashboardHeader setIsSettingsOpen={setIsSettingsOpen} />
+    // Selecting a section closes the (floating) sidebar so it doesn't sit
+    // over the content the user just navigated to — but not when it's
+    // locked into the layout, since then it isn't covering anything.
+    const handleSelectSection = (sectionId) => {
+        setActiveSection(sectionId);
+        if (!sidebar.isLocked) sidebar.closeSidebar();
+    };
 
-            <DashboardWorkspace />
+    return (
+        <div className="dashboard" style={{ "--sidebar-locked": sidebar.isLocked ? 1 : 0 }}>
+            <Sidebar
+                sidebar={sidebar}
+                activeSection={activeSection}
+                onSelectSection={handleSelectSection}
+                onOpenSettings={() => setIsSettingsOpen(true)}
+            />
+
+            <div className="dashboard__content">
+                {activeSection === "dashboard" ? (
+                    <DashboardWorkspace />
+                ) : (
+                    <PlaceholderPage titleKey={activeSection} />
+                )}
+            </div>
 
             {isSettingsOpen && (
                 <>

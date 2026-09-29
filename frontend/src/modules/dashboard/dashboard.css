@@ -1,7 +1,32 @@
+/* --sidebar-locked (0|1) is set inline by Dashboard.jsx from the sidebar's
+   own lock state. The sidebar itself (sidebar.css) is what actually
+   reserves the layout width when locked, by becoming a real flex child
+   instead of a fixed overlay — flexbox is what makes .dashboard__content
+   (and therefore every module inside it, via their existing @container
+   queries on .dashboard__cell) resize automatically with no per-module
+   logic needed.
+
+   --workspace-width mirrors that resulting width as a readable value —
+   calc'd from the same --sidebar-locked flag — for anything that isn't
+   itself a flex sibling of the sidebar and needs the number directly
+   (e.g. a future non-flex overlay), rather than relying on the flex
+   layout alone. */
 .dashboard {
+    --workspace-width: calc(100% - (var(--sidebar-locked, 0) * var(--sidebar-width)));
+
     background-color: var(--color-bg);
     width: 100%;
     height: 100vh;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+}
+
+.dashboard__content {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+
     display: flex;
     flex-direction: column;
     overflow: hidden;

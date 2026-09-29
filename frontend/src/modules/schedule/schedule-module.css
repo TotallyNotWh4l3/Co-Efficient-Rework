@@ -744,16 +744,18 @@
     flex-direction: row;
     align-items: flex-start;
     min-height: 0;
+    flex: 1;
     gap: calc(0.5 * var(--u));
     padding: calc(0.375 * var(--u)) calc(0.5 * var(--u));
 }
+
 .sch-grid-day-week-horizontal .sch-grid-day-head {
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: var(--hairline);
     flex-shrink: 0;
-    width: calc(2.125 * var(--u));
+    width: calc(1 * var(--u));
 }
 .sch-day-weekday-inline {
     font-size: calc(0.5 * var(--u));

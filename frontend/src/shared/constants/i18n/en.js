@@ -38,6 +38,20 @@ export default {
             subTitle: "Updates",
         },
     },
+    sidebar: {
+        toggle: "Toggle navigation",
+        lock: "Lock sidebar in place",
+        unlock: "Unlock sidebar",
+        settings: "Settings",
+        login: "Login",
+        logout: "Sign Out",
+        soon: "Soon",
+        comingSoon: "This section isn't built yet — check back soon.",
+        sections: {
+            dashboard: "Dashboard",
+            attendance: "Attendance",
+        },
+    },
     settings: {
         title: "Settings",
         autoSave: "Auto-saved",
