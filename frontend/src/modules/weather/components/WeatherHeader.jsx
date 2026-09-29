@@ -30,7 +30,7 @@ export default function WeatherHeader({
             <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild>
                     <button className="weather-header__location" type="button">
-                        <MapPin className="weather-header__pin-icon" />
+                        <MapPin className="weather-header__pin-icon" color="#f88"/>
                         <span className="weather-header__select-label">{selectedLabel}</span>
                         <ChevronDown className="weather-header__select-chevron" />
                     </button>
@@ -68,13 +68,13 @@ export default function WeatherHeader({
                 >
                     <Settings className="weather-header__pin-icon" />
                 </button>
-                <button
+                {/* <button
                     onClick={onRemove}
                     className="weather-header__icon-btn weather-header__icon-btn--remove"
                     title={t.remove}
                 >
                     ✕
-                </button>
+                </button> */}
             </div>
         </div>
     );

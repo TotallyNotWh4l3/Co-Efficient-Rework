@@ -54,9 +54,9 @@ export default function AnnouncementHeader({
                     </div>
                 )}
 
-                <button className="ann-icon-toggle" onClick={onOpenArchive} title={t.viewArchive}>
+                {/* <button className="ann-icon-toggle" onClick={onOpenArchive} title={t.viewArchive}>
                     <Archive className="icon-xs" />
-                </button>
+                </button> */}
 
                 <button
                     className={`ann-icon-toggle ${isExtended ? "active" : ""}`}
@@ -70,9 +70,9 @@ export default function AnnouncementHeader({
                     )}
                 </button>
 
-                <button className="ann-icon-toggle" onClick={onRemove} title={t.removeModule}>
+                {/* <button className="ann-icon-toggle" onClick={onRemove} title={t.removeModule}>
                     <X className="icon-xs" />
-                </button>
+                </button> */}
             </div>
         </div>
     );

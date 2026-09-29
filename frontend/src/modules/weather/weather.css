@@ -133,7 +133,6 @@
 .weather-header__pin-icon {
     width: calc(0.875 * var(--u));
     height: calc(0.875 * var(--u));
-    color: #fb7185;
     flex-shrink: 0;
 }
 

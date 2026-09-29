@@ -48,7 +48,6 @@ export default function ScheduleModule({ module }) {
     const [weekOrientation, setWeekOrientation] = useState("vertical"); // 'vertical' | 'horizontal' (week layout only)
     const [anchorDate, setAnchorDate] = useState(new Date());
     const [daysBefore, setDaysBefore] = useState(0);
-    const [showRelativeSettings, setShowRelativeSettings] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
 
     // Relative view fetches a bounded range instead of the whole table.
@@ -237,7 +236,7 @@ export default function ScheduleModule({ module }) {
                 )}
             </div>
 
-            <ScheduleFooter />
+            {/* <ScheduleFooter /> */}
 
             {dayListDate && (
                 <ScheduleDayListModal
@@ -279,15 +278,6 @@ export default function ScheduleModule({ module }) {
                     onClose={() => setShowTagManager(false)}
                     onUpsert={upsertTag}
                     onRemove={removeTag}
-                />
-            )}
-
-            {showRelativeSettings && (
-                <ScheduleRelativeSettings
-                    daysBefore={daysBefore}
-                    layout={layout}
-                    onChange={setDaysBefore}
-                    onClose={() => setShowRelativeSettings(false)}
                 />
             )}
 

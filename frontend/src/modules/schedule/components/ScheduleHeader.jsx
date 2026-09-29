@@ -41,11 +41,11 @@ export default function ScheduleHeader({
                     <Plus className="icon-xs" />
                     <span>{t.addEvent}</span>
                 </button>
-                {onRemove && (
+                {/* {onRemove && (
                     <button className="sch-icon-toggle" onClick={onRemove} title={t.removeModule}>
                         <X className="icon-xs" />
                     </button>
-                )}
+                )} */}
             </div>
         </div>
     );

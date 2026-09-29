@@ -213,7 +213,7 @@ export default function AnnouncementModule({ module }) {
                 />
             </div>
 
-            <AnnouncementFooter />
+            {/* <AnnouncementFooter /> */}
 
             <AnnouncementToast message={successToast} />
 
