@@ -28,10 +28,10 @@ export default function WeatherCurrentView({
     humidity,
     windSpeed,
     precipChance,
-    isJapanese,
 }) {
     const lang = useLanguage();
     const t = lang.modules.weather.current;
+    const conditions = lang.modules.weather.conditions;
 
     const tiles = [
         {
@@ -68,7 +68,7 @@ export default function WeatherCurrentView({
                         <span className="wcv__temp-unit">°C</span>
                     </div>
                     <span className="wcv__condition">
-                        {getWeatherDescText(weatherCode, isJapanese)}
+                        {getWeatherDescText(weatherCode, conditions)}
                     </span>
                     <div className="wcv__hilo">
                         <span className="wcv__hi">

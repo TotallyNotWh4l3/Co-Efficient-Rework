@@ -16,8 +16,7 @@ const AXIS_PADDING = 1;
 /**
  * Props:
  * - dataset: [{ label, value, valueMax?, valueMin? }]
- * - metricInfo: { id, labelEn, labelJa, color, unit }
- * - isJapanese: boolean
+ * - metricInfo: { id, labelKey, color, unit }
  * - isHourly: boolean — dual max/min lines are only shown for the 7-day temp view
  * - allDaysDataset: optional array of datasets (same shape as `dataset`), one
  *   per day. When passed on the hourly view, the axis min/max is computed
@@ -28,7 +27,6 @@ const AXIS_PADDING = 1;
 export default function WeatherChart({
     dataset,
     metricInfo,
-    isJapanese,
     isHourly,
     allDaysDataset,
 }) {
@@ -219,7 +217,7 @@ export default function WeatherChart({
                             boxShadow: `0 0 calc(0.5 * var(--u)) ${metricInfo.color}`,
                         }}
                     ></span>
-                    {isJapanese ? metricInfo.labelJa : metricInfo.labelEn} ({metricInfo.unit})
+                    {lang.modules.weather.metrics[metricInfo.labelKey]} ({metricInfo.unit})
                 </span>
                 <span className="weather-chart__range">
                     {t.range}: {clampedMinVal}-{maxVal} {metricInfo.unit}

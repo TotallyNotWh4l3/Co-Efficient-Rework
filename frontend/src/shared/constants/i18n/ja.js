@@ -7,6 +7,7 @@
 
 export default {
     dateNames: {
+        dateFormat: "{year}年{month}{day}日 {weekday}",
         monthsLong: [
             "1月",
             "2月",
@@ -31,6 +32,35 @@ export default {
             subTitle: "更新情報",
         },
     },
+    common: {
+        loading: "読み込み中...",
+        confirm: "確認",
+        cancel: "キャンセル",
+    },
+
+    auth: {
+        login: {
+            username: "ユーザー名",
+            password: "パスワード",
+            submit: "ログイン",
+        },
+    },
+
+    userMenu: {
+        guest: "ゲスト",
+        account: "アカウント",
+    },
+
+    errors: {
+        loadUsers: "ユーザーを読み込めませんでした。",
+        loadLocations: "場所を読み込めませんでした。",
+        loadThemes: "テーマを読み込めませんでした。",
+        loadSchedule: "スケジュールを読み込めませんでした。",
+        loadTags: "タグを読み込めませんでした。",
+        loadAnnouncements: "お知らせを読み込めませんでした。",
+        geolocationUnsupported: "位置情報に対応していません。",
+    },
+
     sidebar: {
         toggle: "ナビゲーションを切り替え",
         lock: "サイドバーを固定",
@@ -49,11 +79,18 @@ export default {
     settings: {
         title: "設定",
         autoSave: "自動保存済み",
+        close: "設定を閉じる",
+        status: {
+            loading: "設定を読み込み中...",
+            loadFailed: "設定を読み込めませんでした。",
+            contentFailed: "設定内容を読み込めませんでした。",
+        },
 
         sidebar: {
             interface: "インターフェース",
             dashboard: "ダッシュボード",
             modules: "モジュール",
+            users: "ユーザー",
             about: "このアプリについて",
         },
 
@@ -102,6 +139,11 @@ export default {
                     save: "保存",
                     saving: "保存中...",
                     saveFailed: "テーマを保存できませんでした。",
+                    defaultName: "{name}のコピー",
+                    customName: "カスタム",
+                    pickColor: "色を選択",
+                    pickColorFor: "「{label}」の色を選択",
+                    switchTo: "{format}に切り替え",
                     delete: "削除",
                     deleteFailed: "テーマを削除できませんでした。",
 
@@ -149,6 +191,9 @@ export default {
 
                 add: "場所を追加",
                 empty: "保存された場所はありません。",
+                deleteTitle: "場所を削除しますか？",
+                deleteMessage: "「{name}」をすべてのユーザーから削除します。この操作は取り消せません。",
+                deleteConfirm: "削除",
 
                 dialog: {
                     titleAdd: "場所を追加",
@@ -371,7 +416,7 @@ export default {
                 low: "最低",
                 humidity: "湿度",
                 wind: "風速",
-                precipitation: "降水量",
+                precipitation: "降水確率",
                 loading: "読み込み中...",
                 error: "天気を取得できませんでした",
                 noData: "天気データがありません",
@@ -388,6 +433,28 @@ export default {
                 today: "今日",
                 tomorrow: "明日",
                 dayFallback: "{n}日目",
+            },
+
+            conditions: {
+                clear: "快晴",
+                mainlyClear: "晴れ",
+                partlyCloudy: "晴れ時々曇り",
+                overcast: "曇り",
+                fog: "霧",
+                drizzle: "霧雨",
+                rain: "雨",
+                snow: "降雪",
+                showers: "にわか雨",
+                thunderstorm: "雷雨",
+                calm: "おだやか",
+            },
+
+            metrics: {
+                temp: "気温",
+                humidity: "湿度",
+                precipChance: "降水確率",
+                precipAmount: "降水量",
+                windSpeed: "風速",
             },
 
             chart: {
@@ -583,7 +650,7 @@ export default {
             },
 
             footer: {
-                liveSync: "ライブ同期",
+                liveSync: "同期中",
             },
 
             status: {
@@ -663,8 +730,15 @@ export default {
                 publish: "公開",
             },
 
+            archive: {
+                title: "アーカイブ済みのお知らせ",
+                empty: "アーカイブされたお知らせはありません。",
+                archivedOn: "アーカイブ日",
+                restore: "復元",
+            },
+
             footer: {
-                liveFeed: "ライブ同期中",
+                liveFeed: "同期中",
             },
 
             toast: {

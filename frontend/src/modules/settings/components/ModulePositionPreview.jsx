@@ -102,8 +102,8 @@ export default function ModulePositionPreview({
         if (!dest.ok) {
             setMessage(
                 dest.reason === "occupied"
-                    ? (copy.occupied ?? "That spot is already taken.")
-                    : (copy.outOfBounds ?? "The module doesn't fit there."),
+                    ? (copy.occupied)
+                    : (copy.outOfBounds),
             );
             return;
         }
@@ -119,7 +119,7 @@ export default function ModulePositionPreview({
             setSelectedId(null);
             setMessage(null);
         } catch {
-            setMessage(copy.moveFailed ?? "Couldn't move the module. Try again.");
+            setMessage(copy.moveFailed);
         }
     };
 
@@ -131,7 +131,7 @@ export default function ModulePositionPreview({
             setSelectedId((prev) => (prev === module.id ? null : prev));
             setMessage(null);
         } catch {
-            setMessage(copy.removeFailed ?? "Couldn't remove the module. Try again.");
+            setMessage(copy.removeFailed);
         }
     };
 
@@ -183,7 +183,7 @@ export default function ModulePositionPreview({
         const w = module.layout?.w ?? 1;
         const h = module.layout?.h ?? 1;
         if (current.validW === w && current.validH === h) {
-            if (!current.ok) setMessage(copy.resizeBlocked ?? "There's no room to grow that way.");
+            if (!current.ok) setMessage(copy.resizeBlocked);
             return;
         }
 
@@ -191,7 +191,7 @@ export default function ModulePositionPreview({
             await onResize(module.id, { w: current.validW, h: current.validH });
             setMessage(null);
         } catch {
-            setMessage(copy.resizeFailed ?? "Couldn't resize the module. Try again.");
+            setMessage(copy.resizeFailed);
         }
     };
 
@@ -373,13 +373,13 @@ export default function ModulePositionPreview({
                                     onClick={(event) => event.stopPropagation()}
                                 >
                                     <span className="mpp__confirm-text">
-                                        {copy.removeConfirm ?? "Remove?"}
+                                        {copy.removeConfirm}
                                     </span>
                                     <div className="mpp__confirm-actions">
                                         <button
                                             type="button"
                                             className="mpp__icon-btn mpp__icon-btn--danger"
-                                            title={copy.removeYes ?? "Remove"}
+                                            title={copy.removeYes}
                                             onClick={() => confirmRemove(module)}
                                         >
                                             <Check size={14} />
@@ -387,7 +387,7 @@ export default function ModulePositionPreview({
                                         <button
                                             type="button"
                                             className="mpp__icon-btn"
-                                            title={copy.removeNo ?? "Cancel"}
+                                            title={copy.removeNo}
                                             onClick={() => setConfirmRemoveId(null)}
                                         >
                                             <X size={14} />
@@ -398,8 +398,8 @@ export default function ModulePositionPreview({
                                 <button
                                     type="button"
                                     className="mpp__remove"
-                                    title={copy.remove ?? "Remove"}
-                                    aria-label={copy.remove ?? "Remove"}
+                                    title={copy.remove}
+                                    aria-label={copy.remove}
                                     draggable={false}
                                     onClick={(event) => {
                                         event.stopPropagation();
@@ -414,7 +414,7 @@ export default function ModulePositionPreview({
                             <span
                                 className="mpp__grip"
                                 role="presentation"
-                                title={copy.resizeBoth ?? "Drag to resize"}
+                                title={copy.resizeBoth}
                                 draggable={false}
                                 onPointerDown={(event) => startResize(event, module, "se")}
                                 onPointerMove={(event) => moveResize(event, module)}
@@ -453,11 +453,11 @@ export default function ModulePositionPreview({
 
             <div className="mpp__footer">
                 <span className="mpp__caption">
-                    {copy.gridLabel ?? "Grid"} {columns}×{rows}
+                    {copy.gridLabel} {columns}×{rows}
                     {workspace.measured && cellWidth > 0 && cellHeight > 0 && (
                         <>
                             {" · "}
-                            {copy.cellApprox ?? "Each cell ≈"} {cellWidth} × {cellHeight} px
+                            {copy.cellApprox} {cellWidth} × {cellHeight} px
                         </>
                     )}
                 </span>
@@ -467,8 +467,8 @@ export default function ModulePositionPreview({
                 >
                     {message ??
                         (selectedId
-                            ? (copy.selectedHint ?? "Click a cell to place the module there.")
-                            : (copy.hint ?? "Drag a module to move it, drag its edge to resize."))}
+                            ? (copy.selectedHint)
+                            : (copy.hint))}
                 </span>
             </div>
         </div>

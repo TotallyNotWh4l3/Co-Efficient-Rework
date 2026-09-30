@@ -7,7 +7,8 @@
 //       購読する方式に変更。
 // ===================================================
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useLanguage } from "../settings/useLanguage";
 import announcementService from "./announcementService";
 import { getSSEUrl } from "../../shared/sse/sseUrl";
 import { useRealtime } from "../../shared/sse/RealtimeContext";
@@ -23,6 +24,10 @@ function sortAnnouncements(list) {
 }
 
 export default function useAnnouncements({ recentOnly = true, live = true } = {}) {
+    const lang = useLanguage();
+    const langRef = useRef(lang);
+    langRef.current = lang; // read inside callbacks without re-creating them
+
     const [announcements, setAnnouncements] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -41,7 +46,7 @@ export default function useAnnouncements({ recentOnly = true, live = true } = {}
                     console.warn("[useAnnouncements] Expected an array, got:", data);
                 }
             } catch (e) {
-                setError(e.message || "Failed to load announcements.");
+                setError(e.message || langRef.current.errors.loadAnnouncements);
             } finally {
                 if (!silent) setIsLoading(false);
             }

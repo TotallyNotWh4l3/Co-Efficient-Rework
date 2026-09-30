@@ -66,7 +66,7 @@ function SizeInputs({ value, onChange, maxW, maxH, labels, disabled }) {
     return (
         <div className="module-settings__size-inputs">
             <SizeField
-                label={labels?.width ?? "Width"}
+                label={labels?.width}
                 value={w}
                 min={1}
                 max={maxW}
@@ -75,7 +75,7 @@ function SizeInputs({ value, onChange, maxW, maxH, labels, disabled }) {
             />
             <span className="module-settings__size-times">×</span>
             <SizeField
-                label={labels?.height ?? "Height"}
+                label={labels?.height}
                 value={h}
                 min={1}
                 max={maxH}
@@ -104,27 +104,27 @@ export default function ModuleSettings() {
     // settings.modules.<type>.title key in en.js/ja.js), or it won't render
     // or won't have a translated name.
     const AVAILABLE_MODULES = [
-        { type: "weather", name: copy.weather?.title ?? "Weather" },
-        { type: "schedule", name: copy.schedule?.title ?? "Schedule" },
-        { type: "todaySchedule", name: copy.todaySchedule?.title ?? "Today & Tomorrow" },
-        { type: "clock", name: copy.clock?.title ?? "Clock" },
-        { type: "announcement", name: copy.announcements?.title ?? "Announcements" },
+        { type: "weather", name: copy.weather?.title },
+        { type: "schedule", name: copy.schedule?.title },
+        { type: "todaySchedule", name: copy.todaySchedule?.title },
+        { type: "clock", name: copy.clock?.title },
+        { type: "announcement", name: copy.announcements?.title },
     ];
 
     if (loading) {
-        return <div className="module-settings">Loading settings...</div>;
+        return <div className="module-settings">{T.settings.status.loading}</div>;
     }
 
     if (!settings) {
-        return <div className="module-settings">Unable to load settings.</div>;
+        return <div className="module-settings">{T.settings.status.loadFailed}</div>;
     }
 
     return (
         <div className="module-settings">
-            <Settings.Title Icon={Blocks}>{copy.title ?? "Modules"}</Settings.Title>
+            <Settings.Title Icon={Blocks}>{copy.title}</Settings.Title>
 
             <Settings.Description>
-                {copy.description ?? "Add or remove modules from your dashboard."}
+                {copy.description}
             </Settings.Description>
 
             <Settings.Divider mod="thick" />
@@ -134,13 +134,13 @@ export default function ModuleSettings() {
             ======================== */}
 
             <Settings.Section>
-                <Settings.SectionTitle>{copy.available ?? "Add a Module"}</Settings.SectionTitle>
+                <Settings.SectionTitle>{copy.available}</Settings.SectionTitle>
 
                 <Settings.Description>
-                    {copy.availableDescription ?? "Pick a module to add it to your dashboard."}
+                    {copy.availableDescription}
                 </Settings.Description>
 
-                <span className="module-settings__span-label">{sizeCopy.label ?? "Cell size"}</span>
+                <span className="module-settings__span-label">{sizeCopy.label}</span>
                 <SizeInputs
                     value={pendingSpan}
                     onChange={setPendingSpan}
@@ -179,11 +179,10 @@ export default function ModuleSettings() {
             ======================== */}
 
             <Settings.Section>
-                <Settings.SectionTitle>{positionCopy.title ?? "Position"}</Settings.SectionTitle>
+                <Settings.SectionTitle>{positionCopy.title}</Settings.SectionTitle>
 
                 <Settings.Description>
-                    {positionCopy.description ??
-                        "A miniature of your dashboard grid. Move modules around to change where they sit."}
+                    {positionCopy.description}
                 </Settings.Description>
 
                 <ModulePositionPreview

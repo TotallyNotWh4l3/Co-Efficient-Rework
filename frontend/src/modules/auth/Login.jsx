@@ -8,10 +8,12 @@
 
 import { useState } from "react";
 import { useAuth } from "./useAuth";
+import { useLanguage } from "../settings/useLanguage";
 import "./login.css";
 
 export default function Login() {
     const { login } = useAuth();
+    const t = useLanguage().auth.login;
 
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -37,7 +39,7 @@ export default function Login() {
                 <input
                     className="login__input"
                     type="text"
-                    placeholder="Username"
+                    placeholder={t.username}
                     value={username}
                     onChange={(event) => setUsername(event.target.value)}
                 />
@@ -45,7 +47,7 @@ export default function Login() {
                 <input
                     className="login__input"
                     type="password"
-                    placeholder="Password"
+                    placeholder={t.password}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                 />
@@ -53,7 +55,7 @@ export default function Login() {
                 {error && <div className="login__error">{error}</div>}
 
                 <button className="login__button" type="submit">
-                    Login
+                    {t.submit}
                 </button>
             </form>
         </main>

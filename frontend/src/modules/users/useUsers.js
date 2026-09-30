@@ -6,10 +6,15 @@
 // 概要: ユーザー情報を取得するカスタムフック
 // ===================================================
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useLanguage } from "../settings/useLanguage";
 import userService from "./userService";
 
 export default function useUsers() {
+    const lang = useLanguage();
+    const langRef = useRef(lang);
+    langRef.current = lang; // read inside callbacks without re-creating them
+
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -21,7 +26,7 @@ export default function useUsers() {
             const data = await userService.getAll();
             setUsers(Array.isArray(data) ? data : []);
         } catch (e) {
-            setError(e.response?.data?.message || e.message || "Failed to load users.");
+            setError(e.response?.data?.message || e.message || langRef.current.errors.loadUsers);
         } finally {
             if (!silent) setIsLoading(false);
         }

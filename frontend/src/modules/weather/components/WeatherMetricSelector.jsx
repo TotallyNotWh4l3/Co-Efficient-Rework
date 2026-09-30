@@ -13,9 +13,8 @@ import "../weather.css";
  * Props:
  * - activeMetric: string (metric id)
  * - onSelectMetric: (id) => void
- * - isJapanese: boolean
  */
-export default function WeatherMetricSelector({ activeMetric, onSelectMetric, isJapanese }) {
+export default function WeatherMetricSelector({ activeMetric, onSelectMetric }) {
     return (
         <div className="weather-metrics">
             {METRIC_DEFS.map((metric) => {
@@ -41,11 +40,6 @@ export default function WeatherMetricSelector({ activeMetric, onSelectMetric, is
                                     : "none",
                             }}
                         />
-                        {/* <span
-                            className={`weather-metrics__label${isActive ? " weather-metrics__label--active" : ""}`}
-                        >
-                            {isJapanese ? metric.labelJa : metric.labelEn}
-                        </span> */}
                     </button>
                 );
             })}

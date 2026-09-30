@@ -17,10 +17,10 @@ export default function WeatherCurrentSummary({
     temp,
     highTemp,
     lowTemp,
-    isJapanese,
 }) {
     const lang = useLanguage();
     const t = lang.modules.weather.current;
+    const conditions = lang.modules.weather.conditions;
 
     return (
         <div className="weather-summary">
@@ -32,7 +32,7 @@ export default function WeatherCurrentSummary({
                 />
                 <div className="weather-summary__text">
                     <span className="weather-summary__condition">
-                        {getWeatherDescText(weatherCode, isJapanese)}
+                        {getWeatherDescText(weatherCode, conditions)}
                     </span>
                     <span className="weather-summary__code">
                         {t.wmoCode}: {weatherCode}

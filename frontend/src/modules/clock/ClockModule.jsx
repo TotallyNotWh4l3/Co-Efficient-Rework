@@ -8,27 +8,28 @@ import React, { useState } from "react";
 import { Settings as SettingsIcon, X } from "lucide-react";
 import useClock from "./useClock";
 import { useDashboard } from "../dashboard/useDashboard";
-import { useSettings } from "../settings/useSettings";
 import { useLanguage } from "../settings/useLanguage";
 
 import "./clock-module.css";
 
 const pad = (n) => String(n).padStart(2, "0");
 
-function formatDate(now, dateNames, isJapanese) {
-    const y = now.getFullYear();
-    const month = dateNames.monthsLong[now.getMonth()];
-    const weekday = dateNames.weekdaysLong[now.getDay()];
-    const day = now.getDate();
-    return isJapanese ? `${y}年${month}${day}日 ${weekday}` : `${weekday}, ${month} ${day}, ${y}`;
+// dateNames.dateFormat (en.js / ja.js) is a template using
+// {year} {month} {day} {weekday}, so word order stays with the language file.
+function formatDate(now, dateNames) {
+    const values = {
+        year: now.getFullYear(),
+        month: dateNames.monthsLong[now.getMonth()],
+        weekday: dateNames.weekdaysLong[now.getDay()],
+        day: now.getDate(),
+    };
+    return dateNames.dateFormat.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
 }
 
 export default function ClockModule({ module }) {
     const { updateModuleSettings } = useDashboard();
-    const { settings } = useSettings();
     const lang = useLanguage();
     const t = lang.modules.clock;
-    const isJapanese = settings?.preferences?.language === "ja";
 
     const hour12 = module.settings?.hour12 === true;
     const showSeconds = module.settings?.showSeconds !== false;
@@ -75,7 +76,7 @@ export default function ClockModule({ module }) {
                 </div>
 
                 {showDate && (
-                    <div className="clk-date">{formatDate(now, lang.dateNames, isJapanese)}</div>
+                    <div className="clk-date">{formatDate(now, lang.dateNames)}</div>
                 )}
             </div>
 

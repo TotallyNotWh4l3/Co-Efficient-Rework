@@ -22,7 +22,6 @@ export default function WeatherModule({
     current = {},
     dailyList = [],
     hourlyByDay = {},
-    isJapanese = false,
     layoutMode = "combined",
     onLayoutModeChange,
     onRemove,
@@ -114,7 +113,6 @@ export default function WeatherModule({
                         humidity={humidity}
                         windSpeed={windSpeed}
                         precipChance={precipChance}
-                        isJapanese={isJapanese}
                     />
                 )}
 
@@ -125,7 +123,6 @@ export default function WeatherModule({
                         temp={temperature}
                         highTemp={highTemp}
                         lowTemp={lowTemp}
-                        isJapanese={isJapanese} // still needed for getWeatherDescText
                     />
                 )}
 
@@ -134,13 +131,11 @@ export default function WeatherModule({
                         humidity={humidity}
                         windSpeed={windSpeed}
                         precipChance={precipChance}
-                        // isJapanese removed — no longer used inside
                     />
                 )}
 
                 {localLayoutMode !== "current" && (
                     <WeatherForecastSection
-                        isJapanese={isJapanese}
                         activeMetric={activeMetric}
                         onSelectMetric={setActiveMetric}
                         dailyList={dailyList}
@@ -160,7 +155,6 @@ export default function WeatherModule({
                     layoutMode={localLayoutMode}
                     onLayoutModeChange={handleLayoutModeChange}
                     onClose={() => setShowSettings(false)}
-                    // isJapanese removed
                 />
             )}
 

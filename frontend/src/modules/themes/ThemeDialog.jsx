@@ -59,8 +59,11 @@ const COLOR_GROUPS = [
 const SHADOW_FIELDS = ["sm", "md", "lg"];
 
 function ColorField({ label, value, onChange, disabled }) {
+    const dialogCopy = useLanguage().settings.interface.appearance.dialog;
+    const fill = (tpl, vars) => tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
     const colorInputRef = useRef(null);
     const [format, setFormat] = useState("hex"); // "hex" | "rgb"
+    const switchLabel = fill(dialogCopy.switchTo, { format: format === "hex" ? "RGB" : "HEX" });
 
     // <input type="color"> only accepts #rrggbb — some theme values here
     // are rgba(...) (e.g. accentMuted, accentBorder), so fall back to a
@@ -131,8 +134,8 @@ function ColorField({ label, value, onChange, disabled }) {
                 className="theme-dialog__picker-btn"
                 onClick={openPicker}
                 disabled={disabled}
-                aria-label={`Pick a color for ${label}`}
-                title="Pick color"
+                aria-label={fill(dialogCopy.pickColorFor, { label })}
+                title={dialogCopy.pickColor}
             >
                 {/* eyedropper icon */}
                 <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -183,8 +186,8 @@ function ColorField({ label, value, onChange, disabled }) {
                     className="theme-dialog__format-toggle"
                     onClick={toggleFormat}
                     disabled={disabled}
-                    aria-label={`Switch to ${format === "hex" ? "RGB" : "HEX"}`}
-                    title={`Switch to ${format === "hex" ? "RGB" : "HEX"}`}
+                    aria-label={switchLabel}
+                    title={switchLabel}
                 >
                     {format === "hex" ? "HEX" : "RGB"}
                 </button>
@@ -206,7 +209,10 @@ export default function ThemeDialog({
 
     const seed = initialTheme ?? baseTheme;
 
-    const [name, setName] = useState(initialTheme?.name ?? `${baseTheme?.name ?? "Custom"} Copy`);
+    const [name, setName] = useState(
+        initialTheme?.name ??
+            t.dialog.defaultName.replace("{name}", baseTheme?.name ?? t.dialog.customName),
+    );
     const [colors, setColors] = useState({ ...(seed?.appearance?.colors ?? {}) });
     const [shadows, setShadows] = useState({ ...(seed?.appearance?.shadows ?? {}) });
     const [saving, setSaving] = useState(false);

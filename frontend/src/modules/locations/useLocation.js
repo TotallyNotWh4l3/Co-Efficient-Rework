@@ -7,7 +7,8 @@
 //       購読する方式に変更。
 // ===================================================
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useLanguage } from "../settings/useLanguage";
 import { useSettings } from "../settings/useSettings";
 import { useAuth } from "../auth/useAuth";
 import locationService from "./locationService";
@@ -15,6 +16,10 @@ import { getSSEUrl } from "../../shared/sse/sseUrl";
 import { useRealtime } from "../../shared/sse/RealtimeContext";
 
 export function useLocation({ live = true } = {}) {
+    const lang = useLanguage();
+    const langRef = useRef(lang);
+    langRef.current = lang; // read inside callbacks without re-creating them
+
     const { settings, loading: settingsLoading } = useSettings();
     const { user } = useAuth();
     const { subscribe } = useRealtime();
@@ -30,7 +35,7 @@ export function useLocation({ live = true } = {}) {
             const data = await locationService.getAll();
             setLocations(Array.isArray(data) ? data : []);
         } catch (e) {
-            setError(e.message || "Failed to load locations.");
+            setError(e.message || langRef.current.errors.loadLocations);
         } finally {
             if (!silent) setLoading(false);
         }
@@ -90,7 +95,7 @@ export function useLocation({ live = true } = {}) {
     const requestCurrentLocation = useCallback(() => {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
-                reject(new Error("Geolocation is not supported."));
+                reject(new Error(langRef.current.errors.geolocationUnsupported));
                 return;
             }
             navigator.geolocation.getCurrentPosition(

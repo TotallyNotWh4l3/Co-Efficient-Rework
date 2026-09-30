@@ -7,7 +7,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "../../settings/useLanguage";
-import useHolidayName from "../useHolidayName";
+import useHolidayName from "../utils/useHolidayName";
 import {
     getMonthGridDays,
     getWeekDays,

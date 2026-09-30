@@ -9,10 +9,12 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { User, LogIn, LogOut, ChevronDown } from "lucide-react";
 import { useAuth } from "../auth/useAuth";
+import { useLanguage } from "../settings/useLanguage";
 import "./user-button.css";
 
 export default function UserButton() {
     const { user, logout } = useAuth();
+    const lang = useLanguage();
 
     const isLoggedIn = user !== null;
 
@@ -23,7 +25,7 @@ export default function UserButton() {
                     <User size={18} />
 
                     <span className="user-button__username">
-                        {isLoggedIn ? user.username : "Guest"}
+                        {isLoggedIn ? user.username : lang.userMenu.guest}
                     </span>
 
                     <ChevronDown size={16} />
@@ -32,12 +34,14 @@ export default function UserButton() {
 
             <DropdownMenu.Portal>
                 <DropdownMenu.Content className="user-button__content" sideOffset={8} align="end">
-                    <DropdownMenu.Label className="user-button__label">Account</DropdownMenu.Label>
+                    <DropdownMenu.Label className="user-button__label">
+                        {lang.userMenu.account}
+                    </DropdownMenu.Label>
 
                     {!isLoggedIn && (
                         <DropdownMenu.Item className="user-button__item">
                             <LogIn size={16} />
-                            Login
+                            {lang.sidebar.login}
                         </DropdownMenu.Item>
                     )}
 
@@ -47,7 +51,7 @@ export default function UserButton() {
 
                             <DropdownMenu.Item className="user-button__item" onSelect={logout}>
                                 <LogOut size={16} />
-                                Sign Out
+                                {lang.sidebar.logout}
                             </DropdownMenu.Item>
                         </>
                     )}

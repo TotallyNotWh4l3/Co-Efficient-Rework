@@ -89,74 +89,40 @@ export function getWeatherGradient(code, isDay) {
     );
 }
 
-export function getWeatherDescText(code, isJapanese) {
-    if (isJapanese) {
-        switch (code) {
-            case 0:
-                return "快晴 (Clear sky)";
-            case 1:
-                return "晴れ (Mainly clear)";
-            case 2:
-                return "晴れ時々曇り (Partly cloudy)";
-            case 3:
-                return "曇り (Overcast)";
-            case 45:
-            case 48:
-                return "霧 (Fog)";
-            case 51:
-            case 53:
-            case 55:
-                return "霧雨 (Drizzle)";
-            case 61:
-            case 63:
-            case 65:
-                return "雨 (Rain)";
-            case 71:
-            case 73:
-            case 75:
-                return "降雪 (Snow)";
-            case 80:
-            case 81:
-            case 82:
-                return "にわか雨 (Rain Showers)";
-            case 95:
-                return "雷雨 (Thunderstorm)";
-            default:
-                return "おだやか (Calm)";
-        }
-    }
+// `conditions` is lang.modules.weather.conditions from en.js / ja.js.
+export function getWeatherDescText(code, conditions) {
     switch (code) {
         case 0:
-            return "Clear Sky";
+            return conditions.clear;
         case 1:
-            return "Mainly Clear";
+            return conditions.mainlyClear;
         case 2:
-            return "Partly Cloudy";
+            return conditions.partlyCloudy;
         case 3:
-            return "Overcast";
+            return conditions.overcast;
         case 45:
         case 48:
-            return "Foggy";
+            return conditions.fog;
         case 51:
         case 53:
         case 55:
-            return "Drizzle";
+            return conditions.drizzle;
         case 61:
         case 63:
         case 65:
-            return "Rainy";
+            return conditions.rain;
         case 71:
         case 73:
         case 75:
-            return "Snow Fall";
+            return conditions.snow;
         case 80:
         case 81:
         case 82:
-            return "Rain Showers";
+            return conditions.showers;
         case 95:
-            return "Thunderstorm";
+            return conditions.thunderstorm;
         default:
-            return "Calm Conditions";
+            return conditions.calm;
     }
 }
 
@@ -204,44 +170,40 @@ export function WeatherVisualIcon({ code, isDay, className = "" }) {
 }
 
 // Shared metric card definitions. `value` is filled in per-instance by the
-// component that has access to current/daily data.
+// component that has access to current/daily data. Display names live in
+// en.js / ja.js under modules.weather.metrics[labelKey].
 export const METRIC_DEFS = [
     {
         id: "temp",
-        labelEn: "Temp",
-        labelJa: "気温",
+        labelKey: "temp",
         color: "#f87171",
         unit: "°C",
         icon: Thermometer,
     },
     {
         id: "humidity",
-        labelEn: "Humidity",
-        labelJa: "湿度",
+        labelKey: "humidity",
         color: "#38bdf8",
         unit: "%",
         icon: Droplets,
     },
     {
         id: "precipChance",
-        labelEn: "Precip Chance",
-        labelJa: "降水確率",
+        labelKey: "precipChance",
         color: "#a78bfa",
         unit: "%",
         icon: CloudDrizzle,
     },
     {
         id: "precipSum",
-        labelEn: "Precip Sum",
-        labelJa: "降雨量",
+        labelKey: "precipAmount",
         color: "#60a5fa",
         unit: "mm",
         icon: CloudRain,
     },
     {
         id: "windSpeed",
-        labelEn: "Wind Speed",
-        labelJa: "予測風速",
+        labelKey: "windSpeed",
         color: "#2dd4bf",
         unit: "m/s",
         icon: Wind,

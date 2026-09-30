@@ -7,13 +7,18 @@
 //       購読する方式に変更。
 // ===================================================
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
+import { useLanguage } from "../settings/useLanguage";
 import { useAuth } from "../auth/useAuth";
 import themeService from "./themeService";
 import { getSSEUrl } from "../../shared/sse/sseUrl";
 import { useRealtime } from "../../shared/sse/RealtimeContext";
 
 export function useThemes({ live = true } = {}) {
+    const lang = useLanguage();
+    const langRef = useRef(lang);
+    langRef.current = lang; // read inside callbacks without re-creating them
+
     const { user } = useAuth();
     const { subscribe } = useRealtime();
 
@@ -28,7 +33,7 @@ export function useThemes({ live = true } = {}) {
             const data = await themeService.getAll();
             setThemes(Array.isArray(data) ? data : []);
         } catch (e) {
-            setError(e.message || "Failed to load themes.");
+            setError(e.message || langRef.current.errors.loadThemes);
         } finally {
             setLoading(false);
         }

@@ -15,6 +15,7 @@ import { useDashboardState } from "./modules/dashboard/useDashboard";
 import { useDialogState } from "./shared/dialog/useDialog";
 import { useTheme } from "./modules/themes/useTheme";
 import { useAuthState, useAuth } from "./modules/auth/useAuth";
+import { useLanguage } from "./modules/settings/useLanguage";
 
 // Context
 import { SettingsProvider } from "./modules/settings/SettingsContext";
@@ -34,9 +35,10 @@ function ThemeApplier() {
 
 function AppContent() {
     const { user, loading } = useAuth();
+    const lang = useLanguage();
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <div>{lang.common.loading}</div>;
     }
 
     return (

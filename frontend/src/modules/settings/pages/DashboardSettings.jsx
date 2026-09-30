@@ -26,21 +26,21 @@ export default function DashboardSettings() {
     const modulesCopy = T?.settings?.modules ?? {};
 
     if (loading) {
-        return <div className="dashboard-settings">Loading settings...</div>;
+        return <div className="dashboard-settings">{T.settings.status.loading}</div>;
     }
 
     if (!settings) {
-        return <div className="dashboard-settings">Unable to load settings.</div>;
+        return <div className="dashboard-settings">{T.settings.status.loadFailed}</div>;
     }
 
     const layout = dashboard?.layout ?? { columns: 3, rows: 4, gap: 16, padding: 16 };
 
     return (
         <div className="dashboard-settings">
-            <Settings.Title Icon={LayoutGrid}>{copy.title ?? "Dashboard"}</Settings.Title>
+            <Settings.Title Icon={LayoutGrid}>{copy.title}</Settings.Title>
 
             <Settings.Description>
-                {copy.description ?? "Default layout for new dashboards"}
+                {copy.description}
             </Settings.Description>
 
             <Settings.Divider mod="thick" />
@@ -50,15 +50,15 @@ export default function DashboardSettings() {
             ======================== */}
 
             <Settings.Section>
-                <Settings.SectionTitle>{copy.layout?.title ?? "Layout"}</Settings.SectionTitle>
+                <Settings.SectionTitle>{copy.layout?.title}</Settings.SectionTitle>
 
                 <Settings.Description>
-                    {copy.layout?.description ?? "Spacing and column configurations"}
+                    {copy.layout?.description}
                 </Settings.Description>
 
                 <Settings.Row className="settings__row--stacked">
                     <Settings.RowContent>
-                        <Settings.RowLabel>{copy.layout?.columns ?? "Columns"}</Settings.RowLabel>
+                        <Settings.RowLabel>{copy.layout?.columns}</Settings.RowLabel>
                         <Settings.RowDescription>{layout.columns}</Settings.RowDescription>
                     </Settings.RowContent>
                     <Settings.Slider
@@ -71,7 +71,7 @@ export default function DashboardSettings() {
 
                 <Settings.Row className="settings__row--stacked">
                     <Settings.RowContent>
-                        <Settings.RowLabel>{copy.layout?.rows ?? "Rows"}</Settings.RowLabel>
+                        <Settings.RowLabel>{copy.layout?.rows}</Settings.RowLabel>
                         <Settings.RowDescription>{layout.rows}</Settings.RowDescription>
                     </Settings.RowContent>
                     <Settings.Slider
@@ -84,7 +84,7 @@ export default function DashboardSettings() {
 
                 <Settings.Row className="settings__row--stacked">
                     <Settings.RowContent>
-                        <Settings.RowLabel>{copy.layout?.gap ?? "Spacing"}</Settings.RowLabel>
+                        <Settings.RowLabel>{copy.layout?.gap}</Settings.RowLabel>
                         <Settings.RowDescription>{layout.gap}px</Settings.RowDescription>
                     </Settings.RowContent>
                     <Settings.Slider
@@ -97,7 +97,7 @@ export default function DashboardSettings() {
 
                 <Settings.Row className="settings__row--stacked">
                     <Settings.RowContent>
-                        <Settings.RowLabel>{copy.layout?.padding ?? "Padding"}</Settings.RowLabel>
+                        <Settings.RowLabel>{copy.layout?.padding}</Settings.RowLabel>
                         <Settings.RowDescription>{layout.padding}px</Settings.RowDescription>
                     </Settings.RowContent>
                     <Settings.Slider
@@ -117,12 +117,11 @@ export default function DashboardSettings() {
 
             <Settings.Section>
                 <Settings.SectionTitle>
-                    {copy.moduleDefaults?.title ?? "Module Defaults"}
+                    {copy.moduleDefaults?.title}
                 </Settings.SectionTitle>
 
                 <Settings.Description>
-                    {copy.moduleDefaults?.description ??
-                        "Default settings applied when a module is added to the dashboard."}
+                    {copy.moduleDefaults?.description}
                 </Settings.Description>
 
                 {MODULE_TYPES.map((type) => {

@@ -17,7 +17,6 @@ import { useLanguage } from "../../settings/useLanguage";
 import "../weather.css";
 
 export default function WeatherForecastSection({
-    isJapanese,
     activeMetric,
     onSelectMetric,
     dailyList,
@@ -48,7 +47,6 @@ export default function WeatherForecastSection({
             <WeatherMetricSelector
                 activeMetric={activeMetric}
                 onSelectMetric={onSelectMetric}
-                isJapanese={isJapanese}
             />
 
             <WeatherDailyGrid
@@ -63,7 +61,6 @@ export default function WeatherForecastSection({
             <WeatherChart
                 dataset={chartDataset}
                 metricInfo={activeMetricInfo}
-                isJapanese={isJapanese}
                 isHourly={activeTab === "hourly"}
                 allDaysDataset={activeTab === "hourly" ? allDaysHourlyDataset : undefined}
             />

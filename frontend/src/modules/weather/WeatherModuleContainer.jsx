@@ -35,8 +35,6 @@ export default function WeatherModuleContainer({ module }) {
     const { removeModule, updateModuleSettings, ensureModuleMinSize } = useDashboard();
     const { settings } = useSettings();
 
-    const isJapanese = settings?.preferences?.language === "ja";
-
     const [selectedLocationId, setSelectedLocationId] = useState(module.settings?.location);
     const lang = useLanguage();
     const t = lang.modules.weather.current;
@@ -125,7 +123,6 @@ export default function WeatherModuleContainer({ module }) {
             current={mapped.current}
             dailyList={mapped.dailyList}
             hourlyByDay={mapped.hourlyByDay}
-            isJapanese={isJapanese}
             layoutMode={module.settings?.view ?? "combined"}
             onLayoutModeChange={handleLayoutModeChange}
             onRemove={handleRemove}

@@ -4,8 +4,8 @@
 // ===================================================
 
 import { useCallback } from "react";
-import { useSettings } from "../settings/useSettings";
-import { getHolidayName } from "./utils/holidays";
+import { useSettings } from "../../settings/useSettings";
+import { getHolidayName } from "./holidays";
 
 /** Returns (dateStr) => holiday name in the user's language, or null. */
 export default function useHolidayName() {

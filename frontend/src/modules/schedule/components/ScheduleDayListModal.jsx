@@ -7,7 +7,7 @@
 
 import { X, Plus, ChevronRight } from "lucide-react";
 import { useLanguage } from "../../settings/useLanguage";
-import useHolidayName from "../useHolidayName";
+import useHolidayName from "../utils/useHolidayName";
 import { formatDisplayDate, getEventColor } from "../utils/scheduleHelpers";
 
 export default function ScheduleDayListModal({

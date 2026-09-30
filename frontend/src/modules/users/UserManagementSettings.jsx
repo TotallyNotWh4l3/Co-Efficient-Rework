@@ -45,7 +45,7 @@ export default function UserManagementSettings() {
         setFormError(null);
 
         if (!form.username.trim() || !form.password) {
-            setFormError(copy.addUser?.validationError ?? "Username and password are required.");
+            setFormError(copy.addUser?.validationError);
             return;
         }
 
@@ -54,29 +54,19 @@ export default function UserManagementSettings() {
             await createUser(form);
             setForm({ username: "", password: "", role: "user" });
         } catch (err) {
-            setFormError(
-                err.response?.data?.message ||
-                    copy.addUser?.genericError ||
-                    "Failed to create user.",
-            );
+            setFormError(err.response?.data?.message || copy.addUser.genericError);
         } finally {
             setSubmitting(false);
         }
     };
 
     const handleDelete = async (id, username) => {
-        const confirmText =
-            copy.delete?.confirm?.replace("{username}", username) ??
-            `Delete user "${username}"? This cannot be undone.`;
+        const confirmText = copy.delete.confirm.replace("{username}", username);
         if (!window.confirm(confirmText)) return;
         try {
             await deleteUser(id);
         } catch (err) {
-            alert(
-                err.response?.data?.message ||
-                    copy.delete?.genericError ||
-                    "Failed to delete user.",
-            );
+            alert(err.response?.data?.message || copy.delete.genericError);
         }
     };
 
@@ -85,7 +75,7 @@ export default function UserManagementSettings() {
         const username = passwordDialogUser.username;
         setPasswordDialogUser(null);
         setPasswordToast(
-            (passwordCopy.successToast ?? 'Password updated for "{username}".').replace(
+            passwordCopy.successToast.replace(
                 "{username}",
                 username,
             ),
@@ -95,48 +85,48 @@ export default function UserManagementSettings() {
 
     return (
         <div className="user-mgmt-settings">
-            <Settings.Title Icon={Users}>{copy.title ?? "User Management"}</Settings.Title>
+            <Settings.Title Icon={Users}>{copy.title}</Settings.Title>
             <Settings.Description>
-                {copy.description ?? "Create accounts and manage roles for other users."}
+                {copy.description}
             </Settings.Description>
 
             <Settings.Divider mod="thick" />
 
             <Settings.Section>
-                <Settings.SectionTitle>{copy.addUser?.title ?? "Add User"}</Settings.SectionTitle>
+                <Settings.SectionTitle>{copy.addUser?.title}</Settings.SectionTitle>
 
                 <form onSubmit={handleCreate} className="user-mgmt-settings__form">
                     <Settings.Row>
                         <Settings.RowContent>
                             <Settings.RowLabel>
-                                {copy.addUser?.usernameLabel ?? "Username"}
+                                {copy.addUser?.usernameLabel}
                             </Settings.RowLabel>
                         </Settings.RowContent>
                         <Settings.TextInput
                             value={form.username}
                             onChange={(e) => setForm({ ...form, username: e.target.value })}
-                            placeholder={copy.addUser?.usernamePlaceholder ?? "e.g. jsmith"}
+                            placeholder={copy.addUser?.usernamePlaceholder}
                         />
                     </Settings.Row>
 
                     <Settings.Row>
                         <Settings.RowContent>
                             <Settings.RowLabel>
-                                {copy.addUser?.passwordLabel ?? "Password"}
+                                {copy.addUser?.passwordLabel}
                             </Settings.RowLabel>
                         </Settings.RowContent>
                         <Settings.TextInput
                             type="password"
                             value={form.password}
                             onChange={(e) => setForm({ ...form, password: e.target.value })}
-                            placeholder={copy.addUser?.passwordPlaceholder ?? "Temporary password"}
+                            placeholder={copy.addUser?.passwordPlaceholder}
                         />
                     </Settings.Row>
 
                     <Settings.Row className="settings__row--stacked">
                         <Settings.RowContent>
                             <Settings.RowLabel>
-                                {copy.addUser?.roleLabel ?? "Role"}
+                                {copy.addUser?.roleLabel}
                             </Settings.RowLabel>
                         </Settings.RowContent>
                         <Settings.Select
@@ -150,8 +140,8 @@ export default function UserManagementSettings() {
 
                     <Settings.Button type="submit" disabled={submitting}>
                         {submitting
-                            ? (copy.addUser?.submitting ?? "Creating…")
-                            : (copy.addUser?.submit ?? "Create User")}
+                            ? (copy.addUser?.submitting)
+                            : (copy.addUser?.submit)}
                     </Settings.Button>
                 </form>
             </Settings.Section>
@@ -159,7 +149,7 @@ export default function UserManagementSettings() {
             <Settings.Divider />
 
             <Settings.Section>
-                <Settings.SectionTitle>{copy.allUsers?.title ?? "All Users"}</Settings.SectionTitle>
+                <Settings.SectionTitle>{copy.allUsers?.title}</Settings.SectionTitle>
 
                 {passwordToast && (
                     <Settings.Description className="user-mgmt-settings__toast">
@@ -169,7 +159,7 @@ export default function UserManagementSettings() {
 
                 {isLoading ? (
                     <Settings.Description>
-                        {copy.allUsers?.loading ?? "Loading users…"}
+                        {copy.allUsers?.loading}
                     </Settings.Description>
                 ) : error ? (
                     <Settings.Description>{error}</Settings.Description>
@@ -179,7 +169,7 @@ export default function UserManagementSettings() {
                             <Settings.RowContent>
                                 <Settings.RowLabel>{u.username}</Settings.RowLabel>
                                 <Settings.RowDescription>
-                                    {(copy.allUsers?.joined ?? "Joined {date}").replace(
+                                    {(copy.allUsers?.joined).replace(
                                         "{date}",
                                         new Date(u.created_at).toLocaleDateString(),
                                     )}
@@ -196,7 +186,7 @@ export default function UserManagementSettings() {
                             <button
                                 className="user-mgmt-settings__password-btn"
                                 onClick={() => setPasswordDialogUser(u)}
-                                title={passwordCopy.buttonTitle ?? "Set password"}
+                                title={passwordCopy.buttonTitle}
                             >
                                 <KeyRound size={16} />
                             </button>
@@ -205,7 +195,7 @@ export default function UserManagementSettings() {
                                 className="user-mgmt-settings__delete-btn"
                                 disabled={u.id === currentUser?.id}
                                 onClick={() => handleDelete(u.id, u.username)}
-                                title={copy.delete?.title ?? "Delete user"}
+                                title={copy.delete?.title}
                             >
                                 <Trash2 size={16} />
                             </button>
