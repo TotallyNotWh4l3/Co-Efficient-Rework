@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: ScheduleDayListModal.jsx
 // 作成日: 2026/08/27
@@ -8,6 +7,7 @@
 
 import { X, Plus, ChevronRight } from "lucide-react";
 import { useLanguage } from "../../settings/useLanguage";
+import useHolidayName from "../useHolidayName";
 import { formatDisplayDate, getEventColor } from "../utils/scheduleHelpers";
 
 export default function ScheduleDayListModal({
@@ -19,6 +19,7 @@ export default function ScheduleDayListModal({
     onSelectEvent,
 }) {
     const lang = useLanguage();
+    const holidayName = useHolidayName()(dateStr);
     const t = lang.modules.schedule.dayList;
 
     const sorted = [...events].sort((a, b) => a.eventTime.localeCompare(b.eventTime));
@@ -29,6 +30,7 @@ export default function ScheduleDayListModal({
                 <div className="sch-overlay-header">
                     <span className="sch-overlay-title">
                         {formatDisplayDate(dateStr, lang.dateNames)}
+                        {holidayName && <span className="sch-holiday-badge">{holidayName}</span>}
                     </span>
                     <button className="sch-icon-btn" onClick={onClose}>
                         <X className="icon-xs" />

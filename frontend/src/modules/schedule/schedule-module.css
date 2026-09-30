@@ -304,6 +304,28 @@
     color: var(--color-text);
 }
 
+/* National holidays. Themes can override --color-holiday; it defaults to the
+   theme's error red. A holiday that is also today keeps the today highlight. */
+.sch-grid-day-holiday:not(.sch-grid-day-today) {
+    background: color-mix(in srgb, var(--color-holiday, var(--color-error)) 10%, transparent);
+}
+.sch-day-number-holiday {
+    color: var(--color-holiday, var(--color-error));
+}
+.sch-holiday-badge {
+    display: inline-block;
+    margin-left: calc(0.5 * var(--u));
+    padding: calc(0.0625 * var(--u)) calc(0.375 * var(--u));
+    font-size: calc(0.5625 * var(--u));
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+    color: var(--color-holiday, var(--color-error));
+    background: color-mix(in srgb, var(--color-holiday, var(--color-error)) 15%, transparent);
+    border-radius: var(--radius-full);
+}
+
 .sch-day-events {
     display: flex;
     flex-wrap: wrap;
@@ -1188,4 +1210,16 @@
     background: var(--color-element-hover);
     border: var(--hairline) solid var(--color-border);
     color: var(--color-text-muted);
+}
+
+/* Weekend colors: Sunday red like holidays, Saturday blue. Themes can override
+   --color-sunday / --color-saturday. Kept after the base weekday/number rules so
+   they win at equal specificity (including .sch-day-weekday-inline further down). */
+.sch-day-number-sun,
+.sch-dow-sun {
+    color: var(--color-sunday, var(--color-error));
+}
+.sch-day-number-sat,
+.sch-dow-sat {
+    color: var(--color-saturday, #3b82f6);
 }

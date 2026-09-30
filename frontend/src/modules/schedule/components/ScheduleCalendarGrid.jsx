@@ -7,6 +7,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "../../settings/useLanguage";
+import useHolidayName from "../useHolidayName";
 import {
     getMonthGridDays,
     getWeekDays,
@@ -14,6 +15,19 @@ import {
     hasConflict,
     getEventColor,
 } from "../utils/scheduleHelpers";
+
+/** Sunday red, Saturday blue (weekday labels). */
+function weekendClass(dow) {
+    if (dow === 0) return " sch-dow-sun";
+    if (dow === 6) return " sch-dow-sat";
+    return "";
+}
+
+/** Date-number color: holidays and Sundays red, Saturdays blue. A holiday on a Saturday stays red. */
+function dayNumberTone(dow, holidayName) {
+    if (holidayName) return " sch-day-number-holiday";
+    return weekendClass(dow).replace("sch-dow", "sch-day-number");
+}
 
 export default function ScheduleCalendarGrid({
     anchorDate,
@@ -29,6 +43,7 @@ export default function ScheduleCalendarGrid({
     hideNav = false,
 }) {
     const lang = useLanguage();
+    const getHoliday = useHolidayName();
     const t = lang.modules.schedule.calendar;
     const { monthsLong, weekdaysShort } = lang.dateNames;
 
@@ -47,8 +62,8 @@ export default function ScheduleCalendarGrid({
     // weekdaysShort is always the fixed Sun-Sat header row; daysOverride
     // (relative view) still walks actual dates but the header stays static.
     const weekdayLabels = daysOverride
-        ? days.slice(0, 7).map((d) => weekdaysShort[d.getDay()])
-        : weekdaysShort;
+        ? days.slice(0, 7).map((d) => ({ label: weekdaysShort[d.getDay()], dow: d.getDay() }))
+        : weekdaysShort.map((label, dow) => ({ label, dow }));
 
     return (
         <>
@@ -71,8 +86,11 @@ export default function ScheduleCalendarGrid({
 
             <div className={`${gridClass}${isWeekHorizontal ? " sch-grid-week-horizontal" : ""}`}>
                 {!isWeekHorizontal &&
-                    weekdayLabels.map((label, i) => (
-                        <div key={`${label}-${i}`} className="sch-grid-weekday">
+                    weekdayLabels.map(({ label, dow }, i) => (
+                        <div
+                            key={`${label}-${i}`}
+                            className={`sch-grid-weekday${weekendClass(dow)}`}
+                        >
                             {label}
                         </div>
                     ))}
@@ -86,6 +104,7 @@ export default function ScheduleCalendarGrid({
                         day.getMonth() === anchorDate.getMonth();
                     const dayEvents = eventsByDay[dayStr] || [];
                     const conflict = hasConflict(dayEvents);
+                    const holidayName = getHoliday(dayStr);
 
                     // Horizontal week: one event fills the whole row with full
                     // detail; two or more collapse to thin title+subtitle lines
@@ -109,17 +128,22 @@ export default function ScheduleCalendarGrid({
                                 isWeekHorizontal ? " sch-grid-day-week-horizontal" : ""
                             }${isToday ? " sch-grid-day-today" : ""}${
                                 isCurrentMonth ? "" : " sch-grid-day-outside"
-                            }`}
+                            }${holidayName ? " sch-grid-day-holiday" : ""}`}
+                            title={holidayName ?? undefined}
                             onClick={() => onDayClick(dayStr)}
                         >
                             <div className="sch-grid-day-head">
                                 {weekdayInlineLabel && (
-                                    <span className="sch-day-weekday-inline">
+                                    <span
+                                        className={`sch-day-weekday-inline${weekendClass(day.getDay())}`}
+                                    >
                                         {weekdayInlineLabel}
                                     </span>
                                 )}
                                 <span
-                                    className={`sch-day-number${isToday ? " sch-day-number-today" : ""}`}
+                                    className={`sch-day-number${isToday ? " sch-day-number-today" : ""}${
+                                        isToday ? "" : dayNumberTone(day.getDay(), holidayName)
+                                    }`}
                                 >
                                     {day.getDate()}
                                 </span>

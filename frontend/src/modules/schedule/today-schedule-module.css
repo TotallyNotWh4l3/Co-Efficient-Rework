@@ -49,6 +49,10 @@
     text-transform: uppercase;
     color: var(--color-text-accent);
 }
+.tsm-section-date .sch-holiday-badge {
+    margin-left: 0;
+    margin-right: calc(0.5 * var(--u));
+}
 .tsm-section--today .tsm-section-label {
     font-size: calc(0.875 * var(--u));
 }

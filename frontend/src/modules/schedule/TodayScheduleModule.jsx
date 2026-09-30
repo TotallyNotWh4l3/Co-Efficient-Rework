@@ -17,18 +17,31 @@ import { useLanguage } from "../settings/useLanguage";
 import ScheduleDetailModal from "./components/ScheduleDetailModal";
 import ScheduleEventFormModal from "./components/ScheduleEventFormModal";
 import { formatDateStr, formatDisplayDate, getEventColor } from "./utils/scheduleHelpers";
+import {
+    getServerNow,
+    startServerClockSync,
+    subscribeServerClock,
+} from "../../shared/utils/serverClock";
 
 import "./schedule-module.css";
 import "./today-schedule-module.css";
 
 const TICK_MS = 30 * 1000;
 
-/** Current Date, refreshed on an interval so "past" styling and the midnight rollover stay correct. */
+/**
+ * Current Date (server-corrected, so a drifting device clock doesn't matter),
+ * refreshed on an interval so "past" styling and the midnight rollover stay correct.
+ */
 function useNow(intervalMs = TICK_MS) {
-    const [now, setNow] = useState(() => new Date());
+    const [now, setNow] = useState(() => getServerNow());
     useEffect(() => {
-        const id = setInterval(() => setNow(new Date()), intervalMs);
-        return () => clearInterval(id);
+        startServerClockSync();
+        const id = setInterval(() => setNow(getServerNow()), intervalMs);
+        const unsubscribe = subscribeServerClock(() => setNow(getServerNow()));
+        return () => {
+            clearInterval(id);
+            unsubscribe();
+        };
     }, [intervalMs]);
     return now;
 }

@@ -75,6 +75,13 @@ const corsOptions = isProduction
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Server time for kiosk clients whose own clock drifts (see frontend shared/utils/serverClock.js).
+// Deliberately unauthenticated and uncached: the clock must work on the login screen too.
+app.get("/api/time", (req, res) => {
+    res.set("Cache-Control", "no-store");
+    res.json({ now: Date.now() });
+});
+
 // Single central SSE channel for every module's realtime push.
 app.use("/api/sse", sseRoutes);
 
