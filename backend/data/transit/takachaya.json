@@ -1,0 +1,377 @@
+{
+    "version": 2,
+    "stops": [
+        {
+            "id": "takachaya",
+            "type": "station",
+            "name": "高茶屋",
+            "directions": [
+                {
+                    "id": "kameyama",
+                    "label": "亀山方面",
+                    "services": [
+                        {
+                            "id": "kisei-kameyama",
+                            "operator": "JR東海",
+                            "line": "紀勢本線",
+                            "timetables": [
+                                {
+                                    "days": [
+                                        "weekday",
+                                        "saturday",
+                                        "holiday"
+                                    ],
+                                    "departures": [
+                                        {
+                                            "time": "05:28",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "06:16",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "07:01",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "07:40",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "08:02",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "08:49",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "09:26",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "10:09",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "11:20",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "12:07",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "13:13",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "14:08",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "14:48",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "15:49",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "17:04",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "18:05",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "19:10",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "19:38",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "20:39",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "21:27",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        },
+                                        {
+                                            "time": "22:14",
+                                            "type": "local",
+                                            "dest": "亀山"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "toba-shingu",
+                    "label": "鳥羽・新宮方面",
+                    "services": [
+                        {
+                            "id": "kisei-toba-shingu",
+                            "operator": "JR東海",
+                            "line": "紀勢本線",
+                            "timetables": [
+                                {
+                                    "days": [
+                                        "weekday"
+                                    ],
+                                    "departures": [
+                                        {
+                                            "time": "06:36",
+                                            "type": "local",
+                                            "dest": "新宮"
+                                        },
+                                        {
+                                            "time": "07:01",
+                                            "type": "local",
+                                            "dest": "伊勢市"
+                                        },
+                                        {
+                                            "time": "07:38",
+                                            "type": "local",
+                                            "dest": "伊勢市"
+                                        },
+                                        {
+                                            "time": "08:20",
+                                            "type": "local",
+                                            "dest": "伊勢市"
+                                        },
+                                        {
+                                            "time": "09:12",
+                                            "type": "local",
+                                            "dest": "伊勢市"
+                                        },
+                                        {
+                                            "time": "09:54",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "10:54",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "11:54",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "12:47",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "13:54",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "14:55",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "15:57",
+                                            "type": "local",
+                                            "dest": "新宮"
+                                        },
+                                        {
+                                            "time": "16:49",
+                                            "type": "local",
+                                            "dest": "多気"
+                                        },
+                                        {
+                                            "time": "17:02",
+                                            "type": "local",
+                                            "dest": "伊勢市"
+                                        },
+                                        {
+                                            "time": "18:03",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "18:44",
+                                            "type": "local",
+                                            "dest": "新宮"
+                                        },
+                                        {
+                                            "time": "19:09",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "20:07",
+                                            "type": "local",
+                                            "dest": "熊野市"
+                                        },
+                                        {
+                                            "time": "21:02",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "21:27",
+                                            "type": "local",
+                                            "dest": "三瀬谷"
+                                        },
+                                        {
+                                            "time": "22:34",
+                                            "type": "local",
+                                            "dest": "伊勢市"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "days": [
+                                        "saturday",
+                                        "holiday"
+                                    ],
+                                    "departures": [
+                                        {
+                                            "time": "06:36",
+                                            "type": "local",
+                                            "dest": "新宮"
+                                        },
+                                        {
+                                            "time": "07:01",
+                                            "type": "local",
+                                            "dest": "伊勢市"
+                                        },
+                                        {
+                                            "time": "07:38",
+                                            "type": "local",
+                                            "dest": "伊勢市"
+                                        },
+                                        {
+                                            "time": "08:23",
+                                            "type": "local",
+                                            "dest": "伊勢市"
+                                        },
+                                        {
+                                            "time": "09:12",
+                                            "type": "local",
+                                            "dest": "伊勢市"
+                                        },
+                                        {
+                                            "time": "09:54",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "10:54",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "11:54",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "12:47",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "13:54",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "14:55",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "15:57",
+                                            "type": "local",
+                                            "dest": "新宮"
+                                        },
+                                        {
+                                            "time": "16:49",
+                                            "type": "local",
+                                            "dest": "多気"
+                                        },
+                                        {
+                                            "time": "17:02",
+                                            "type": "local",
+                                            "dest": "伊勢市"
+                                        },
+                                        {
+                                            "time": "18:03",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "18:44",
+                                            "type": "local",
+                                            "dest": "新宮"
+                                        },
+                                        {
+                                            "time": "19:09",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "20:07",
+                                            "type": "local",
+                                            "dest": "熊野市"
+                                        },
+                                        {
+                                            "time": "21:02",
+                                            "type": "local",
+                                            "dest": "鳥羽"
+                                        },
+                                        {
+                                            "time": "21:27",
+                                            "type": "local",
+                                            "dest": "三瀬谷"
+                                        },
+                                        {
+                                            "time": "22:34",
+                                            "type": "local",
+                                            "dest": "伊勢市"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

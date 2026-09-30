@@ -26,6 +26,10 @@ const AVAILABLE_MODULES = [
         name: "Clock",
     },
     {
+        type: "transit",
+        name: "Trains & Buses",
+    },
+    {
         type: "announcement",
         name: "Announcements",
     },

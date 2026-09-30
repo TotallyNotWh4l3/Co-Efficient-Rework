@@ -1,0 +1,208 @@
+/* Transit (train / bus) module.
+   Reuses the .sch-* card, header and empty-state primitives from schedule-module.css;
+   everything here is sized in multiples of --u like the other modules.
+   Layout: the departure list is a flex column with space-between so the rows
+   spread over the whole body and no empty space is left at the bottom. */
+
+.trn-daytype {
+    margin: 0;
+    font-size: calc(0.5625 * var(--u));
+    font-weight: 700;
+    color: var(--color-text-accent);
+}
+
+.trn-picker-btn {
+    display: grid;
+    place-items: center;
+    padding: calc(0.375 * var(--u));
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: calc(0.5 * var(--u));
+    cursor: pointer;
+    z-index: 2;
+}
+.trn-picker-btn:hover {
+    color: var(--color-text);
+    background: var(--color-element-hover);
+}
+
+/* ---------- Stop picker (overlay under the header) ---------- */
+.trn-picker {
+    position: absolute;
+    top: calc(3.75 * var(--u));
+    left: calc(1.25 * var(--u));
+    right: calc(1.25 * var(--u));
+    max-height: 60%;
+    margin: 0;
+    padding: calc(0.375 * var(--u));
+    list-style: none;
+    overflow-y: auto;
+    background: var(--color-bg-elevated);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.75 * var(--u));
+    box-shadow: var(--shadow-lg);
+    z-index: 3;
+}
+.trn-picker-item {
+    display: flex;
+    align-items: center;
+    gap: calc(0.5 * var(--u));
+    width: 100%;
+    padding: calc(0.5 * var(--u)) calc(0.625 * var(--u));
+    font-size: calc(0.75 * var(--u));
+    font-weight: 600;
+    color: var(--color-text);
+    background: transparent;
+    border: 0;
+    border-radius: calc(0.5 * var(--u));
+    cursor: pointer;
+    text-align: left;
+}
+.trn-picker-item:hover {
+    background: var(--color-element-hover);
+}
+.trn-picker-item--on {
+    color: var(--color-text-accent);
+    background: var(--color-accent-muted);
+}
+
+/* ---------- Body ---------- */
+.trn-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.625 * var(--u));
+}
+
+.trn-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(0.375 * var(--u));
+    flex-shrink: 0;
+}
+.trn-tab {
+    padding: calc(0.25 * var(--u)) calc(0.75 * var(--u));
+    font-size: calc(0.625 * var(--u));
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(1 * var(--u));
+    cursor: pointer;
+}
+.trn-tab--on {
+    color: var(--color-text-accent);
+    background: var(--color-accent-muted);
+    border-color: var(--color-text-accent);
+}
+.trn-direction {
+    margin: 0;
+    font-size: calc(0.6875 * var(--u));
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+}
+
+/* ---------- Departure rows ---------- */
+.trn-list {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: calc(0.25 * var(--u));
+}
+.trn-row {
+    display: flex;
+    align-items: center;
+    gap: calc(0.75 * var(--u));
+    padding: calc(0.375 * var(--u)) calc(0.625 * var(--u));
+    border-radius: calc(0.5 * var(--u));
+    min-width: 0;
+}
+.trn-row--next {
+    background: var(--color-accent-muted);
+    border: var(--hairline) solid var(--color-accent-border);
+}
+
+.trn-time {
+    flex-shrink: 0;
+    font-size: calc(1.125 * var(--u));
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+}
+.trn-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+.trn-dest {
+    font-size: calc(0.75 * var(--u));
+    font-weight: 700;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.trn-meta {
+    display: flex;
+    align-items: center;
+    gap: calc(0.375 * var(--u));
+    font-size: calc(0.5625 * var(--u));
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+}
+.trn-tomorrow {
+    padding: 0 calc(0.3125 * var(--u));
+    font-weight: 700;
+    color: var(--color-warning);
+    background: var(--color-warning-bg);
+    border-radius: calc(0.25 * var(--u));
+}
+.trn-access {
+    width: calc(0.75 * var(--u));
+    height: calc(0.75 * var(--u));
+    color: var(--color-text-accent);
+}
+
+.trn-type {
+    flex-shrink: 0;
+    padding: calc(0.125 * var(--u)) calc(0.5 * var(--u));
+    font-size: calc(0.5625 * var(--u));
+    font-weight: 800;
+    color: var(--color-text-secondary);
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(1 * var(--u));
+}
+.trn-type--express {
+    color: var(--color-warning);
+    background: var(--color-warning-bg);
+    border-color: var(--color-warning);
+}
+.trn-type--limited_express {
+    color: var(--color-error);
+    background: var(--color-error-bg);
+    border-color: var(--color-error);
+}
+
+.trn-wait {
+    flex-shrink: 0;
+    min-width: calc(3.5 * var(--u));
+    text-align: right;
+    font-size: calc(0.625 * var(--u));
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+.trn-row--next .trn-wait {
+    color: var(--color-text-accent);
+}

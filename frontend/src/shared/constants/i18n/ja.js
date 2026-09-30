@@ -294,6 +294,10 @@ export default {
                 title: "時計",
             },
 
+            transit: {
+                title: "電車・バス",
+            },
+
             announcements: {
                 title: "お知らせ",
             },
@@ -505,6 +509,39 @@ export default {
                 hour12: "12時間表示",
                 showSeconds: "秒",
                 showDate: "日付",
+            },
+        },
+        transit: {
+            header: {
+                title: "電車・バス",
+                changeStop: "駅・バス停を変更",
+            },
+            dayTypes: {
+                weekday: "平日",
+                saturday: "土曜",
+                holiday: "日曜・祝日",
+            },
+            types: {
+                local: "普通",
+                express: "急行",
+                limited_express: "特急",
+                regular: "一般",
+                night: "深夜",
+            },
+            toDest: "{dest}行き",
+            now: "まもなく",
+            inMin: "あと{n}分",
+            inHourMin: "あと{h}時間{m}分",
+            tomorrow: "明日",
+            accessible: "車いす対応",
+            noService: "この後の発車はありません。",
+            selectStop: "駅・バス停を選択してください。",
+            stopMissing: "選択した駅・バス停は利用できません。別のものを選んでください。",
+            noStops: "駅・バス停が未登録です。管理者に時刻表ファイルの追加を依頼してください。",
+            status: {
+                loading: "時刻表を読み込み中...",
+                errorTitle: "時刻表を読み込めませんでした",
+                retry: "再試行",
             },
         },
         todaySchedule: {

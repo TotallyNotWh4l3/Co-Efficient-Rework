@@ -10,6 +10,7 @@ import AnnouncementCard from "../../modules/announcements/AnnouncementModule";
 import ScheduleModule from "../../modules/schedule/ScheduleModule";
 import TodayScheduleModule from "../../modules/schedule/TodayScheduleModule";
 import ClockModule from "../../modules/clock/ClockModule";
+import TransitModule from "../../modules/transit/TransitModule";
 import "./module-renderer.css";
 const MODULE_COMPONENTS = {
     weather: WeatherModuleContainer,
@@ -17,6 +18,7 @@ const MODULE_COMPONENTS = {
     schedule: ScheduleModule,
     todaySchedule: TodayScheduleModule,
     clock: ClockModule,
+    transit: TransitModule,
 };
 
 export default function ModuleRenderer({ module, onSelect }) {

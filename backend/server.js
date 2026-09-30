@@ -26,6 +26,7 @@ import scheduleRoutes from "./modules/schedule/scheduleRoutes.js";
 import geocodingRoutes from "./modules/geocoding/geocodingRoutes.js";
 import themeRoutes from "./modules/themes/themeRoutes.js";
 import userRoutes from "./modules/users/userRoutes.js";
+import transitRoutes from "./modules/transit/transitRoutes.js";
 
 import sseRoutes from "./sse/sseRoutes.js";
 
@@ -95,6 +96,7 @@ app.use("/api/schedule", scheduleRoutes);
 app.use("/api/geocoding", geocodingRoutes);
 app.use("/api/themes", themeRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/transit", transitRoutes);
 
 const PORT = process.env.PORT || 3001;
 

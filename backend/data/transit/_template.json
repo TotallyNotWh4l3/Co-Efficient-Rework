@@ -1,0 +1,38 @@
+{
+    "version": 2,
+    "stops": [
+        {
+            "id": "my-station",
+            "type": "station",
+            "name": "駅名",
+            "directions": [
+                {
+                    "id": "direction-a",
+                    "label": "○○方面",
+                    "services": [
+                        {
+                            "id": "my-line-direction-a",
+                            "operator": "事業者名",
+                            "line": "路線名",
+                            "timetables": [
+                                {
+                                    "days": ["weekday"],
+                                    "departures": [
+                                        { "time": "05:30", "type": "local", "dest": "行き先" },
+                                        { "time": "24:10", "type": "express", "dest": "行き先" }
+                                    ]
+                                },
+                                {
+                                    "days": ["saturday", "holiday"],
+                                    "departures": [
+                                        { "time": "05:45", "type": "local", "dest": "行き先" }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

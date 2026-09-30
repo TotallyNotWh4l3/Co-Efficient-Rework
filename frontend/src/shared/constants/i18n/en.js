@@ -269,6 +269,10 @@ export default {
             clock: {
                 title: "Clock",
             },
+
+            transit: {
+                title: "Trains & Buses",
+            },
             announcements: {
                 title: "Announcements",
             },
@@ -463,6 +467,39 @@ export default {
                 hour12: "12-hour",
                 showSeconds: "Seconds",
                 showDate: "Date",
+            },
+        },
+        transit: {
+            header: {
+                title: "Trains & Buses",
+                changeStop: "Change station / bus stop",
+            },
+            dayTypes: {
+                weekday: "Weekday",
+                saturday: "Saturday",
+                holiday: "Sunday / Holiday",
+            },
+            types: {
+                local: "Local",
+                express: "Express",
+                limited_express: "Ltd. Express",
+                regular: "Regular",
+                night: "Night",
+            },
+            toDest: "to {dest}",
+            now: "Now",
+            inMin: "in {n} min",
+            inHourMin: "in {h}h {m}m",
+            tomorrow: "Tomorrow",
+            accessible: "Wheelchair accessible",
+            noService: "No more departures.",
+            selectStop: "Choose a station or bus stop.",
+            stopMissing: "That station or bus stop is no longer available. Choose another.",
+            noStops: "No stations or bus stops registered yet. Ask an admin to add a timetable file.",
+            status: {
+                loading: "Loading timetable...",
+                errorTitle: "Couldn't load the timetable",
+                retry: "Retry",
             },
         },
         todaySchedule: {

@@ -108,6 +108,7 @@ export default function ModuleSettings() {
         { type: "schedule", name: copy.schedule?.title },
         { type: "todaySchedule", name: copy.todaySchedule?.title },
         { type: "clock", name: copy.clock?.title },
+        { type: "transit", name: copy.transit?.title },
         { type: "announcement", name: copy.announcements?.title },
     ];
 
