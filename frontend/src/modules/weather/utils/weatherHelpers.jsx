@@ -16,6 +16,7 @@ import {
     CloudLightning,
     Thermometer,
     Droplet,
+    Droplets,
     Wind,
 } from "lucide-react";
 
@@ -216,10 +217,10 @@ export const METRIC_DEFS = [
     {
         id: "humidity",
         labelEn: "Humidity",
-        labelJa: "ライブ湿度",
+        labelJa: "湿度",
         color: "#38bdf8",
         unit: "%",
-        icon: Droplet,
+        icon: Droplets,
     },
     {
         id: "precipChance",
@@ -227,7 +228,7 @@ export const METRIC_DEFS = [
         labelJa: "降水確率",
         color: "#a78bfa",
         unit: "%",
-        icon: CloudSun,
+        icon: CloudDrizzle,
     },
     {
         id: "precipSum",

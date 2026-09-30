@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from "react";
 import WeatherHeader from "./components/WeatherHeader";
 import WeatherCurrentSummary from "./components/WeatherCurrentSummary";
+import WeatherCurrentView from "./components/WeatherCurrentView";
 import WeatherStatsRow from "./components/WeatherStatsRow";
 import WeatherForecastSection from "./components/WeatherForecastSection";
 import WeatherSettingsPanel from "./components/WeatherSettingsPanel";
@@ -49,6 +50,10 @@ export default function WeatherModule({
     } = current;
 
     const gradient = getWeatherGradient(weatherCode, isDay);
+
+    // Anything that isn't "current" or "forecast" (including an unexpected saved
+    // value) keeps the original combined behavior.
+    const showCombinedCurrent = localLayoutMode !== "current" && localLayoutMode !== "forecast";
 
     const mapHourlyDay = (items) =>
         (items || []).map((item) => ({
@@ -97,7 +102,23 @@ export default function WeatherModule({
             />
 
             <div className="weather-body">
-                {localLayoutMode !== "forecast" && (
+                {/* "Current View Only" has its own layout (big icon, colored metric
+                    tiles) rather than the Both view with the forecast removed. */}
+                {localLayoutMode === "current" && (
+                    <WeatherCurrentView
+                        weatherCode={weatherCode}
+                        isDay={isDay}
+                        temp={temperature}
+                        highTemp={highTemp}
+                        lowTemp={lowTemp}
+                        humidity={humidity}
+                        windSpeed={windSpeed}
+                        precipChance={precipChance}
+                        isJapanese={isJapanese}
+                    />
+                )}
+
+                {showCombinedCurrent && (
                     <WeatherCurrentSummary
                         weatherCode={weatherCode}
                         isDay={isDay}
@@ -108,7 +129,7 @@ export default function WeatherModule({
                     />
                 )}
 
-                {localLayoutMode !== "forecast" && (
+                {showCombinedCurrent && (
                     <WeatherStatsRow
                         humidity={humidity}
                         windSpeed={windSpeed}
