@@ -8,17 +8,36 @@
 // ===================================================
 
 import React, { useState } from "react";
-import { AlertCircle, Accessibility, BusFront, ChevronDown, RefreshCw, TrainFront } from "lucide-react";
+import {
+    AlertCircle,
+    Accessibility,
+    BusFront,
+    ChevronDown,
+    List,
+    RefreshCw,
+    Route,
+    Settings as SettingsIcon,
+    TrainFront,
+    X,
+} from "lucide-react";
 import useClock from "../clock/useClock";
 import useTransit from "./useTransit";
 import { useDashboard } from "../dashboard/useDashboard";
 import { useLanguage } from "../settings/useLanguage";
+import TransitLine from "./components/TransitLine";
 import { getDayType, getUpcoming } from "./utils/transitHelpers";
 
 import "../schedule/schedule-module.css";
 import "./transit-module.css";
 
 const DEFAULT_COUNT = 5;
+
+// Line-view options, stored in module.settings. First value of each list is the default.
+const LINE_OPTIONS = [
+    { key: "orientation", values: ["horizontal", "vertical"] },
+    { key: "colorMode", values: ["mono", "theme"] },
+    { key: "timer", values: ["seconds", "minutes"] },
+];
 
 const fill = (template, values) =>
     template.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
@@ -62,10 +81,14 @@ function DepartureRow({ dep, isNext, t }) {
 }
 
 export default function TransitModule({ module }) {
-    const { updateModuleSettings } = useDashboard();
+    const { updateModuleSettings, ensureModuleMinSize } = useDashboard();
     const lang = useLanguage();
     const t = lang.modules.transit;
-    const now = useClock(false);
+
+    // "board": departure list (one direction at a time). "line": map-style line, one lane per direction.
+    const view = module.settings?.view === "line" ? "line" : "board";
+    // The line view animates per second; the list only needs the minute.
+    const now = useClock(view === "line");
 
     const stopId = module.settings?.stopId ?? null;
     const directionId = module.settings?.directionId ?? null;
@@ -76,6 +99,13 @@ export default function TransitModule({ module }) {
 
     const { stops, stop, isLoading, error, stopMissing, reload } = useTransit(stopId);
     const [pickerOpen, setPickerOpen] = useState(false);
+    const [optionsOpen, setOptionsOpen] = useState(false);
+
+    const lineSettings = {
+        orientation: module.settings?.orientation === "vertical" ? "vertical" : "horizontal",
+        colorMode: module.settings?.colorMode === "theme" ? "theme" : "mono",
+        timer: module.settings?.timer === "minutes" ? "minutes" : "seconds",
+    };
 
     // 未選択、または選んだ駅が見つからないときは、選択リストを自動で開く
     const showPicker = stops.length > 0 && (pickerOpen || !stopId || stopMissing);
@@ -84,6 +114,12 @@ export default function TransitModule({ module }) {
         ? (stop.directions.find((d) => d.id === directionId) ?? stop.directions[0])
         : null;
     const upcoming = direction ? getUpcoming(direction, now, count) : [];
+
+    const switchView = () => {
+        const next = view === "line" ? "board" : "line";
+        updateModuleSettings(module.id, "view", next);
+        ensureModuleMinSize(module.id, next);
+    };
 
     const chooseStop = (id) => {
         updateModuleSettings(module.id, "stopId", id);
@@ -119,6 +155,25 @@ export default function TransitModule({ module }) {
         body = (
             <div className="sch-empty-state">
                 <p className="sch-empty-text">{stopMissing ? t.stopMissing : t.selectStop}</p>
+            </div>
+        );
+    } else if (view === "line") {
+        body = (
+            <div
+                className={`trl-lanes${lineSettings.orientation === "vertical" ? " trl-lanes--vertical" : ""}`}
+            >
+                {stop.directions.map((d) => (
+                    <TransitLine
+                        key={d.id}
+                        direction={d}
+                        mode={stop.type}
+                        now={now}
+                        t={t}
+                        vertical={lineSettings.orientation === "vertical"}
+                        themed={lineSettings.colorMode === "theme"}
+                        minutesOnly={lineSettings.timer === "minutes"}
+                    />
+                ))}
             </div>
         );
     } else {
@@ -166,7 +221,7 @@ export default function TransitModule({ module }) {
     }
 
     return (
-        <div className="sch-card">
+        <div className={`sch-card${view === "board" ? " trn-card--board" : ""}`}>
             <div className="sch-glow sch-glow-top" />
 
             <div className="sch-header">
@@ -183,21 +238,77 @@ export default function TransitModule({ module }) {
                 </div>
 
                 {stops.length > 0 && (
-                    <button
-                        className="trn-picker-btn"
-                        title={t.header.changeStop}
-                        aria-expanded={showPicker}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setPickerOpen((v) => !v);
-                        }}
-                    >
-                        <ChevronDown className="icon-xs" />
-                    </button>
+                    <div className="trl-header-actions">
+                        {stop && (
+                            <button
+                                className="trn-picker-btn"
+                                title={view === "line" ? t.views.toBoard : t.views.toLine}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    switchView();
+                                }}
+                            >
+                                {view === "line" ? (
+                                    <List className="icon-xs" />
+                                ) : (
+                                    <Route className="icon-xs" />
+                                )}
+                            </button>
+                        )}
+                        {stop && view === "line" && (
+                            <button
+                                className="trn-picker-btn"
+                                title={t.options.title}
+                                aria-expanded={optionsOpen}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOptionsOpen((v) => !v);
+                                    setPickerOpen(false);
+                                }}
+                            >
+                                {optionsOpen ? (
+                                    <X className="icon-xs" />
+                                ) : (
+                                    <SettingsIcon className="icon-xs" />
+                                )}
+                            </button>
+                        )}
+                        <button
+                            className="trn-picker-btn"
+                            title={t.header.changeStop}
+                            aria-expanded={showPicker}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setPickerOpen((v) => !v);
+                                setOptionsOpen(false);
+                            }}
+                        >
+                            <ChevronDown className="icon-xs" />
+                        </button>
+                    </div>
                 )}
             </div>
 
             <div className="sch-body">{body}</div>
+
+            {optionsOpen && view === "line" && stop && (
+                <div className="trl-options" onClick={(e) => e.stopPropagation()}>
+                    {LINE_OPTIONS.map(({ key, values }) => (
+                        <div key={key} className="trl-option-row">
+                            <span className="trl-option-label">{t.options[key].label}</span>
+                            {values.map((value) => (
+                                <button
+                                    key={value}
+                                    className={`trl-chip${lineSettings[key] === value ? " trl-chip--on" : ""}`}
+                                    onClick={() => updateModuleSettings(module.id, key, value)}
+                                >
+                                    {t.options[key][value]}
+                                </button>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {showPicker && (
                 <ul className="trn-picker" onClick={(e) => e.stopPropagation()}>

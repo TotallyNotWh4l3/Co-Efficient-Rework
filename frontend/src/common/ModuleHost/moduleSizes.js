@@ -16,6 +16,7 @@
 //   weather      -> settings.view: "combined" | "current" | "forecast"
 //   announcement -> settings.view: "compact"  | "extended"
 //   schedule     -> calendar layout: "month"  | "week"
+//   transit      -> settings.view: "board" | "line"
 export const MODULE_MIN_SIZES = {
     weather: {
         combined: { w: 2, h: 2 },
@@ -29,6 +30,10 @@ export const MODULE_MIN_SIZES = {
     schedule: {
         month: { w: 2, h: 2 },
         week: { w: 1, h: 2 },
+    },
+    transit: {
+        board: { w: 1, h: 2 },
+        line: { w: 2, h: 2 },
     },
 };
 

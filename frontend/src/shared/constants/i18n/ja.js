@@ -516,6 +516,32 @@ export default {
                 title: "電車・バス",
                 changeStop: "駅・バス停を変更",
             },
+            views: {
+                toLine: "路線図で表示",
+                toBoard: "発車一覧で表示",
+            },
+            options: {
+                title: "路線図の設定",
+                orientation: { label: "向き", horizontal: "横", vertical: "縦" },
+                colorMode: { label: "色", mono: "白黒", theme: "テーマ" },
+                timer: { label: "タイマー", seconds: "分と秒", minutes: "分のみ" },
+            },
+            line: {
+                phase: {
+                    waiting: "次の発車",
+                    inbound: "接近中",
+                    approaching: "まもなく到着",
+                    atStation: "停車中",
+                    atStop: "停車中",
+                },
+                departedAt: "{time} 発車",
+                comingTrain: "電車が向かっています · あと{n}分",
+                comingBus: "バスが向かっています · あと{n}分",
+                following: "その次",
+                arrivingSoon: "まもなく到着",
+                minutes: "{n}分",
+                hourMinutes: "{h}時間{m}分",
+            },
             dayTypes: {
                 weekday: "平日",
                 saturday: "土曜",

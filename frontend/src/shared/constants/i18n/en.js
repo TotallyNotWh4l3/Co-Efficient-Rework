@@ -474,6 +474,32 @@ export default {
                 title: "Trains & Buses",
                 changeStop: "Change station / bus stop",
             },
+            views: {
+                toLine: "Show line view",
+                toBoard: "Show departure list",
+            },
+            options: {
+                title: "Line view options",
+                orientation: { label: "Layout", horizontal: "Horizontal", vertical: "Vertical" },
+                colorMode: { label: "Colors", mono: "Black & white", theme: "Theme" },
+                timer: { label: "Timer", seconds: "Minutes & seconds", minutes: "Minutes only" },
+            },
+            line: {
+                phase: {
+                    waiting: "Next",
+                    inbound: "Coming",
+                    approaching: "Arriving",
+                    atStation: "At station",
+                    atStop: "At stop",
+                },
+                departedAt: "Left {time}",
+                comingTrain: "A train is coming · {n} min",
+                comingBus: "A bus is coming · {n} min",
+                following: "Then",
+                arrivingSoon: "Arriving Soon",
+                minutes: "{n} min",
+                hourMinutes: "{h}h {m}m",
+            },
             dayTypes: {
                 weekday: "Weekday",
                 saturday: "Saturday",

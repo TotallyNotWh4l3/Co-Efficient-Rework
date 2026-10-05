@@ -206,3 +206,30 @@
 .trn-row--next .trn-wait {
     color: var(--color-text-accent);
 }
+
+/* ---------- Compact departure list (board view) ----------
+   Less card padding, header gap, row padding and row gaps so more departures fit. */
+.trn-card--board {
+    padding: calc(0.75 * var(--u));
+}
+.trn-card--board .sch-header {
+    padding-bottom: calc(0.5 * var(--u));
+}
+.trn-card--board .sch-body {
+    padding-top: calc(0.375 * var(--u));
+}
+.trn-card--board .trn-content {
+    gap: calc(0.375 * var(--u));
+}
+.trn-card--board .trn-list {
+    gap: calc(0.125 * var(--u));
+}
+.trn-card--board .trn-row {
+    gap: calc(0.5 * var(--u));
+    padding: calc(0.1875 * var(--u)) calc(0.4375 * var(--u));
+}
+.trn-card--board .trn-picker {
+    top: calc(3 * var(--u));
+    left: calc(0.75 * var(--u));
+    right: calc(0.75 * var(--u));
+}
