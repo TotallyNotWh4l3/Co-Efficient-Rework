@@ -192,7 +192,8 @@ export default {
                 add: "場所を追加",
                 empty: "保存された場所はありません。",
                 deleteTitle: "場所を削除しますか？",
-                deleteMessage: "「{name}」をすべてのユーザーから削除します。この操作は取り消せません。",
+                deleteMessage:
+                    "「{name}」をすべてのユーザーから削除します。この操作は取り消せません。",
                 deleteConfirm: "削除",
 
                 dialog: {
@@ -541,6 +542,7 @@ export default {
                 arrivingSoon: "まもなく到着",
                 minutes: "{n}分",
                 hourMinutes: "{h}時間{m}分",
+                tip: { departs: "発車", type: "種別", dest: "行き先", line: "路線" },
             },
             dayTypes: {
                 weekday: "平日",

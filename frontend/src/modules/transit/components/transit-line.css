@@ -241,14 +241,28 @@
 }
 
 /* ---------- Vertical orientation ----------
-   Lanes sit side by side; each track runs top to bottom. The vehicle moves
-   with `top` instead of `left` (set inline by TransitLine). */
+   Lanes sit side by side and each track runs bottom to top: the vehicle comes in
+   from the bottom, stops on the station point, and leaves off the top edge
+   (the top is the destination, marked by the arrow). TransitLine sets `top` inline
+   as 100 - x%, so the station sits at (100 - --trl-station-x)% from the top.
+
+   The lanes share one grid (head / track / foot rows) via subgrid, so every
+   lane's head, track and foot line up: tracks have identical length and the
+   station points sit at the same height in every lane. */
 .trl-lanes--vertical {
-    flex-direction: row;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(calc(5 * var(--u)), 1fr);
+    grid-template-rows: auto minmax(calc(6 * var(--u)), 1fr) auto;
+    column-gap: calc(0.625 * var(--u));
+    row-gap: calc(0.375 * var(--u));
 }
 .trl-lane--vertical {
+    display: grid;
+    grid-row: 1 / span 3;
+    grid-template-rows: subgrid;
     min-height: 0;
-    min-width: calc(5 * var(--u));
+    min-width: 0;
 }
 .trl-lane--vertical .trl-head {
     flex-direction: column;
@@ -264,7 +278,7 @@
     max-width: 100%;
 }
 .trl-lane--vertical .trl-track {
-    min-height: calc(6 * var(--u));
+    min-height: 0;
 }
 .trl-lane--vertical .trl-rail {
     left: 50%;
@@ -275,13 +289,14 @@
     height: auto;
     transform: translateX(-50%);
 }
+/* Dashes are anchored to the bottom (where trains come from), so the pattern
+   is identical in every lane whatever the track height is. */
 .trl-lane--vertical .trl-rail::after {
     inset: 0 calc(0.1875 * var(--u));
-    background: repeating-linear-gradient(
-        180deg,
-        var(--trl-paper) 0 calc(0.4375 * var(--u)),
-        transparent calc(0.4375 * var(--u)) calc(0.875 * var(--u))
-    );
+    background: linear-gradient(180deg, var(--trl-paper) 0 50%, transparent 50% 100%);
+    background-size: 100% calc(0.875 * var(--u));
+    background-position: 0 100%;
+    background-repeat: repeat-y;
 }
 .trl-lane--vertical.trl-lane--bus .trl-rail {
     width: calc(0.875 * var(--u));
@@ -293,11 +308,12 @@
     height: auto;
     border-top: 0;
     border-left: calc(0.125 * var(--u)) dashed var(--trl-paper);
+    background: none;
     transform: translateX(-50%);
 }
 .trl-lane--vertical .trl-station {
     left: 50%;
-    top: var(--trl-station-x);
+    top: calc(100% - var(--trl-station-x));
 }
 .trl-lane--vertical .trl-vehicle {
     top: auto;
@@ -310,11 +326,39 @@
         background 0.3s ease,
         color 0.3s ease;
 }
+
+/* Arrow capping the top (destination) end of the rail */
+.trl-dest-arrow {
+    display: none;
+}
+.trl-lane--vertical .trl-dest-arrow {
+    display: block;
+    position: absolute;
+    top: calc(0.125 * var(--u));
+    left: 50%;
+    width: calc(1 * var(--u));
+    height: calc(1 * var(--u));
+    transform: translateX(-50%);
+    padding: calc(0.0625 * var(--u)) 0;
+    color: var(--trl-ink);
+    background: var(--trl-paper);
+    stroke-width: 3;
+}
+
+/* Toast: a compact pill (icon over "N min") at the bottom of the track, which is
+   the inbound side, so it never covers the station point or the vehicle. */
 .trl-lane--vertical .trl-toast {
+    top: auto;
+    bottom: calc(0.375 * var(--u));
     left: 50%;
     transform: translateX(-50%);
-    white-space: normal;
+    flex-direction: column;
+    gap: calc(0.0625 * var(--u));
+    max-width: calc(100% - 0.5 * var(--u));
+    padding: calc(0.3125 * var(--u)) calc(0.5 * var(--u));
+    font-size: calc(0.5625 * var(--u));
     text-align: center;
+    white-space: nowrap;
     border-radius: calc(0.75 * var(--u));
     animation-name: trl-toast-in-v;
 }
@@ -378,7 +422,7 @@
 @keyframes trl-toast-in-v {
     from {
         opacity: 0;
-        transform: translate(-50%, -60%);
+        transform: translate(-50%, 60%);
     }
 }
 @keyframes trl-enter {

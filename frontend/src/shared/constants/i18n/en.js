@@ -436,18 +436,15 @@ export default {
                     title: "Layout",
                     combined: {
                         title: "Combined View",
-                        description:
-                            "Current weather and 7-day forecast.",
+                        description: "Current weather and 7-day forecast.",
                     },
                     current: {
                         title: "Current Only",
-                        description:
-                            "Current conditions only.",
+                        description: "Current conditions only.",
                     },
                     forecast: {
                         title: "Forecast Only",
-                        description:
-                            "7-day forecast and chart.",
+                        description: "7-day forecast and chart.",
                     },
                 },
                 active: "● ACTIVE",
@@ -499,6 +496,7 @@ export default {
                 arrivingSoon: "Arriving Soon",
                 minutes: "{n} min",
                 hourMinutes: "{h}h {m}m",
+                tip: { departs: "Departs", type: "Type", dest: "Destination", line: "Line" },
             },
             dayTypes: {
                 weekday: "Weekday",
@@ -521,7 +519,8 @@ export default {
             noService: "No more departures.",
             selectStop: "Choose a station or bus stop.",
             stopMissing: "That station or bus stop is no longer available. Choose another.",
-            noStops: "No stations or bus stops registered yet. Ask an admin to add a timetable file.",
+            noStops:
+                "No stations or bus stops registered yet. Ask an admin to add a timetable file.",
             status: {
                 loading: "Loading timetable...",
                 errorTitle: "Couldn't load the timetable",
@@ -699,8 +698,7 @@ export default {
             list: {
                 loading: "Loading...",
                 emptyTitle: "No announcements",
-                emptyText:
-                    "Nothing matches your search or filter.",
+                emptyText: "Nothing matches your search or filter.",
             },
             item: {
                 unread: "Unread",

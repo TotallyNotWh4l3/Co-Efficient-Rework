@@ -9,6 +9,7 @@
                 {
                     "id": "nagoya",
                     "label": "名古屋方面",
+                    "heading": "up",
                     "services": [
                         {
                             "id": "kintetsu-nagoya",
@@ -16,9 +17,7 @@
                             "line": "名古屋線",
                             "timetables": [
                                 {
-                                    "days": [
-                                        "weekday"
-                                    ],
+                                    "days": ["weekday"],
                                     "departures": [
                                         {
                                             "time": "05:15",
@@ -454,10 +453,7 @@
                                     ]
                                 },
                                 {
-                                    "days": [
-                                        "saturday",
-                                        "holiday"
-                                    ],
+                                    "days": ["saturday", "holiday"],
                                     "departures": [
                                         {
                                             "time": "05:15",
@@ -859,6 +855,7 @@
                 {
                     "id": "kashikojima",
                     "label": "賢島方面",
+                    "heading": "down",
                     "services": [
                         {
                             "id": "kintetsu-kashikojima",
@@ -866,9 +863,7 @@
                             "line": "名古屋線",
                             "timetables": [
                                 {
-                                    "days": [
-                                        "weekday"
-                                    ],
+                                    "days": ["weekday"],
                                     "departures": [
                                         {
                                             "time": "05:18",
@@ -1311,10 +1306,7 @@
                                     ]
                                 },
                                 {
-                                    "days": [
-                                        "saturday",
-                                        "holiday"
-                                    ],
+                                    "days": ["saturday", "holiday"],
                                     "departures": [
                                         {
                                             "time": "05:18",

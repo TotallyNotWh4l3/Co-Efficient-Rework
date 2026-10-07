@@ -41,7 +41,7 @@ export const ARRIVING_SOON_SEC = 90;
 // Where the station point sits on the track, in % of its width.
 // Left of it is the inbound side, right of it the line the vehicle leaves along.
 export const STATION_X = 68;
-const EXIT_X = 112; // departed vehicles slide past the right edge and fade out
+export const EXIT_X = 112; // departed vehicles slide past the right edge and fade out
 
 /** Departures of one direction as absolute times (ms), covering yesterday, today and tomorrow. */
 export function laneDepartures(direction, now) {
@@ -100,7 +100,11 @@ export function getLaneState(direction, mode, now) {
 
     // Same key from approaching -> atStation -> departed, so one vehicle moves continuously.
     const vehicleKey =
-        phase === "departed" ? last.at : phase === "approaching" || phase === "atStation" ? next.at : null;
+        phase === "departed"
+            ? last.at
+            : phase === "approaching" || phase === "atStation"
+              ? next.at
+              : null;
 
     let vehicleX = null;
     let vehicleOpacity = 0;

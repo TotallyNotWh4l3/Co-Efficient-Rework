@@ -25,6 +25,7 @@ import useTransit from "./useTransit";
 import { useDashboard } from "../dashboard/useDashboard";
 import { useLanguage } from "../settings/useLanguage";
 import TransitLine from "./components/TransitLine";
+import TransitDiagram from "./components/TransitDiagram";
 import { getDayType, getUpcoming } from "./utils/transitHelpers";
 
 import "../schedule/schedule-module.css";
@@ -39,8 +40,7 @@ const LINE_OPTIONS = [
     { key: "timer", values: ["seconds", "minutes"] },
 ];
 
-const fill = (template, values) =>
-    template.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
+const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
 
 const StopIcon = ({ type, className }) =>
     type === "busStop" ? <BusFront className={className} /> : <TrainFront className={className} />;
@@ -157,11 +157,23 @@ export default function TransitModule({ module }) {
                 <p className="sch-empty-text">{stopMissing ? t.stopMissing : t.selectStop}</p>
             </div>
         );
+    } else if (view === "line" && lineSettings.orientation === "vertical") {
+        // 縦表示: 上り/下りを1本の路線図にまとめる (上の端と下の端にそれぞれ行き先)
+        body = (
+            <div className="trl-lanes">
+                <TransitDiagram
+                    directions={stop.directions}
+                    mode={stop.type}
+                    now={now}
+                    t={t}
+                    themed={lineSettings.colorMode === "theme"}
+                    minutesOnly={lineSettings.timer === "minutes"}
+                />
+            </div>
+        );
     } else if (view === "line") {
         body = (
-            <div
-                className={`trl-lanes${lineSettings.orientation === "vertical" ? " trl-lanes--vertical" : ""}`}
-            >
+            <div className="trl-lanes">
                 {stop.directions.map((d) => (
                     <TransitLine
                         key={d.id}
@@ -169,7 +181,6 @@ export default function TransitModule({ module }) {
                         mode={stop.type}
                         now={now}
                         t={t}
-                        vertical={lineSettings.orientation === "vertical"}
                         themed={lineSettings.colorMode === "theme"}
                         minutesOnly={lineSettings.timer === "minutes"}
                     />
@@ -231,9 +242,7 @@ export default function TransitModule({ module }) {
                     </div>
                     <div>
                         <h3 className="sch-header-title">{stop?.name ?? t.header.title}</h3>
-                        {stop && (
-                            <p className="trn-daytype">{t.dayTypes[getDayType(now)]}</p>
-                        )}
+                        {stop && <p className="trn-daytype">{t.dayTypes[getDayType(now)]}</p>}
                     </div>
                 </div>
 

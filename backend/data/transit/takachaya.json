@@ -9,6 +9,7 @@
                 {
                     "id": "kameyama",
                     "label": "亀山方面",
+                    "heading": "up",
                     "services": [
                         {
                             "id": "kisei-kameyama",
@@ -16,11 +17,7 @@
                             "line": "紀勢本線",
                             "timetables": [
                                 {
-                                    "days": [
-                                        "weekday",
-                                        "saturday",
-                                        "holiday"
-                                    ],
+                                    "days": ["weekday", "saturday", "holiday"],
                                     "departures": [
                                         {
                                             "time": "05:28",
@@ -136,6 +133,7 @@
                 {
                     "id": "toba-shingu",
                     "label": "鳥羽・新宮方面",
+                    "heading": "down",
                     "services": [
                         {
                             "id": "kisei-toba-shingu",
@@ -143,9 +141,7 @@
                             "line": "紀勢本線",
                             "timetables": [
                                 {
-                                    "days": [
-                                        "weekday"
-                                    ],
+                                    "days": ["weekday"],
                                     "departures": [
                                         {
                                             "time": "06:36",
@@ -255,10 +251,7 @@
                                     ]
                                 },
                                 {
-                                    "days": [
-                                        "saturday",
-                                        "holiday"
-                                    ],
+                                    "days": ["saturday", "holiday"],
                                     "departures": [
                                         {
                                             "time": "06:36",

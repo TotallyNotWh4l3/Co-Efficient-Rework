@@ -1,0 +1,393 @@
+/* Merged vertical diagram: a double-track line, one rail per direction.
+   Top end = "up" direction, bottom end = "down" direction, one station across both rails.
+   The up rail is on the left, the down rail on the right (left-hand traffic).
+   Train type is shown by colour only; details appear in a tooltip on hover.
+   Everything is sized in multiples of --u. */
+
+.trd {
+    /* ★ EDIT HERE ★  Train type colours. Any type key in the JSON can get its own colour:
+       add `--trd-c-<type>` below and a `.trd-t--<type>` rule further down. */
+    --trd-c-local: #111111;
+    --trd-c-rapid: #1971c2;
+    --trd-c-express: #e8590c;
+    --trd-c-limited_express: #e03131;
+    --trd-c-night: #5f3dc4;
+
+    /* Black-and-white by default; .trd--themed swaps these for theme colours. */
+    --trd-ink: #111111;
+    --trd-paper: #f3f3f1;
+    --trd-on-ink: #ffffff;
+    --trd-station-fill: #ffffff;
+
+    --trd-gap: calc(1.25 * var(--u)); /* rail centre -> track centre */
+
+    flex: 1;
+    min-height: calc(11 * var(--u));
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.375 * var(--u));
+}
+.trd--themed {
+    --trd-ink: var(--color-accent);
+    --trd-paper: var(--color-bg-elevated);
+    --trd-on-ink: var(--color-text);
+    --trd-station-fill: var(--color-surface);
+}
+
+/* Type -> colour. Anything not listed falls back to the line colour (ink). */
+.trd-t--local {
+    --trd-vehicle: var(--trd-c-local);
+}
+.trd-t--rapid {
+    --trd-vehicle: var(--trd-c-rapid);
+    --trd-on-vehicle: #ffffff;
+}
+.trd-t--express {
+    --trd-vehicle: var(--trd-c-express);
+    --trd-on-vehicle: #ffffff;
+}
+.trd-t--limited_express {
+    --trd-vehicle: var(--trd-c-limited_express);
+    --trd-on-vehicle: #ffffff;
+}
+.trd-t--night {
+    --trd-vehicle: var(--trd-c-night);
+    --trd-on-vehicle: #ffffff;
+}
+.trd-type-dot {
+    flex-shrink: 0;
+    display: inline-block;
+    width: calc(0.5 * var(--u));
+    height: calc(0.5 * var(--u));
+    border-radius: 50%;
+    background: var(--trd-vehicle, var(--trd-ink));
+}
+
+/* ---------- Ends (label + countdown + next departure) ---------- */
+.trd-end {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.125 * var(--u));
+    min-width: 0;
+}
+.trd-end-top,
+.trd-end-sub {
+    display: flex;
+    align-items: baseline;
+    gap: calc(0.5 * var(--u));
+    min-width: 0;
+}
+.trd-end-top {
+    justify-content: space-between;
+}
+.trd-end-label {
+    display: flex;
+    align-items: center;
+    gap: calc(0.25 * var(--u));
+    min-width: 0;
+    font-size: calc(0.75 * var(--u));
+    font-weight: 800;
+    color: var(--color-text);
+    white-space: nowrap;
+}
+.trd-end-label > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.trd-end-arrow {
+    flex-shrink: 0;
+    width: calc(0.875 * var(--u));
+    height: calc(0.875 * var(--u));
+    color: var(--color-text-accent);
+}
+.trd-count {
+    flex-shrink: 0;
+    font-size: calc(1.125 * var(--u));
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+}
+.trd-count--text {
+    font-size: calc(0.875 * var(--u));
+}
+.trd-end-sub {
+    flex-wrap: wrap;
+    font-size: calc(0.5625 * var(--u));
+}
+.trd-phase {
+    font-weight: 700;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+.trd-end--approaching .trd-phase,
+.trd-end--atStation .trd-phase {
+    color: var(--color-text-accent);
+}
+.trd-next {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(0.25 * var(--u));
+    min-width: 0;
+}
+.trd-next-time {
+    font-size: calc(0.75 * var(--u));
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+}
+.trd-next-dest {
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.trd-following {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+/* ---------- Track ---------- */
+.trd-track {
+    position: relative;
+    flex: 1;
+    min-height: calc(5 * var(--u));
+}
+/* The stage clips vehicles sliding off either end; the tooltip lives outside it. */
+.trd-stage {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: var(--trd-paper);
+    border-radius: calc(0.625 * var(--u));
+}
+
+.trd-rail {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: calc(0.625 * var(--u));
+    transform: translateX(-50%);
+    background: var(--trd-ink);
+}
+.trd-rail--up {
+    left: calc(50% - var(--trd-gap));
+}
+.trd-rail--down {
+    left: calc(50% + var(--trd-gap));
+}
+/* Dashes are anchored to the middle so the pattern is symmetric around the station. */
+.trd-rail::after {
+    content: "";
+    position: absolute;
+    inset: 0 calc(0.1875 * var(--u));
+    background: linear-gradient(180deg, var(--trd-paper) 0 50%, transparent 50% 100%);
+    background-size: 100% calc(0.875 * var(--u));
+    background-position: 0 50%;
+    background-repeat: repeat-y;
+}
+.trd--bus .trd-rail {
+    width: calc(0.875 * var(--u));
+    border-radius: calc(0.4375 * var(--u));
+}
+.trd--bus .trd-rail::after {
+    inset: calc(0.4375 * var(--u)) auto calc(0.4375 * var(--u)) 50%;
+    width: 0;
+    background: none;
+    border-left: calc(0.125 * var(--u)) dashed var(--trd-paper);
+    transform: translateX(-50%);
+}
+
+.trd-arrow {
+    position: absolute;
+    left: 50%;
+    width: calc(1 * var(--u));
+    height: calc(1 * var(--u));
+    transform: translateX(-50%);
+    padding: calc(0.0625 * var(--u)) 0;
+    color: var(--trd-ink);
+    background: var(--trd-paper);
+    stroke-width: 3;
+}
+.trd-arrow--top {
+    left: calc(50% - var(--trd-gap));
+    top: calc(0.125 * var(--u));
+}
+.trd-arrow--bottom {
+    left: calc(50% + var(--trd-gap));
+    bottom: calc(0.125 * var(--u));
+}
+
+.trd-station {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(2 * var(--trd-gap) + 1.25 * var(--u));
+    height: calc(1.25 * var(--u));
+    transform: translate(-50%, -50%);
+    background: var(--trd-station-fill);
+    border: calc(0.1875 * var(--u)) solid var(--trd-ink);
+    border-radius: calc(0.625 * var(--u));
+    box-sizing: border-box;
+}
+.trd--bus .trd-station {
+    border-radius: calc(0.3125 * var(--u));
+}
+.trd-station--active::after {
+    content: "";
+    position: absolute;
+    inset: calc(-0.375 * var(--u));
+    border: calc(0.125 * var(--u)) solid var(--trd-ink);
+    border-radius: inherit;
+    animation: trd-pulse 1.4s ease-out infinite;
+}
+
+/* ---------- Vehicles ---------- */
+.trd-dv {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: calc(1.5 * var(--u));
+    height: calc(2 * var(--u));
+    transform: translate(-50%, -50%);
+    color: var(--trd-on-vehicle, var(--trd-on-ink));
+    background: var(--trd-vehicle, var(--trd-ink));
+    border: calc(0.125 * var(--u)) solid var(--trd-vehicle, var(--trd-ink));
+    border-radius: calc(0.4375 * var(--u));
+    box-sizing: border-box;
+    box-shadow: 0 0 0 calc(0.1875 * var(--u)) var(--trd-paper);
+    cursor: help;
+    /* Updates arrive once per second; a linear 1s transition turns them into smooth motion. */
+    transition:
+        top 1s linear,
+        opacity 1s linear,
+        background 0.3s ease,
+        color 0.3s ease;
+    animation: trd-enter 0.4s ease-out;
+}
+.trd--bus .trd-dv {
+    border-radius: calc(0.3125 * var(--u));
+}
+/* Left-hand traffic: up on the left of the rail, down on the right. */
+.trd-dv--up {
+    left: calc(50% - var(--trd-gap));
+}
+.trd-dv--down {
+    left: calc(50% + var(--trd-gap));
+}
+/* At the station: a white box in the type colour. */
+.trd-dv--arrived {
+    color: var(--trd-vehicle, var(--trd-ink));
+    background: var(--trd-station-fill);
+}
+.trd-dv-icon {
+    width: calc(1 * var(--u));
+    height: calc(1 * var(--u));
+}
+.trd-dv:focus-visible,
+.trd-toast:focus-visible {
+    outline: calc(0.125 * var(--u)) solid var(--color-text-accent);
+    outline-offset: calc(0.125 * var(--u));
+}
+
+/* ---------- Inbound toast: sits in the lane the train will arrive in ---------- */
+.trd-toast {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: calc(0.25 * var(--u));
+    max-width: calc(50% - var(--trd-gap) - 1.5 * var(--u));
+    padding: calc(0.25 * var(--u)) calc(0.5 * var(--u));
+    font-size: calc(0.5625 * var(--u));
+    font-weight: 700;
+    color: var(--trd-on-vehicle, var(--trd-on-ink));
+    background: var(--trd-vehicle, var(--trd-ink));
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+    overflow: hidden;
+    cursor: help;
+    animation: trd-enter 0.35s ease-out;
+}
+.trd-toast--up {
+    bottom: calc(0.375 * var(--u));
+    right: calc(50% + var(--trd-gap) + 0.875 * var(--u));
+}
+.trd-toast--down {
+    top: calc(0.375 * var(--u));
+    left: calc(50% + var(--trd-gap) + 0.875 * var(--u));
+}
+.trd-toast-icon {
+    flex-shrink: 0;
+    width: calc(0.8125 * var(--u));
+    height: calc(0.8125 * var(--u));
+}
+
+/* ---------- Hover details ---------- */
+.trd-tip {
+    position: absolute;
+    left: 50%;
+    z-index: 5;
+    width: max-content;
+    max-width: calc(100% - 0.5 * var(--u));
+    padding: calc(0.5 * var(--u)) calc(0.75 * var(--u));
+    font-size: calc(0.625 * var(--u));
+    color: var(--color-text);
+    background: var(--color-bg-elevated);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.5 * var(--u));
+    box-shadow: var(--shadow-lg);
+    pointer-events: none;
+}
+.trd-tip--above {
+    transform: translate(-50%, calc(-100% - 1.25 * var(--u)));
+}
+.trd-tip--below {
+    transform: translate(-50%, calc(1.25 * var(--u)));
+}
+.trd-tip-list {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: calc(0.125 * var(--u)) calc(0.625 * var(--u));
+    margin: 0;
+}
+.trd-tip-list dt {
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+.trd-tip-list dd {
+    display: flex;
+    align-items: center;
+    gap: calc(0.25 * var(--u));
+    margin: 0;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+@keyframes trd-pulse {
+    from {
+        transform: scale(0.85);
+        opacity: 0.8;
+    }
+    to {
+        transform: scale(1.35);
+        opacity: 0;
+    }
+}
+@keyframes trd-enter {
+    from {
+        opacity: 0;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .trd-dv,
+    .trd-toast,
+    .trd-station--active::after {
+        transition: none;
+        animation: none;
+    }
+}

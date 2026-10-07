@@ -9,6 +9,7 @@
                 {
                     "id": "direction-a",
                     "label": "○○方面",
+                    "heading": "up",
                     "services": [
                         {
                             "id": "my-line-direction-a",

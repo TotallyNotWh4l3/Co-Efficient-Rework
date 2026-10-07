@@ -8,10 +8,11 @@
 //         approaching : 近い。残り時間に応じてアイコンが駅へスライド
 //         atStation   : 駅の点に白いボックスが止まっている
 //         departed    : 発車直後。アイコンが右へ抜けていく
+//       縦表示では下から上へ進む(上が行き先)。位置は 100 - x% で反転して使う。
 // ===================================================
 
 import React from "react";
-import { BusFront, TrainFront } from "lucide-react";
+import { ArrowUp, BusFront, TrainFront } from "lucide-react";
 import {
     fillTemplate,
     formatCountdown,
@@ -85,14 +86,18 @@ export default function TransitLine({
                 aria-label={phaseLabel}
             >
                 <div className="trl-rail" />
-                <div className={`trl-station${phase === "atStation" ? " trl-station--active" : ""}`} />
+                {vertical && <ArrowUp className="trl-dest-arrow" aria-hidden="true" />}
+                <div
+                    className={`trl-station${phase === "atStation" ? " trl-station--active" : ""}`}
+                />
 
                 {state.vehicleKey != null && (
                     <div
                         key={state.vehicleKey}
                         className={`trl-vehicle${phase === "atStation" ? " trl-vehicle--arrived" : ""}`}
                         style={{
-                            [vertical ? "top" : "left"]: `${state.vehicleX}%`,
+                            [vertical ? "top" : "left"]:
+                                `${vertical ? 100 - state.vehicleX : state.vehicleX}%`,
                             opacity: state.vehicleOpacity,
                         }}
                     >
@@ -101,9 +106,21 @@ export default function TransitLine({
                 )}
 
                 {phase === "inbound" && (
-                    <div className="trl-toast" role="status">
+                    <div
+                        className="trl-toast"
+                        role="status"
+                        title={fillTemplate(isBus ? L.comingBus : L.comingTrain, {
+                            n: minutesLeft,
+                        })}
+                    >
                         <VehicleIcon className="trl-toast-icon" />
-                        <span>{fillTemplate(isBus ? L.comingBus : L.comingTrain, { n: minutesLeft })}</span>
+                        <span>
+                            {vertical
+                                ? fillTemplate(L.minutes, { n: minutesLeft })
+                                : fillTemplate(isBus ? L.comingBus : L.comingTrain, {
+                                      n: minutesLeft,
+                                  })}
+                        </span>
                     </div>
                 )}
             </div>

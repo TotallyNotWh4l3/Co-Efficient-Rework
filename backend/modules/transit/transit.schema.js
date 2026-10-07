@@ -15,18 +15,27 @@ export const DAY_TYPES = ["weekday", "saturday", "holiday"];
 // 英数字とハイフンのみ (小文字)。例: "hisai", "kintetsu-nagoya"
 const idSchema = z
     .string()
-    .regex(/^[a-z0-9][a-z0-9-]*$/, "id は英小文字・数字・ハイフンのみ使用できます (例: my-station)");
+    .regex(
+        /^[a-z0-9][a-z0-9-]*$/,
+        "id は英小文字・数字・ハイフンのみ使用できます (例: my-station)",
+    );
 
 // "HH:mm" (24時間表記)。深夜は 24:10 や 25:03 のように 24 以上で表す (00〜29時まで)。
 const timeSchema = z
     .string()
-    .regex(/^(?:[01]\d|2\d):[0-5]\d$/, "時刻は HH:mm 形式で入力してください (例: 07:05 / 深夜は 24:10)");
+    .regex(
+        /^(?:[01]\d|2\d):[0-5]\d$/,
+        "時刻は HH:mm 形式で入力してください (例: 07:05 / 深夜は 24:10)",
+    );
 
 // 種別キー (例: local, express, limited_express, rapid, night)。
 // 表示名は言語ファイル側で対応付けるため、ここでは形式のみ確認する。
 const typeKeySchema = z
     .string()
-    .regex(/^[a-z][a-z0-9_]*$/, "type は英小文字と _ のみ使用できます (例: local, limited_express)");
+    .regex(
+        /^[a-z][a-z0-9_]*$/,
+        "type は英小文字と _ のみ使用できます (例: local, limited_express)",
+    );
 
 const nonEmpty = z.string().trim().min(1, "空にはできません");
 
@@ -80,6 +89,9 @@ const directionSchema = z
     .object({
         id: idSchema,
         label: nonEmpty,
+        // 縦表示での電車の進行方向 (実際の路線図の向き)。up = 下から上へ、down = 上から下へ。
+        // 省略時は 1番目の方面が up、2番目以降が down。
+        heading: z.enum(["up", "down"], { error: 'heading は "up" か "down" です' }).optional(),
         services: z.array(serviceSchema).min(1, "services に1つ以上必要です"),
     })
     .strict();
