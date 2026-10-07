@@ -466,11 +466,18 @@ export default {
                 range: "範囲",
                 max: "最高",
                 min: "最低",
+                school: "授業",
+                now: "現在",
             },
 
             settings: {
                 title: "天気設定",
                 back: "戻る",
+                schoolHours: {
+                    title: "授業時間（時間別グラフに表示）",
+                    start: "開始",
+                    end: "終了",
+                },
 
                 layout: {
                     title: "表示レイアウト",

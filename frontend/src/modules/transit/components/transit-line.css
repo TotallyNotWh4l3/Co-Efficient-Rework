@@ -162,10 +162,10 @@
     box-sizing: border-box;
     /* Paper-coloured ring so the vehicle stays distinct where it overlaps the rail. */
     box-shadow: 0 0 0 calc(0.1875 * var(--u)) var(--trl-paper);
-    /* Updates arrive once per second; a linear 1s transition turns them into smooth motion. */
+    /* The icon hops every few seconds (see VEHICLE_STEP_SEC); each hop glides with ease-in-out. */
     transition:
-        left 1s linear,
-        opacity 1s linear,
+        left var(--vehicle-glide, 2.2s) ease-in-out,
+        opacity var(--vehicle-glide, 2.2s) ease-in-out,
         background 0.3s ease,
         color 0.3s ease;
     animation: trl-enter 0.4s ease-out;
@@ -321,8 +321,8 @@
     width: calc(1.5 * var(--u));
     height: calc(2 * var(--u));
     transition:
-        top 1s linear,
-        opacity 1s linear,
+        top var(--vehicle-glide, 2.2s) ease-in-out,
+        opacity var(--vehicle-glide, 2.2s) ease-in-out,
         background 0.3s ease,
         color 0.3s ease;
 }

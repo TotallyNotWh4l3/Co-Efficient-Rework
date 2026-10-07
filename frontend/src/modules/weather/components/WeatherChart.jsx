@@ -23,12 +23,22 @@ const AXIS_PADDING = 1;
  *   across ALL of these days instead of just the day currently shown, so the
  *   scale — and therefore the curve shapes — are directly comparable across
  *   days. If omitted, falls back to using just `dataset`.
+ * - schoolStart / schoolEnd: "HH:MM" — shaded school-hours band (hourly view only)
+ * - nowTime: "HH:MM" location time; showNow: draw the "now" line (selected day is today)
+ *
+ * metricInfo.id === "precip" draws chance (line, left axis, %) and amount
+ * (bars, right axis, mm) together; dataset items carry `value` (chance) and
+ * `valueSum` (amount).
  */
 export default function WeatherChart({
     dataset,
     metricInfo,
     isHourly,
     allDaysDataset,
+    schoolStart,
+    schoolEnd,
+    nowTime,
+    showNow,
 }) {
     const [hoveredIdx, setHoveredIdx] = useState(null);
     const svgRef = useRef(null);
@@ -40,6 +50,7 @@ export default function WeatherChart({
     const [box, setBox] = useState(null);
     const lang = useLanguage();
     const t = lang.modules.weather.chart;
+    const metricNames = lang.modules.weather.metrics;
 
     useEffect(() => {
         const el = wrapRef.current;
@@ -73,6 +84,12 @@ export default function WeatherChart({
     const paddingLeft = 26;
 
     const isDual = metricInfo.id === "temp" && !isHourly;
+    const isPrecip = metricInfo.id === "precip";
+    // Right strip for the amount (mm) axis labels of the combined precip chart.
+    const paddingRight = isPrecip ? 22 : 0;
+    const plotRight = width - paddingX - paddingRight;
+
+    const valueLabelSize = 8
 
     // For the hourly view, pull values from every day (when provided) so the
     // axis range reflects the whole week, not just whichever day is showing.
@@ -115,7 +132,7 @@ export default function WeatherChart({
             const x =
                 paddingX +
                 paddingLeft +
-                (idx / (dataset.length - 1)) * (width - 2 * paddingX - paddingLeft);
+                (idx / (dataset.length - 1)) * (plotRight - paddingX - paddingLeft);
             const y =
                 height -
                 paddingBottom -
@@ -137,6 +154,47 @@ export default function WeatherChart({
     // we're in dual (max/min) or single-line mode, since both are built from
     // the same idx/dataset.length formula in toPoints.
     const xGridPoints = isDual ? pointsMax : pointsSingle;
+
+    // Amount (mm) axis for the combined precip chart — scaled over the same
+    // source range as the chance axis so days stay comparable.
+    const sumVals = isPrecip
+        ? rangeSourceDatasets.flatMap((ds) => ds.map((d) => d.valueSum ?? 0))
+        : [];
+    const sumMax = isPrecip ? Math.max(1, Math.ceil(Math.max(...sumVals))) : 1;
+    const sumMid = Math.round((sumMax / 2) * 10) / 10;
+    const plotH = height - paddingTop - paddingBottom;
+    const sumToY = (v) => height - paddingBottom - (Math.min(v, sumMax) / sumMax) * plotH;
+    const barSlot = dataset.length > 1 ? (plotRight - paddingLeft) / (dataset.length - 1) : 10;
+    const barW = Math.min(14, barSlot * 0.55);
+
+    // Time markers (hourly view only): x is placed by clock time between the
+    // first and last label of the dataset.
+    const toMin = (hhmm) => {
+        const m = /^(\d{1,2}):(\d{2})/.exec(hhmm || "");
+        return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+    };
+    const firstMin = isHourly ? toMin(dataset[0].label) : null;
+    const lastMin = isHourly ? toMin(dataset[dataset.length - 1].label) : null;
+    const canPlaceTimes = firstMin !== null && lastMin !== null && lastMin > firstMin;
+    const minToX = (m) =>
+        paddingLeft + ((m - firstMin) / (lastMin - firstMin)) * (plotRight - paddingLeft);
+
+    let schoolBand = null;
+    if (canPlaceTimes) {
+        const a = toMin(schoolStart);
+        const b = toMin(schoolEnd);
+        if (a !== null && b !== null && b > a && b > firstMin && a < lastMin) {
+            schoolBand = {
+                x1: minToX(Math.max(a, firstMin)),
+                x2: minToX(Math.min(b, lastMin)),
+            };
+        }
+    }
+    const nowMin = toMin(nowTime);
+    const nowX =
+        canPlaceTimes && showNow && nowMin !== null && nowMin >= firstMin && nowMin <= lastMin
+            ? minToX(nowMin)
+            : null;
 
     const getBezierPath = (pts) => {
         if (pts.length === 0) return "";
@@ -206,21 +264,51 @@ export default function WeatherChart({
 
     const handlePointerLeave = () => setHoveredIdx(null);
 
+    // Top-left labels. Dual temp shows both lines (Max + Min); the combined
+    // precip chart shows chance + amount; everything else keeps one label.
+    const legendItems = isDual
+        ? [
+              { color: "#f87171", text: `${t.max} (${metricInfo.unit})` },
+              { color: "#60a5fa", text: `${t.min} (${metricInfo.unit})` },
+          ]
+        : isPrecip
+          ? [
+                {
+                    color: metricInfo.color,
+                    text: `${metricNames[metricInfo.labelKey]} (${metricInfo.unit})`,
+                },
+                {
+                    color: metricInfo.colorSecondary,
+                    text: `${metricNames[metricInfo.labelKeySecondary]} (${metricInfo.unitSecondary})`,
+                },
+            ]
+          : [
+                {
+                    color: metricInfo.color,
+                    text: `${metricNames[metricInfo.labelKey]} (${metricInfo.unit})`,
+                },
+            ];
+
     return (
         <div className="weather-chart">
             <div className="weather-chart__header">
                 <span className="weather-chart__title">
-                    <span
-                        className="weather-chart__dot"
-                        style={{
-                            backgroundColor: metricInfo.color,
-                            boxShadow: `0 0 calc(0.5 * var(--u)) ${metricInfo.color}`,
-                        }}
-                    ></span>
-                    {lang.modules.weather.metrics[metricInfo.labelKey]} ({metricInfo.unit})
+                    {legendItems.map((item) => (
+                        <span key={item.text} className="weather-chart__legend-item">
+                            <span
+                                className="weather-chart__dot"
+                                style={{
+                                    backgroundColor: item.color,
+                                    boxShadow: `0 0 calc(0.5 * var(--u)) ${item.color}`,
+                                }}
+                            ></span>
+                            {item.text}
+                        </span>
+                    ))}
                 </span>
                 <span className="weather-chart__range">
                     {t.range}: {clampedMinVal}-{maxVal} {metricInfo.unit}
+                    {isPrecip && ` · 0-${sumMax} ${metricInfo.unitSecondary}`}
                 </span>
             </div>
 
@@ -244,7 +332,7 @@ export default function WeatherChart({
                     <line
                         x1={paddingX + paddingLeft}
                         y1={paddingTop}
-                        x2={width - paddingX}
+                        x2={plotRight}
                         y2={paddingTop}
                         stroke="rgba(255,255,255,0.05)"
                         strokeDasharray="2 2"
@@ -252,7 +340,7 @@ export default function WeatherChart({
                     <line
                         x1={paddingX + paddingLeft}
                         y1={height - paddingBottom}
-                        x2={width - paddingX}
+                        x2={plotRight}
                         y2={height - paddingBottom}
                         stroke="rgba(255,255,255,0.12)"
                     />
@@ -264,7 +352,7 @@ export default function WeatherChart({
                         y={paddingTop + 3}
                         fill="rgba(255,255,255,0.35)"
                         fontFamily="JetBrains Mono, monospace"
-                        fontSize="8px"
+                        fontSize={valueLabelSize}
                         textAnchor="start"
                     >
                         {maxVal}
@@ -274,7 +362,7 @@ export default function WeatherChart({
                         y={height / 2 + 3}
                         fill="rgba(255,255,255,0.35)"
                         fontFamily="JetBrains Mono, monospace"
-                        fontSize="8px"
+                        fontSize={valueLabelSize}
                         textAnchor="start"
                     >
                         {midVal}
@@ -284,11 +372,92 @@ export default function WeatherChart({
                         y={height - paddingBottom - 2}
                         fill="rgba(255,255,255,0.35)"
                         fontFamily="JetBrains Mono, monospace"
-                        fontSize="8px"
+                        fontSize={valueLabelSize}
                         textAnchor="start"
                     >
                         {clampedMinVal}
                     </text>
+
+                    {isPrecip &&
+                        [
+                            [sumMax, paddingTop + 3],
+                            [sumMid, height / 2 + 3],
+                            [0, height - paddingBottom - 2],
+                        ].map(([v, y]) => (
+                            <text
+                                key={y}
+                                x={width}
+                                y={y}
+                                fill={metricInfo.colorSecondary}
+                                fillOpacity="0.7"
+                                fontFamily="JetBrains Mono, monospace"
+                                fontSize={valueLabelSize}
+                                textAnchor="end"
+                            >
+                                {v}
+                            </text>
+                        ))}
+
+                    {/* School hours: shaded band between start and end */}
+                    {schoolBand && (
+                        <g>
+                            <rect
+                                x={schoolBand.x1}
+                                y={paddingTop}
+                                width={schoolBand.x2 - schoolBand.x1}
+                                height={plotH}
+                                fill="rgba(52,211,153,0.10)"
+                            />
+                            <line
+                                x1={schoolBand.x1}
+                                y1={paddingTop}
+                                x2={schoolBand.x1}
+                                y2={height - paddingBottom}
+                                stroke="rgba(52,211,153,0.45)"
+                                strokeDasharray="3 2"
+                            />
+                            <line
+                                x1={schoolBand.x2}
+                                y1={paddingTop}
+                                x2={schoolBand.x2}
+                                y2={height - paddingBottom}
+                                stroke="rgba(52,211,153,0.45)"
+                                strokeDasharray="3 2"
+                            />
+                            {schoolBand.x2 - schoolBand.x1 > 40 && (
+                                <text
+                                    x={schoolBand.x1 + 3}
+                                    y={paddingTop + 8}
+                                    fill="rgba(52,211,153,0.8)"
+                                    fontFamily="JetBrains Mono, monospace"
+                                    fontSize="0px"
+                                >
+                                    {t.school} {schoolStart}-{schoolEnd}
+                                </text>
+                            )}
+                        </g>
+                    )}
+
+                    {/* Precipitation amount bars (behind the chance line) */}
+                    {isPrecip &&
+                        dataset.map((d, i) => {
+                            const v = d.valueSum ?? 0;
+                            if (v <= 0) return null;
+                            const x = pointsSingle[i].x;
+                            const y = sumToY(v);
+                            return (
+                                <rect
+                                    key={i}
+                                    x={x - barW / 2}
+                                    y={y}
+                                    width={barW}
+                                    height={height - paddingBottom - y}
+                                    rx="1"
+                                    fill={metricInfo.colorSecondary}
+                                    fillOpacity={hoveredIdx === i ? 0.9 : 0.55}
+                                />
+                            );
+                        })}
 
                     {isDual ? (
                         <>
@@ -296,6 +465,7 @@ export default function WeatherChart({
                             {areaMaxD && <path d={areaMaxD} fill="url(#grad-temp-max)" />}
                         </>
                     ) : (
+                        !isPrecip &&
                         areaSingleD && <path d={areaSingleD} fill={`url(#grad-${metricInfo.id})`} />
                     )}
 
@@ -344,6 +514,31 @@ export default function WeatherChart({
                         )
                     )}
 
+                    {/* Current time */}
+                    {nowX !== null && (
+                        <g>
+                            <line
+                                x1={nowX}
+                                y1={paddingTop - 2}
+                                x2={nowX}
+                                y2={height - paddingBottom}
+                                stroke="#fbbf24"
+                                strokeWidth="1.5"
+                            />
+                            <circle cx={nowX} cy={paddingTop - 2} r="2.5" fill="#fbbf24" />
+                            <text
+                                x={nowX}
+                                y={paddingTop - 5}
+                                fill="#fbbf24"
+                                fontFamily="JetBrains Mono, monospace"
+                                fontSize="10px"
+                                textAnchor={nowX > width - 30 ? "end" : "middle"}
+                            >
+                                {nowTime}
+                            </text>
+                        </g>
+                    )}
+
                     {renderPoints.map((pt, idx) => {
                         const isHovered = hoveredIdx === pt.origIdx;
                         return (
@@ -386,7 +581,7 @@ export default function WeatherChart({
                                         y={height - 3}
                                         fill="rgba(255,255,255,0.4)"
                                         fontFamily="JetBrains Mono, monospace"
-                                        fontSize="8px"
+                                        fontSize={valueLabelSize}
                                         textAnchor="middle"
                                     >
                                         {pt.label}
@@ -404,7 +599,7 @@ export default function WeatherChart({
                     <rect
                         x={paddingX + paddingLeft}
                         y={0}
-                        width={width - paddingX - paddingLeft}
+                        width={plotRight - paddingX - paddingLeft}
                         height={height}
                         fill="transparent"
                         style={{ cursor: "crosshair" }}
@@ -438,6 +633,33 @@ export default function WeatherChart({
                                     <span className="weather-chart__tooltip-name">{t.min}:</span>
                                     <span className="weather-chart__tooltip-num">
                                         {dataset[hoveredIdx].valueMin}°C
+                                    </span>
+                                </div>
+                            </div>
+                        ) : isPrecip ? (
+                            <div className="weather-chart__tooltip-dual">
+                                <div className="weather-chart__tooltip-row">
+                                    <span
+                                        className="weather-chart__tooltip-swatch"
+                                        style={{ backgroundColor: metricInfo.color }}
+                                    ></span>
+                                    <span className="weather-chart__tooltip-name">
+                                        {metricNames[metricInfo.labelKey]}:
+                                    </span>
+                                    <span className="weather-chart__tooltip-num">
+                                        {dataset[hoveredIdx].value}%
+                                    </span>
+                                </div>
+                                <div className="weather-chart__tooltip-row">
+                                    <span
+                                        className="weather-chart__tooltip-swatch"
+                                        style={{ backgroundColor: metricInfo.colorSecondary }}
+                                    ></span>
+                                    <span className="weather-chart__tooltip-name">
+                                        {metricNames[metricInfo.labelKeySecondary]}:
+                                    </span>
+                                    <span className="weather-chart__tooltip-num">
+                                        {dataset[hoveredIdx].valueSum ?? 0}mm
                                     </span>
                                 </div>
                             </div>

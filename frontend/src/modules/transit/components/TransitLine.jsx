@@ -19,6 +19,7 @@ import {
     getLaneState,
     getMinuteTimer,
     STATION_X,
+    VEHICLE_GLIDE_MS,
 } from "../utils/transitLane";
 
 import "./transit-line.css";
@@ -99,6 +100,7 @@ export default function TransitLine({
                             [vertical ? "top" : "left"]:
                                 `${vertical ? 100 - state.vehicleX : state.vehicleX}%`,
                             opacity: state.vehicleOpacity,
+                            "--vehicle-glide": `${VEHICLE_GLIDE_MS}ms`,
                         }}
                     >
                         <VehicleIcon className="trl-vehicle-icon" />

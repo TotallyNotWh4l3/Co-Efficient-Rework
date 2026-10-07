@@ -17,7 +17,7 @@ import "../weather.css";
 export default function WeatherMetricSelector({ activeMetric, onSelectMetric }) {
     return (
         <div className="weather-metrics">
-            {METRIC_DEFS.map((metric) => {
+            {METRIC_DEFS.filter((m) => m.selectable !== false).map((metric) => {
                 const isActive = activeMetric === metric.id;
                 const IconComp = metric.icon;
                 return (

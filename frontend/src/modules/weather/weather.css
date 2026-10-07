@@ -699,6 +699,13 @@
     letter-spacing: 0.03em;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    gap: calc(0.125 * var(--u)) calc(0.75 * var(--u));
+}
+
+.weather-chart__legend-item {
+    display: inline-flex;
+    align-items: center;
     gap: calc(0.375 * var(--u));
 }
 
@@ -1246,4 +1253,30 @@
         align-items: center;
         text-align: center;
     }
+}
+
+/* School-hours time pickers in the weather settings panel */
+.weather-settings__time-row {
+    display: flex;
+    gap: calc(0.75 * var(--u));
+}
+
+.weather-settings__time-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.25 * var(--u));
+    font-size: calc(0.625 * var(--u));
+    color: var(--color-text-muted);
+}
+
+.weather-settings__time-field input {
+    padding: calc(0.375 * var(--u)) calc(0.5 * var(--u));
+    border-radius: calc(0.5 * var(--u));
+    border: var(--hairline) solid var(--color-border);
+    background: var(--color-overlay-light);
+    color: var(--color-text);
+    font-family: "JetBrains Mono", monospace;
+    font-size: calc(0.75 * var(--u));
+    pointer-events: auto;
 }

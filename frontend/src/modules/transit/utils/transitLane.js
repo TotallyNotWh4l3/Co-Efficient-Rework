@@ -35,6 +35,19 @@ export const LANE_TIMING = {
     busStop: { toastSec: 10 * 60, appearSec: 90, stopSec: 20, heldSec: 45 },
 };
 
+// ---------------------------------------------------
+// ★ EDIT HERE ★  Vehicle icon movement (line view).
+//   Instead of creeping a hair every second (which looks janky when the train is slow),
+//   the icon HOPS: it holds still, then glides a bigger distance in one smooth move.
+//   VEHICLE_STEP_SEC : seconds between hops (bigger = bigger, rarer hops)
+//   VEHICLE_GLIDE_MS : how long each hop takes to glide (keep it well under the step)
+// ---------------------------------------------------
+export const VEHICLE_STEP_SEC = 6;
+export const VEHICLE_GLIDE_MS = 2200;
+
+// Rounds elapsed seconds down to the last hop boundary.
+const hopped = (elapsedSec) => Math.floor(elapsedSec / VEHICLE_STEP_SEC) * VEHICLE_STEP_SEC;
+
 // Minutes-only timer: at or under this many seconds it shows "Arriving Soon" instead of a number.
 export const ARRIVING_SOON_SEC = 90;
 
@@ -90,10 +103,10 @@ export function getLaneState(direction, mode, now) {
         phase = "atStation";
     } else if (arrivalSec <= timing.appearSec) {
         phase = "approaching";
-        progress = 1 - arrivalSec / timing.appearSec;
+        progress = hopped(timing.appearSec - arrivalSec) / timing.appearSec;
     } else if (last && t - last.at < timing.heldSec * 1000) {
         phase = "departed";
-        progress = (t - last.at) / (timing.heldSec * 1000);
+        progress = hopped((t - last.at) / 1000) / timing.heldSec;
     } else if (arrivalSec <= timing.toastSec) {
         phase = "inbound";
     }

@@ -13,6 +13,7 @@ import dashboardService from "./dashboardService";
 import { getSSEUrl } from "../../shared/sse/sseUrl";
 import { useRealtime } from "../../shared/sse/RealtimeContext";
 import { getMinSize, growToMinSize } from "../../common/ModuleHost/moduleSizes";
+import { reflowModules } from "../../../../shared/utils/grid";
 
 const EMPTY_DASHBOARD = {
     id: "main",
@@ -127,10 +128,38 @@ export function useDashboardState(user) {
     // =====================================================
     // Layout
     // =====================================================
+    const layoutRequestRef = useRef(0);
     const updateLayout = useCallback(async (key, value) => {
-        setDashboard((prev) => ({ ...prev, layout: { ...prev.layout, [key]: value } }));
+        setDashboard((prev) => {
+            const layout = { ...prev.layout, [key]: value };
+            if (key !== "columns" && key !== "rows") return { ...prev, layout };
+            // Columns/rows change what every row-major cell index means, so
+            // re-flow the modules locally in the same update — otherwise they
+            // render at the wrong cells (overlapping) until the server replies.
+            const result = reflowModules(
+                prev.modules,
+                prev.layout.columns,
+                layout.columns,
+                layout.rows,
+            );
+            return {
+                ...prev,
+                layout: { ...layout, rows: result.rows },
+                modules: prev.modules.map((m, i) => ({
+                    ...m,
+                    cellIndex: result.modules[i].cellIndex,
+                    layout: result.modules[i].layout,
+                })),
+            };
+        });
+
+        const requestId = (layoutRequestRef.current += 1);
         try {
-            await dashboardService.updateLayout({ [key]: value });
+            const state = await dashboardService.updateLayout({ [key]: value });
+            // Slider drags fire many requests; only the newest response may win.
+            if (requestId === layoutRequestRef.current && state?.modules) {
+                setDashboard((prev) => ({ ...prev, layout: state.layout, modules: state.modules }));
+            }
         } catch (e) {
             console.error("[useDashboard] Failed to update layout:", e);
         }

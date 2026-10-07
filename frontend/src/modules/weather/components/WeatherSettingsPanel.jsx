@@ -12,7 +12,14 @@ import "../weather.css";
 
 const LAYOUT_MODES = ["combined", "current", "forecast"];
 
-export default function WeatherSettingsPanel({ layoutMode, onLayoutModeChange, onClose }) {
+export default function WeatherSettingsPanel({
+    layoutMode,
+    onLayoutModeChange,
+    schoolStart,
+    schoolEnd,
+    onSchoolTimeChange,
+    onClose,
+}) {
     const lang = useLanguage();
     const t = lang.modules.weather.settings;
 
@@ -58,6 +65,34 @@ export default function WeatherSettingsPanel({ layoutMode, onLayoutModeChange, o
                                 </button>
                             );
                         })}
+                    </div>
+                </div>
+
+                <div className="weather-settings__group">
+                    <label className="weather-settings__group-label">{t.schoolHours.title}</label>
+                    <div className="weather-settings__time-row">
+                        <label className="weather-settings__time-field">
+                            <span>{t.schoolHours.start}</span>
+                            <input
+                                type="time"
+                                value={schoolStart}
+                                onChange={(e) =>
+                                    onSchoolTimeChange &&
+                                    onSchoolTimeChange("schoolStart", e.target.value)
+                                }
+                            />
+                        </label>
+                        <label className="weather-settings__time-field">
+                            <span>{t.schoolHours.end}</span>
+                            <input
+                                type="time"
+                                value={schoolEnd}
+                                onChange={(e) =>
+                                    onSchoolTimeChange &&
+                                    onSchoolTimeChange("schoolEnd", e.target.value)
+                                }
+                            />
+                        </label>
                     </div>
                 </div>
 

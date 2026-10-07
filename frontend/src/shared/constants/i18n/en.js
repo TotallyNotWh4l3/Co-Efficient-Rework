@@ -428,9 +428,16 @@ export default {
                 range: "Range",
                 max: "Max",
                 min: "Min",
+                school: "School",
+                now: "Now",
             },
             settings: {
                 title: "Weather Settings",
+                schoolHours: {
+                    title: "School hours (shown on the hourly chart)",
+                    start: "Starts",
+                    end: "Ends",
+                },
                 back: "Back",
                 layout: {
                     title: "Layout",

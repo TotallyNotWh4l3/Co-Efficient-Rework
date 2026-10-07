@@ -262,10 +262,10 @@
     box-sizing: border-box;
     box-shadow: 0 0 0 calc(0.1875 * var(--u)) var(--trd-paper);
     cursor: help;
-    /* Updates arrive once per second; a linear 1s transition turns them into smooth motion. */
+    /* The icon hops every few seconds (see VEHICLE_STEP_SEC); each hop glides with ease-in-out. */
     transition:
-        top 1s linear,
-        opacity 1s linear,
+        top var(--vehicle-glide, 2.2s) ease-in-out,
+        opacity var(--vehicle-glide, 2.2s) ease-in-out,
         background 0.3s ease,
         color 0.3s ease;
     animation: trd-enter 0.4s ease-out;

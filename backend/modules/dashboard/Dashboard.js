@@ -7,7 +7,7 @@
 
 import { run, get, all } from "../../shared/db/dbHelpers.js";
 import { DEFAULT_DASHBOARD } from "../../../shared/constants/defaults/defaultDashboard.js";
-import { footprint, canPlaceAt } from "../../../shared/utils/grid.js";
+import { footprint, canPlaceAt, reflowModules } from "../../../shared/utils/grid.js";
 
 function parseModuleRow(row) {
     return {
@@ -142,11 +142,57 @@ const Dashboard = {
 
         if (fields.length === 0) return Dashboard.getState(userId);
 
+        // Changing columns/rows changes what every stored cell_index means
+        // (it is row-major), so re-flow the modules first and keep them in
+        // sync with the new grid. Rows may be raised above the requested
+        // value if the modules genuinely don't fit.
+        let changedModules = [];
+        if (updates.columns !== undefined || updates.rows !== undefined) {
+            const before = await get(
+                `SELECT columns, rows FROM dashboard_settings WHERE user_id = ?`,
+                [userId],
+            );
+            const oldColumns = before?.columns ?? 3;
+            const newColumns = updates.columns ?? oldColumns;
+            const requestedRows = updates.rows ?? before?.rows ?? 4;
+
+            const moduleRows = await all(`SELECT * FROM dashboard_modules WHERE user_id = ?`, [
+                userId,
+            ]);
+            const current = moduleRows.map(parseModuleRow);
+            const result = reflowModules(current, oldColumns, newColumns, requestedRows);
+
+            for (const next of result.modules) {
+                const prev = current.find((m) => m.id === next.id);
+                if (
+                    prev.cellIndex !== next.cellIndex ||
+                    JSON.stringify(prev.layout) !== JSON.stringify(next.layout)
+                ) {
+                    await run(
+                        `UPDATE dashboard_modules SET layout_json = ?, cell_index = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?`,
+                        [JSON.stringify(next.layout), next.cellIndex, next.id, userId],
+                    );
+                    changedModules.push(next.id);
+                }
+            }
+
+            if (result.rows !== requestedRows) {
+                const i = fields.findIndex((f) => f.startsWith("rows"));
+                if (i >= 0) values[i] = result.rows;
+                else {
+                    fields.push("rows = ?");
+                    values.push(result.rows);
+                }
+            }
+        }
+
         fields.push("updated_at = datetime('now')");
         values.push(userId);
 
         await run(`UPDATE dashboard_settings SET ${fields.join(", ")} WHERE user_id = ?`, values);
-        return Dashboard.getState(userId);
+        const state = await Dashboard.getState(userId);
+        state.changedModuleIds = changedModules;
+        return state;
     },
 
     /**
@@ -201,7 +247,19 @@ const Dashboard = {
         await run(
             `INSERT INTO dashboard_modules (id, user_id, type, settings_json, layout_json, cell_index)
              VALUES (?, ?, ?, ?, ?, ?)`,
-            [id, userId, type, JSON.stringify(settings ?? {}), JSON.stringify({ w, h }), cellIndex],
+            [
+                id,
+                userId,
+                type,
+                JSON.stringify(settings ?? {}),
+                JSON.stringify({
+                    w,
+                    h,
+                    hc: cellIndex % columns,
+                    hr: Math.floor(cellIndex / columns),
+                }),
+                cellIndex,
+            ],
         );
 
         const row = await get(`SELECT * FROM dashboard_modules WHERE id = ? AND user_id = ?`, [
@@ -278,7 +336,17 @@ const Dashboard = {
 
         await run(
             `UPDATE dashboard_modules SET layout_json = ?, cell_index = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?`,
-            [JSON.stringify({ w, h }), cellIndex, moduleId, userId],
+            [
+                JSON.stringify({
+                    w,
+                    h,
+                    hc: cellIndex % columns,
+                    hr: Math.floor(cellIndex / columns),
+                }),
+                cellIndex,
+                moduleId,
+                userId,
+            ],
         );
 
         const updated = await get(`SELECT * FROM dashboard_modules WHERE id = ? AND user_id = ?`, [
@@ -335,8 +403,19 @@ const Dashboard = {
         if (!check.ok) return { error: check.reason };
 
         await run(
-            `UPDATE dashboard_modules SET cell_index = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?`,
-            [cellIndex, moduleId, userId],
+            `UPDATE dashboard_modules SET cell_index = ?, layout_json = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?`,
+            [
+                cellIndex,
+                // A deliberate move also becomes the module's new "home".
+                JSON.stringify({
+                    w,
+                    h,
+                    hc: cellIndex % columns,
+                    hr: Math.floor(cellIndex / columns),
+                }),
+                moduleId,
+                userId,
+            ],
         );
 
         const updated = await get(`SELECT * FROM dashboard_modules WHERE id = ? AND user_id = ?`, [

@@ -188,18 +188,25 @@ export const METRIC_DEFS = [
         icon: Droplets,
     },
     {
+        // Combined chart: chance (line, %) + amount (bars, mm) in one graph.
+        id: "precip",
+        labelKey: "precipChance",
+        labelKeySecondary: "precipAmount",
+        color: "#a78bfa",
+        colorSecondary: "#60a5fa",
+        unit: "%",
+        unitSecondary: "mm",
+        icon: CloudDrizzle,
+    },
+    {
+        // Not a selector button any more (merged into "precip"); the
+        // current-weather view still reads its colour/icon from here.
         id: "precipChance",
         labelKey: "precipChance",
         color: "#a78bfa",
         unit: "%",
         icon: CloudDrizzle,
-    },
-    {
-        id: "precipSum",
-        labelKey: "precipAmount",
-        color: "#60a5fa",
-        unit: "mm",
-        icon: CloudRain,
+        selectable: false,
     },
     {
         id: "windSpeed",

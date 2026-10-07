@@ -18,6 +18,7 @@ import {
     getLaneState,
     getMinuteTimer,
     STATION_X,
+    VEHICLE_GLIDE_MS,
 } from "../utils/transitLane";
 
 import "./transit-diagram.css";
@@ -241,7 +242,11 @@ export default function TransitDiagram({
                                 className={`trd-dv trd-dv--${it.heading} trd-t--${it.dep.type}${
                                     it.state.phase === "atStation" ? " trd-dv--arrived" : ""
                                 }`}
-                                style={{ top: `${it.pos}%`, opacity: it.state.vehicleOpacity }}
+                                style={{
+                                    top: `${it.pos}%`,
+                                    opacity: it.state.vehicleOpacity,
+                                    "--vehicle-glide": `${VEHICLE_GLIDE_MS}ms`,
+                                }}
                                 {...hoverProps(key)}
                             >
                                 <VehicleIcon className="trd-dv-icon" />

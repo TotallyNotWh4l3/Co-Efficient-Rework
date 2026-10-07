@@ -24,6 +24,9 @@ export default function WeatherModule({
     hourlyByDay = {},
     layoutMode = "combined",
     onLayoutModeChange,
+    schoolStart = "08:30",
+    schoolEnd = "15:30",
+    onSchoolTimeChange,
     onRemove,
 }) {
     const [activeTab, setActiveTab] = useState("hourly");
@@ -54,10 +57,16 @@ export default function WeatherModule({
     // value) keeps the original combined behavior.
     const showCombinedCurrent = localLayoutMode !== "current" && localLayoutMode !== "forecast";
 
+    // The combined precipitation chart plots chance as its main line (the
+    // amount rides along as valueSum); every other metric reads its own key.
+    const pickValue = (item) =>
+        activeMetric === "precip" ? item.precipChance : item[activeMetric];
+
     const mapHourlyDay = (items) =>
         (items || []).map((item) => ({
             label: item.time,
-            value: item[activeMetric],
+            value: pickValue(item),
+            valueSum: item.precipSum,
             valueMax: item.maxTemp,
             valueMin: item.minTemp,
         }));
@@ -67,7 +76,8 @@ export default function WeatherModule({
             ? mapHourlyDay(hourlyByDay[selectedDayIdx])
             : dailyList.map((item) => ({
                   label: item.dayLabel,
-                  value: item[activeMetric],
+                  value: pickValue(item),
+                  valueSum: item.precipSum,
                   valueMax: item.maxTemp,
                   valueMin: item.minTemp,
               }));
@@ -146,6 +156,11 @@ export default function WeatherModule({
                         chartDataset={chartDataset}
                         allDaysHourlyDataset={allDaysHourlyDataset}
                         timeString={time}
+                        schoolStart={schoolStart}
+                        schoolEnd={schoolEnd}
+                        nowTime={time}
+                        // dailyList[0] is today; the "now" line only makes sense there.
+                        showNow={selectedDayIdx === 0}
                     />
                 )}
             </div>
@@ -154,6 +169,9 @@ export default function WeatherModule({
                 <WeatherSettingsPanel
                     layoutMode={localLayoutMode}
                     onLayoutModeChange={handleLayoutModeChange}
+                    schoolStart={schoolStart}
+                    schoolEnd={schoolEnd}
+                    onSchoolTimeChange={onSchoolTimeChange}
                     onClose={() => setShowSettings(false)}
                 />
             )}

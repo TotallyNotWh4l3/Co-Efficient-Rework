@@ -14,7 +14,14 @@ const dashboardController = {
     async getState(req, res) {
         try {
             await Dashboard.ensureSeeded(req.user.id);
-            res.json(await Dashboard.getState(req.user.id));
+            // Self-heal layouts left overlapping / off-grid by earlier column
+            // changes: a same-size update re-flows only modules that don't fit.
+            const current = await Dashboard.getState(req.user.id);
+            const { changedModuleIds, ...healed } = await Dashboard.updateLayout(req.user.id, {
+                columns: current.layout.columns,
+            });
+            void changedModuleIds;
+            res.json(healed);
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: "Failed to load dashboard." });
@@ -26,7 +33,17 @@ const dashboardController = {
     // PATCH /api/dashboard/layout
     async updateLayout(req, res) {
         try {
-            const state = await Dashboard.updateLayout(req.user.id, req.body);
+            const { changedModuleIds = [], ...state } = await Dashboard.updateLayout(
+                req.user.id,
+                req.body,
+            );
+            // Re-flowing after a column/row change can move or resize modules —
+            // push those too so other tabs don't keep the old positions.
+            for (const module of state.modules) {
+                if (changedModuleIds.includes(module.id)) {
+                    broadcastToUser(req.user.id, "dashboard:module-updated", module);
+                }
+            }
             broadcastToUser(req.user.id, "dashboard:layout-updated", state.layout);
             res.json(state);
         } catch (error) {

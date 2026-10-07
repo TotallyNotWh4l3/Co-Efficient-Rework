@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: WeatherForecastSection.jsx
 // 作成日: 2026/08/27
@@ -32,6 +31,10 @@ export default function WeatherForecastSection({
     // holds for the 7-day hourly forecast.
     allDaysHourlyDataset,
     timeString,
+    schoolStart,
+    schoolEnd,
+    nowTime,
+    showNow,
 }) {
     const lang = useLanguage();
     const t = lang.modules.weather.forecast;
@@ -44,10 +47,7 @@ export default function WeatherForecastSection({
                 <span className="weather-section-title__rule"></span>
             </div>
 
-            <WeatherMetricSelector
-                activeMetric={activeMetric}
-                onSelectMetric={onSelectMetric}
-            />
+            <WeatherMetricSelector activeMetric={activeMetric} onSelectMetric={onSelectMetric} />
 
             <WeatherDailyGrid
                 dailyList={dailyList}
@@ -63,8 +63,12 @@ export default function WeatherForecastSection({
                 metricInfo={activeMetricInfo}
                 isHourly={activeTab === "hourly"}
                 allDaysDataset={activeTab === "hourly" ? allDaysHourlyDataset : undefined}
+                schoolStart={schoolStart}
+                schoolEnd={schoolEnd}
+                nowTime={nowTime}
+                showNow={showNow}
             />
-            
+
             {/* <div className="weather-updated">
                 <div className="weather-updated__inner">
                     <Clock className="weather-updated__icon" />

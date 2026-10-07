@@ -14,7 +14,10 @@ import { useSettings } from "../settings/useSettings";
 import { mapWeatherResponse } from "./utils/mapWeatherResponse";
 import "./weather.css";
 import { useLanguage } from "../settings/useLanguage";
-// ...
+
+// Used until a school start/end time is chosen in the module's settings.
+const DEFAULT_SCHOOL_START = "08:30";
+const DEFAULT_SCHOOL_END = "15:30";
 
 /**
  * Data-wiring layer for the weather module.
@@ -67,6 +70,10 @@ export default function WeatherModuleContainer({ module }) {
     const handleLayoutModeChange = (mode) => {
         updateModuleSettings(module.id, "view", mode);
         ensureModuleMinSize(module.id, mode);
+    };
+
+    const handleSchoolTimeChange = (key, value) => {
+        updateModuleSettings(module.id, key, value);
     };
 
     const handleRemove = () => {
@@ -125,6 +132,9 @@ export default function WeatherModuleContainer({ module }) {
             hourlyByDay={mapped.hourlyByDay}
             layoutMode={module.settings?.view ?? "combined"}
             onLayoutModeChange={handleLayoutModeChange}
+            schoolStart={module.settings?.schoolStart ?? DEFAULT_SCHOOL_START}
+            schoolEnd={module.settings?.schoolEnd ?? DEFAULT_SCHOOL_END}
+            onSchoolTimeChange={handleSchoolTimeChange}
             onRemove={handleRemove}
         />
     );
