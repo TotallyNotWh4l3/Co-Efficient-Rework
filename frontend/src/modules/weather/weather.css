@@ -115,18 +115,7 @@
     border: var(--hairline) solid rgba(255, 255, 255, 0.2);
     border-radius: calc(0.5 * var(--u));
     padding: calc(0.25 * var(--u)) calc(0.625 * var(--u)) calc(0.25 * var(--u)) calc(0.5 * var(--u));
-    transition: background 0.2s ease;
-    cursor: pointer;
     font-family: inherit;
-}
-
-.weather-header__location:hover {
-    background: rgba(0, 0, 0, 0.8);
-}
-
-.weather-header__location[data-state="open"] {
-    background: rgba(0, 0, 0, 0.8);
-    border-color: rgba(255, 255, 255, 0.35);
 }
 
 .weather-header__pin-icon {

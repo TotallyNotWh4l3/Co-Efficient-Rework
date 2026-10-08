@@ -60,6 +60,7 @@ export default function ModulePositionPreview({
     // { id, w, h, ok, validW, validH } — w/h is what the pointer asks for,
     // validW/validH the last size that fit (what the block actually shows).
     const [resize, setResize] = useState(null);
+    const [deleteMode, setDeleteMode] = useState(false); // when on, clicking a module targets it for removal
     const [confirmRemoveId, setConfirmRemoveId] = useState(null); // module awaiting "remove?" confirmation
     const resizingRef = useRef(false); // set synchronously so a native drag can't start mid-resize
 
@@ -123,7 +124,20 @@ export default function ModulePositionPreview({
         }
     };
 
-    // ---------- Remove (trash button -> inline confirm) ----------
+    // ---------- Delete mode ----------
+    // Removing happens in a mode of its own, with the confirmation shown
+    // below the grid, so it works no matter how small a module's box is.
+    const toggleDeleteMode = () => {
+        setDeleteMode((on) => !on);
+        setSelectedId(null);
+        setConfirmRemoveId(null);
+        setHover(null);
+        setMessage(null);
+    };
+
+    const pendingRemove = deleteMode ? modules.find((m) => m.id === confirmRemoveId) : null;
+
+    // ---------- Remove (delete mode -> confirm bar) ----------
     const confirmRemove = async (module) => {
         setConfirmRemoveId(null);
         try {
@@ -251,7 +265,21 @@ export default function ModulePositionPreview({
         setMessage(null);
     };
 
+    // A click on a module: select it for moving, or (delete mode) target it for removal.
+    const activate = (module) => {
+        if (deleteMode) {
+            setConfirmRemoveId((prev) => (prev === module.id ? null : module.id));
+            setMessage(null);
+            return;
+        }
+        toggleSelected(module);
+    };
+
     const handleGridClick = (event) => {
+        if (deleteMode) {
+            setConfirmRemoveId(null);
+            return;
+        }
         if (!selectedId || drag || !active) return;
         attemptMove(active, computeTarget(cellFromEvent(event)));
     };
@@ -288,6 +316,18 @@ export default function ModulePositionPreview({
 
     return (
         <div className="mpp">
+            <div className="mpp__toolbar">
+                <button
+                    type="button"
+                    className={`mpp__mode-btn${deleteMode ? " mpp__mode-btn--on" : ""}`}
+                    aria-pressed={deleteMode}
+                    onClick={toggleDeleteMode}
+                >
+                    <Trash2 size={14} />
+                    <span>{deleteMode ? copy.deleteModeDone : copy.deleteMode}</span>
+                </button>
+            </div>
+
             <div
                 ref={gridRef}
                 className="mpp__grid"
@@ -336,26 +376,28 @@ export default function ModulePositionPreview({
                                 `mpp__module--${module.type}`,
                                 isSelected ? "mpp__module--selected" : "",
                                 isDragging ? "mpp__module--dragging" : "",
+                                deleteMode ? "mpp__module--deletable" : "",
+                                deleteMode && confirmRemoveId === module.id ? "mpp__module--pending-delete" : "",
                                 isResizing ? "mpp__module--resizing" : "",
                             ].join(" ")}
                             style={{
                                 gridColumn: `${col + 1} / span ${w}`,
                                 gridRow: `${row + 1} / span ${h}`,
                             }}
-                            draggable={!resize}
+                            draggable={!resize && !deleteMode}
                             role="button"
                             tabIndex={0}
-                            aria-pressed={isSelected}
+                            aria-pressed={deleteMode ? confirmRemoveId === module.id : isSelected}
                             onDragStart={(event) => handleDragStart(event, module)}
                             onDragEnd={handleDragEnd}
                             onClick={(event) => {
                                 event.stopPropagation();
-                                toggleSelected(module);
+                                activate(module);
                             }}
                             onKeyDown={(event) => {
                                 if (event.key === "Enter" || event.key === " ") {
                                     event.preventDefault();
-                                    toggleSelected(module);
+                                    activate(module);
                                 }
                             }}
                         >
@@ -366,51 +408,7 @@ export default function ModulePositionPreview({
                                 </span>
                             </div>
 
-                            {confirmRemoveId === module.id ? (
-                                <div
-                                    className="mpp__confirm"
-                                    role="alertdialog"
-                                    onClick={(event) => event.stopPropagation()}
-                                >
-                                    <span className="mpp__confirm-text">
-                                        {copy.removeConfirm}
-                                    </span>
-                                    <div className="mpp__confirm-actions">
-                                        <button
-                                            type="button"
-                                            className="mpp__icon-btn mpp__icon-btn--danger"
-                                            title={copy.removeYes}
-                                            onClick={() => confirmRemove(module)}
-                                        >
-                                            <Check size={14} />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="mpp__icon-btn"
-                                            title={copy.removeNo}
-                                            onClick={() => setConfirmRemoveId(null)}
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <button
-                                    type="button"
-                                    className="mpp__remove"
-                                    title={copy.remove}
-                                    aria-label={copy.remove}
-                                    draggable={false}
-                                    onClick={(event) => {
-                                        event.stopPropagation();
-                                        setConfirmRemoveId(module.id);
-                                        setSelectedId(null);
-                                    }}
-                                >
-                                    <Trash2 size={13} />
-                                </button>
-                            )}
-
+                            {!deleteMode && (
                             <span
                                 className="mpp__grip"
                                 role="presentation"
@@ -426,6 +424,7 @@ export default function ModulePositionPreview({
                             >
                                 <span className="mpp__grip-dots" />
                             </span>
+                            )}
                         </div>
                     );
                 })}
@@ -451,6 +450,32 @@ export default function ModulePositionPreview({
                 )}
             </div>
 
+            {pendingRemove && (
+                <div className="mpp__delete-bar" role="alertdialog">
+                    <span className="mpp__delete-text">
+                        {(copy.deleteConfirm ?? "").replace("{name}", labelFor(pendingRemove))}
+                    </span>
+                    <div className="mpp__confirm-actions">
+                        <button
+                            type="button"
+                            className="mpp__bar-btn mpp__bar-btn--danger"
+                            onClick={() => confirmRemove(pendingRemove)}
+                        >
+                            <Check size={14} />
+                            <span>{copy.removeYes}</span>
+                        </button>
+                        <button
+                            type="button"
+                            className="mpp__bar-btn"
+                            onClick={() => setConfirmRemoveId(null)}
+                        >
+                            <X size={14} />
+                            <span>{copy.removeNo}</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="mpp__footer">
                 <span className="mpp__caption">
                     {copy.gridLabel} {columns}×{rows}
@@ -466,7 +491,9 @@ export default function ModulePositionPreview({
                     role="status"
                 >
                     {message ??
-                        (selectedId
+                        (deleteMode
+                            ? copy.deleteHint
+                            : selectedId
                             ? (copy.selectedHint)
                             : (copy.hint))}
                 </span>

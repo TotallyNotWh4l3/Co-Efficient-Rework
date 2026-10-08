@@ -7,11 +7,11 @@
 
 import React, { useState, useEffect } from "react";
 import WeatherHeader from "./components/WeatherHeader";
+import CollapsibleHeader from "../../common/ModuleHost/CollapsibleHeader";
 import WeatherCurrentSummary from "./components/WeatherCurrentSummary";
 import WeatherCurrentView from "./components/WeatherCurrentView";
 import WeatherStatsRow from "./components/WeatherStatsRow";
 import WeatherForecastSection from "./components/WeatherForecastSection";
-import WeatherSettingsPanel from "./components/WeatherSettingsPanel";
 import { getWeatherGradient } from "./utils/weatherHelpers";
 import "./weather.css";
 
@@ -23,16 +23,14 @@ export default function WeatherModule({
     dailyList = [],
     hourlyByDay = {},
     layoutMode = "combined",
-    onLayoutModeChange,
     schoolStart = "08:30",
     schoolEnd = "15:30",
-    onSchoolTimeChange,
-    onRemove,
+    headerCollapsed = false,
+    onToggleHeader,
 }) {
     const [activeTab, setActiveTab] = useState("hourly");
     const [activeMetric, setActiveMetric] = useState("temp");
     const [selectedDayIdx, setSelectedDayIdx] = useState(0);
-    const [showSettings, setShowSettings] = useState(false);
     const [localLayoutMode, setLocalLayoutMode] = useState(layoutMode);
 
     useEffect(() => {
@@ -94,21 +92,14 @@ export default function WeatherModule({
                   .map((dayIdx) => mapHourlyDay(hourlyByDay[dayIdx]))
             : undefined;
 
-    const handleLayoutModeChange = (mode) => {
-        setLocalLayoutMode(mode);
-        onLayoutModeChange && onLayoutModeChange(mode);
-    };
-
     return (
         <div className="weather-card" style={{ background: gradient }}>
-            <WeatherHeader
-                locationOptions={locationOptions}
-                selectedLocationId={selectedLocationId}
-                onLocationChange={onLocationChange}
-                showSettings={showSettings}
-                onToggleSettings={() => setShowSettings((s) => !s)}
-                onRemove={onRemove}
-            />
+            <CollapsibleHeader collapsed={headerCollapsed} onToggle={onToggleHeader}>
+                <WeatherHeader
+                    locationOptions={locationOptions}
+                    selectedLocationId={selectedLocationId}
+                />
+            </CollapsibleHeader>
 
             <div className="weather-body">
                 {/* "Current View Only" has its own layout (big icon, colored metric
@@ -164,17 +155,6 @@ export default function WeatherModule({
                     />
                 )}
             </div>
-
-            {showSettings && (
-                <WeatherSettingsPanel
-                    layoutMode={localLayoutMode}
-                    onLayoutModeChange={handleLayoutModeChange}
-                    schoolStart={schoolStart}
-                    schoolEnd={schoolEnd}
-                    onSchoolTimeChange={onSchoolTimeChange}
-                    onClose={() => setShowSettings(false)}
-                />
-            )}
 
             <div className="weather-card__flare-top" />
             <div className="weather-card__flare-bottom" />

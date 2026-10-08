@@ -36,6 +36,8 @@ export default {
         loading: "読み込み中...",
         confirm: "確認",
         cancel: "キャンセル",
+        collapseHeader: "ヘッダーを隠す",
+        expandHeader: "ヘッダーを表示",
     },
 
     auth: {

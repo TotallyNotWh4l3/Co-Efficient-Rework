@@ -23,6 +23,8 @@ import {
     subscribeServerClock,
 } from "../../shared/utils/serverClock";
 
+import CollapsibleHeader from "../../common/ModuleHost/CollapsibleHeader";
+import useHeaderCollapse from "../../common/ModuleHost/useHeaderCollapse";
 import "./schedule-module.css";
 import "./today-schedule-module.css";
 
@@ -147,7 +149,8 @@ function DaySection({
     );
 }
 
-export default function TodayScheduleModule() {
+export default function TodayScheduleModule({ module }) {
+    const header = useHeaderCollapse(module);
     const lang = useLanguage();
     const t = lang.modules.todaySchedule;
     const { user } = useAuth();
@@ -239,16 +242,18 @@ export default function TodayScheduleModule() {
         <div className="sch-card">
             <div className="sch-glow sch-glow-top" />
 
-            <div className="sch-header">
-                <div className="sch-header-left">
-                    <div className="sch-header-icon">
-                        <CalendarClock className="icon-sm" />
-                    </div>
-                    <div>
-                        <h3 className="sch-header-title">{t.header.title}</h3>
+            <CollapsibleHeader collapsed={header.collapsed} onToggle={header.toggle}>
+                <div className="sch-header">
+                    <div className="sch-header-left">
+                        <div className="sch-header-icon">
+                            <CalendarClock className="icon-sm" />
+                        </div>
+                        <div>
+                            <h3 className="sch-header-title">{t.header.title}</h3>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </CollapsibleHeader>
 
             <div className="sch-body">
                 {isLoading ? (

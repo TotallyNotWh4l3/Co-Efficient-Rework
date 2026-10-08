@@ -260,3 +260,82 @@
 .mpp__status--error {
     color: var(--color-error);
 }
+
+
+/* ---------- Delete mode ---------- */
+.mpp__toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: calc(0.5 * var(--u));
+}
+
+.mpp__mode-btn,
+.mpp__bar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: 0.8125rem;
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.mpp__mode-btn:hover,
+.mpp__bar-btn:hover {
+    color: var(--color-text);
+    background: var(--color-bg-elevated);
+}
+
+.mpp__mode-btn--on,
+.mpp__bar-btn--danger {
+    color: var(--color-error);
+    background: var(--color-error-bg);
+    border-color: var(--color-error);
+}
+
+.mpp__bar-btn--danger:hover {
+    color: #fff;
+    background: var(--color-error);
+}
+
+/* Modules become plain click targets: red outline, no move/resize cursor. */
+.mpp__module--deletable {
+    cursor: pointer;
+    outline: 2px dashed color-mix(in srgb, var(--color-error) 60%, transparent);
+    outline-offset: -2px;
+}
+
+.mpp__module--deletable:hover {
+    background: var(--color-error-bg);
+}
+
+.mpp__module--pending-delete {
+    outline: 2px solid var(--color-error);
+    background: var(--color-error-bg);
+}
+
+.mpp__delete-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(0.5 * var(--u));
+    margin-top: calc(0.5 * var(--u));
+    padding: calc(0.5 * var(--u)) calc(0.75 * var(--u));
+    background: color-mix(in srgb, var(--color-error) 12%, var(--color-surface));
+    border: var(--hairline) solid var(--color-error);
+    border-radius: 10px;
+}
+
+.mpp__delete-text {
+    color: var(--color-text);
+    font-weight: 600;
+}

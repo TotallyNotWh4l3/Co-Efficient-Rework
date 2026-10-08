@@ -5,15 +5,13 @@
 // 概要: スケジュールヘッダー コンポーネント
 // ===================================================
 
-import { Calendar, Plus, X, Tags, Settings } from "lucide-react";
+import { Calendar, Plus, Tags } from "lucide-react";
 import { useLanguage } from "../../settings/useLanguage";
 
 export default function ScheduleHeader({
-    onOpenSettings,
     onAdd,
     onManageTags,
     canManageTags,
-    onRemove,
 }) {
     const lang = useLanguage();
     const t = lang.modules.schedule.header;
@@ -29,9 +27,6 @@ export default function ScheduleHeader({
                 </div>
             </div>
             <div className="sch-header-actions">
-                <button className="sch-icon-toggle" onClick={onOpenSettings} title={t.settings}>
-                    <Settings className="icon-xs" />
-                </button>
                 {canManageTags && (
                     <button className="sch-icon-toggle" onClick={onManageTags} title={t.manageTags}>
                         <Tags className="icon-xs" />
@@ -41,11 +36,6 @@ export default function ScheduleHeader({
                     <Plus className="icon-xs" />
                     <span>{t.addEvent}</span>
                 </button>
-                {/* {onRemove && (
-                    <button className="sch-icon-toggle" onClick={onRemove} title={t.removeModule}>
-                        <X className="icon-xs" />
-                    </button>
-                )} */}
             </div>
         </div>
     );

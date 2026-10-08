@@ -7,38 +7,27 @@
 //       時刻表データは backend/data/transit/ のJSONから取得する。
 // ===================================================
 
-import React, { useState } from "react";
+import React from "react";
 import {
     AlertCircle,
     Accessibility,
     BusFront,
-    ChevronDown,
-    List,
     RefreshCw,
-    Route,
-    Settings as SettingsIcon,
     TrainFront,
-    X,
 } from "lucide-react";
 import useClock from "../clock/useClock";
 import useTransit from "./useTransit";
-import { useDashboard } from "../dashboard/useDashboard";
 import { useLanguage } from "../settings/useLanguage";
 import TransitLine from "./components/TransitLine";
 import TransitDiagram from "./components/TransitDiagram";
+import CollapsibleHeader from "../../common/ModuleHost/CollapsibleHeader";
+import useHeaderCollapse from "../../common/ModuleHost/useHeaderCollapse";
 import { getDayType, getUpcoming } from "./utils/transitHelpers";
 
 import "../schedule/schedule-module.css";
 import "./transit-module.css";
 
 const DEFAULT_COUNT = 5;
-
-// Line-view options, stored in module.settings. First value of each list is the default.
-const LINE_OPTIONS = [
-    { key: "orientation", values: ["horizontal", "vertical"] },
-    { key: "colorMode", values: ["mono", "theme"] },
-    { key: "timer", values: ["seconds", "minutes"] },
-];
 
 const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
 
@@ -81,9 +70,9 @@ function DepartureRow({ dep, isNext, t }) {
 }
 
 export default function TransitModule({ module }) {
-    const { updateModuleSettings, ensureModuleMinSize } = useDashboard();
     const lang = useLanguage();
     const t = lang.modules.transit;
+    const header = useHeaderCollapse(module);
 
     // "board": departure list (one direction at a time). "line": map-style line, one lane per direction.
     const view = module.settings?.view === "line" ? "line" : "board";
@@ -98,8 +87,6 @@ export default function TransitModule({ module }) {
         : DEFAULT_COUNT;
 
     const { stops, stop, isLoading, error, stopMissing, reload } = useTransit(stopId);
-    const [pickerOpen, setPickerOpen] = useState(false);
-    const [optionsOpen, setOptionsOpen] = useState(false);
 
     const lineSettings = {
         orientation: module.settings?.orientation === "vertical" ? "vertical" : "horizontal",
@@ -107,24 +94,10 @@ export default function TransitModule({ module }) {
         timer: module.settings?.timer === "minutes" ? "minutes" : "seconds",
     };
 
-    // 未選択、または選んだ駅が見つからないときは、選択リストを自動で開く
-    const showPicker = stops.length > 0 && (pickerOpen || !stopId || stopMissing);
-
     const direction = stop
         ? (stop.directions.find((d) => d.id === directionId) ?? stop.directions[0])
         : null;
     const upcoming = direction ? getUpcoming(direction, now, count) : [];
-
-    const switchView = () => {
-        const next = view === "line" ? "board" : "line";
-        updateModuleSettings(module.id, "view", next);
-        ensureModuleMinSize(module.id, next);
-    };
-
-    const chooseStop = (id) => {
-        updateModuleSettings(module.id, "stopId", id);
-        setPickerOpen(false);
-    };
 
     let body;
     if (isLoading) {
@@ -190,26 +163,7 @@ export default function TransitModule({ module }) {
     } else {
         body = (
             <div className="trn-content">
-                {stop.directions.length > 1 && (
-                    <div className="trn-tabs" role="tablist">
-                        {stop.directions.map((d) => (
-                            <button
-                                key={d.id}
-                                role="tab"
-                                aria-selected={d.id === direction.id}
-                                className={`trn-tab${d.id === direction.id ? " trn-tab--on" : ""}`}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateModuleSettings(module.id, "directionId", d.id);
-                                }}
-                            >
-                                {d.label}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {stop.directions.length === 1 && <p className="trn-direction">{direction.label}</p>}
+                <p className="trn-direction">{direction.label}</p>
 
                 {upcoming.length === 0 ? (
                     <div className="sch-empty-state">
@@ -235,105 +189,21 @@ export default function TransitModule({ module }) {
         <div className={`sch-card${view === "board" ? " trn-card--board" : ""}`}>
             <div className="sch-glow sch-glow-top" />
 
-            <div className="sch-header">
-                <div className="sch-header-left">
-                    <div className="sch-header-icon">
-                        <StopIcon type={stop?.type} className="icon-sm" />
-                    </div>
-                    <div>
-                        <h3 className="sch-header-title">{stop?.name ?? t.header.title}</h3>
-                        {stop && <p className="trn-daytype">{t.dayTypes[getDayType(now)]}</p>}
+            <CollapsibleHeader collapsed={header.collapsed} onToggle={header.toggle}>
+                <div className="sch-header">
+                    <div className="sch-header-left">
+                        <div className="sch-header-icon">
+                            <StopIcon type={stop?.type} className="icon-sm" />
+                        </div>
+                        <div>
+                            <h3 className="sch-header-title">{stop?.name ?? t.header.title}</h3>
+                            {stop && <p className="trn-daytype">{t.dayTypes[getDayType(now)]}</p>}
+                        </div>
                     </div>
                 </div>
-
-                {stops.length > 0 && (
-                    <div className="trl-header-actions">
-                        {stop && (
-                            <button
-                                className="trn-picker-btn"
-                                title={view === "line" ? t.views.toBoard : t.views.toLine}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    switchView();
-                                }}
-                            >
-                                {view === "line" ? (
-                                    <List className="icon-xs" />
-                                ) : (
-                                    <Route className="icon-xs" />
-                                )}
-                            </button>
-                        )}
-                        {stop && view === "line" && (
-                            <button
-                                className="trn-picker-btn"
-                                title={t.options.title}
-                                aria-expanded={optionsOpen}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOptionsOpen((v) => !v);
-                                    setPickerOpen(false);
-                                }}
-                            >
-                                {optionsOpen ? (
-                                    <X className="icon-xs" />
-                                ) : (
-                                    <SettingsIcon className="icon-xs" />
-                                )}
-                            </button>
-                        )}
-                        <button
-                            className="trn-picker-btn"
-                            title={t.header.changeStop}
-                            aria-expanded={showPicker}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setPickerOpen((v) => !v);
-                                setOptionsOpen(false);
-                            }}
-                        >
-                            <ChevronDown className="icon-xs" />
-                        </button>
-                    </div>
-                )}
-            </div>
+            </CollapsibleHeader>
 
             <div className="sch-body">{body}</div>
-
-            {optionsOpen && view === "line" && stop && (
-                <div className="trl-options" onClick={(e) => e.stopPropagation()}>
-                    {LINE_OPTIONS.map(({ key, values }) => (
-                        <div key={key} className="trl-option-row">
-                            <span className="trl-option-label">{t.options[key].label}</span>
-                            {values.map((value) => (
-                                <button
-                                    key={value}
-                                    className={`trl-chip${lineSettings[key] === value ? " trl-chip--on" : ""}`}
-                                    onClick={() => updateModuleSettings(module.id, key, value)}
-                                >
-                                    {t.options[key][value]}
-                                </button>
-                            ))}
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {showPicker && (
-                <ul className="trn-picker" onClick={(e) => e.stopPropagation()}>
-                    {stops.map((s) => (
-                        <li key={s.id}>
-                            <button
-                                className={`trn-picker-item${s.id === stopId ? " trn-picker-item--on" : ""}`}
-                                onClick={() => chooseStop(s.id)}
-                            >
-                                <StopIcon type={s.type} className="icon-xs" />
-                                <span>{s.name}</span>
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            )}
         </div>
     );
 }

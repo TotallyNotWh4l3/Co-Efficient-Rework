@@ -35,7 +35,7 @@ const DEFAULT_SCHOOL_END = "15:30";
  */
 export default function WeatherModuleContainer({ module }) {
     const { locationOptions } = useLocation();
-    const { removeModule, updateModuleSettings, ensureModuleMinSize } = useDashboard();
+    const { updateModuleSettings } = useDashboard();
     const { settings } = useSettings();
 
     const [selectedLocationId, setSelectedLocationId] = useState(module.settings?.location);
@@ -61,24 +61,6 @@ export default function WeatherModuleContainer({ module }) {
     }, [selectedLocationId, locationOptions, settings?.preferences?.locationId]);
 
     const { weather, loading, error, refresh } = useWeather(selectedLocationId);
-
-    const handleLocationChange = (id) => {
-        setSelectedLocationId(id);
-        updateModuleSettings(module.id, "location", id);
-    };
-
-    const handleLayoutModeChange = (mode) => {
-        updateModuleSettings(module.id, "view", mode);
-        ensureModuleMinSize(module.id, mode);
-    };
-
-    const handleSchoolTimeChange = (key, value) => {
-        updateModuleSettings(module.id, key, value);
-    };
-
-    const handleRemove = () => {
-        removeModule(module.id);
-    };
 
     if (!selectedLocationId || (loading && !weather)) {
         return (
@@ -126,16 +108,14 @@ export default function WeatherModuleContainer({ module }) {
         <WeatherModule
             locationOptions={locationOptions}
             selectedLocationId={selectedLocationId}
-            onLocationChange={handleLocationChange}
             current={mapped.current}
             dailyList={mapped.dailyList}
             hourlyByDay={mapped.hourlyByDay}
             layoutMode={module.settings?.view ?? "combined"}
-            onLayoutModeChange={handleLayoutModeChange}
             schoolStart={module.settings?.schoolStart ?? DEFAULT_SCHOOL_START}
             schoolEnd={module.settings?.schoolEnd ?? DEFAULT_SCHOOL_END}
-            onSchoolTimeChange={handleSchoolTimeChange}
-            onRemove={handleRemove}
+            headerCollapsed={module.settings?.headerCollapsed === true}
+            onToggleHeader={() => updateModuleSettings(module.id, "headerCollapsed", module.settings?.headerCollapsed !== true)}
         />
     );
 }

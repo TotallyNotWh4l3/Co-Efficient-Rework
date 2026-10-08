@@ -6,7 +6,7 @@
 // 概要: お知らせヘッダー コンポーネント
 // ===================================================
 
-import { Megaphone, Plus, Lock, Archive, Maximize2, Minimize2, X } from "lucide-react";
+import { Megaphone, Plus, Lock, Archive } from "lucide-react";
 import { useLanguage } from "../../settings/useLanguage";
 
 export default function AnnouncementHeader({
@@ -15,9 +15,6 @@ export default function AnnouncementHeader({
     currentUser,
     onCreate,
     onOpenArchive,
-    isExtended,
-    onToggleExtended,
-    onRemove,
 }) {
     const lang = useLanguage();
     const t = lang.modules.announcement.header;
@@ -56,22 +53,6 @@ export default function AnnouncementHeader({
 
                 {/* <button className="ann-icon-toggle" onClick={onOpenArchive} title={t.viewArchive}>
                     <Archive className="icon-xs" />
-                </button> */}
-
-                <button
-                    className={`ann-icon-toggle ${isExtended ? "active" : ""}`}
-                    onClick={onToggleExtended}
-                    title={isExtended ? t.compactView : t.extendView}
-                >
-                    {isExtended ? (
-                        <Minimize2 className="icon-xs" />
-                    ) : (
-                        <Maximize2 className="icon-xs" />
-                    )}
-                </button>
-
-                {/* <button className="ann-icon-toggle" onClick={onRemove} title={t.removeModule}>
-                    <X className="icon-xs" />
                 </button> */}
             </div>
         </div>

@@ -43,6 +43,8 @@ export default {
         loading: "Loading...",
         confirm: "Confirm",
         cancel: "Cancel",
+        collapseHeader: "Hide header",
+        expandHeader: "Show header",
     },
     auth: {
         login: {

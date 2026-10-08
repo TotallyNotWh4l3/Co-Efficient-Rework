@@ -9,16 +9,16 @@ import React, { useState, useMemo } from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import useSchedule from "./useSchedule";
 import useScheduleTags from "./useScheduleTags";
-import { useDashboard } from "../dashboard/useDashboard";
 import { useAuth } from "../auth/useAuth";
 import { useLanguage } from "../settings/useLanguage";
 import ScheduleHeader from "./components/ScheduleHeader";
+import CollapsibleHeader from "../../common/ModuleHost/CollapsibleHeader";
+import useHeaderCollapse from "../../common/ModuleHost/useHeaderCollapse";
 import ScheduleCalendarGrid from "./components/ScheduleCalendarGrid";
 import ScheduleDayListModal from "./components/ScheduleDayListModal";
 import ScheduleDetailModal from "./components/ScheduleDetailModal";
 import ScheduleEventFormModal from "./components/ScheduleEventFormModal";
 import ScheduleTagManagerModal from "./components/ScheduleTagManagerModal";
-import ScheduleSettingsPanel from "./components/ScheduleSettingsPanel";
 import ScheduleFooter from "./components/ScheduleFooter";
 import {
     formatDateStr,
@@ -29,26 +29,19 @@ import {
 import "./schedule-module.css";
 
 export default function ScheduleModule({ module }) {
-    const { removeModule, ensureModuleMinSize } = useDashboard();
     const { user } = useAuth();
     const lang = useLanguage();
     const t = lang.modules.schedule;
-    const onRemove = () => removeModule(module.id);
+    const header = useHeaderCollapse(module);
     const isManagerOrAdmin = ["admin", "manager"].includes(user?.role?.toLowerCase());
 
-    // ---- View mode state ----
-    const [viewMode, setViewMode] = useState("absolute"); // 'absolute' | 'relative'
-    const [layout, setLayoutState] = useState("month"); // 'month' | 'week'
-    // Switching month <-> week grows the module only if it's below that
-    // layout's minimum size (see moduleSizes.js) — never shrinks it.
-    const setLayout = (next) => {
-        setLayoutState(next);
-        ensureModuleMinSize(module.id, next);
-    };
-    const [weekOrientation, setWeekOrientation] = useState("vertical"); // 'vertical' | 'horizontal' (week layout only)
+    // ---- View mode (stored in module.settings; edited on the Module Settings page) ----
+    const viewMode = module.settings?.viewMode === "relative" ? "relative" : "absolute";
+    const layout = module.settings?.layout === "week" ? "week" : "month";
+    const weekOrientation =
+        module.settings?.weekOrientation === "horizontal" ? "horizontal" : "vertical";
     const [anchorDate, setAnchorDate] = useState(new Date());
-    const [daysBefore, setDaysBefore] = useState(0);
-    const [showSettings, setShowSettings] = useState(false);
+    const daysBefore = Math.max(0, Math.round(Number(module.settings?.daysBefore) || 0));
 
     // Relative view fetches a bounded range instead of the whole table.
     const relativeDays = useMemo(() => getRelativeRollingDays(daysBefore), [daysBefore]);
@@ -184,13 +177,13 @@ export default function ScheduleModule({ module }) {
         <div className="sch-card">
             <div className="sch-glow sch-glow-top" />
 
-            <ScheduleHeader
-                onOpenSettings={() => setShowSettings(true)}
-                onAdd={() => openAddForm(todayStr)}
-                onManageTags={() => setShowTagManager(true)}
-                canManageTags={isManagerOrAdmin}
-                onRemove={onRemove}
-            />
+            <CollapsibleHeader collapsed={header.collapsed} onToggle={header.toggle}>
+                <ScheduleHeader
+                    onAdd={() => openAddForm(todayStr)}
+                    onManageTags={() => setShowTagManager(true)}
+                    canManageTags={isManagerOrAdmin}
+                />
+            </CollapsibleHeader>
 
             <div className="sch-body">
                 {isLoading ? (
@@ -278,20 +271,6 @@ export default function ScheduleModule({ module }) {
                     onClose={() => setShowTagManager(false)}
                     onUpsert={upsertTag}
                     onRemove={removeTag}
-                />
-            )}
-
-            {showSettings && (
-                <ScheduleSettingsPanel
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                    layout={layout}
-                    onLayoutChange={setLayout}
-                    weekOrientation={weekOrientation}
-                    onWeekOrientationChange={setWeekOrientation}
-                    daysBefore={daysBefore}
-                    onDaysBeforeChange={setDaysBefore}
-                    onClose={() => setShowSettings(false)}
                 />
             )}
         </div>

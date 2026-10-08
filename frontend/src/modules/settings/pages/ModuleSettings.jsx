@@ -16,6 +16,7 @@ import { useLanguage } from "../useLanguage";
 
 import Settings from "../components/SettingsComponents";
 import ModulePositionPreview from "../components/ModulePositionPreview";
+import ModuleSpecificSettings from "../components/ModuleSpecificSettings";
 
 // A module's cell-span is entered as a width and height (in grid cells)
 // rather than picked from a fixed set of buttons, so any size the grid can
@@ -95,6 +96,7 @@ export default function ModuleSettings() {
     const copy = T?.settings?.modules ?? {};
     const sizeCopy = copy.size ?? {};
     const positionCopy = copy.position ?? {};
+    const moduleSettingsCopy = copy.moduleSettings ?? {};
     const maxW = dashboard.layout?.columns ?? 3;
     const maxH = dashboard.layout?.rows ?? 4;
 
@@ -111,6 +113,11 @@ export default function ModuleSettings() {
         { type: "transit", name: copy.transit?.title },
         { type: "announcement", name: copy.announcements?.title },
     ];
+
+    const labelFor = (module) =>
+        module.settings?.title ||
+        AVAILABLE_MODULES.find((m) => m.type === module.type)?.name ||
+        module.type;
 
     if (loading) {
         return <div className="module-settings">{T.settings.status.loading}</div>;
@@ -189,15 +196,29 @@ export default function ModuleSettings() {
                 <ModulePositionPreview
                     layout={dashboard.layout}
                     modules={dashboard.modules ?? []}
-                    labelFor={(module) =>
-                        module.settings?.title ||
-                        AVAILABLE_MODULES.find((m) => m.type === module.type)?.name ||
-                        module.type
-                    }
+                    labelFor={labelFor}
                     onMove={moveModule}
                     onResize={updateModuleLayout}
                     onRemove={removeModule}
                     copy={positionCopy}
+                />
+            </Settings.Section>
+
+            <Settings.Divider />
+
+            {/* =======================
+                PER-MODULE SETTINGS
+            ======================== */}
+
+            <Settings.Section>
+                <Settings.SectionTitle>{moduleSettingsCopy.title}</Settings.SectionTitle>
+
+                <Settings.Description>{moduleSettingsCopy.description}</Settings.Description>
+
+                <ModuleSpecificSettings
+                    modules={dashboard.modules ?? []}
+                    labelFor={labelFor}
+                    copy={moduleSettingsCopy}
                 />
             </Settings.Section>
         </div>
