@@ -15,6 +15,19 @@ function dateKeyOf(isoString) {
     return isoString ? isoString.split("T")[0] : "";
 }
 
+// Average of a numeric field over an array of hourly items (nulls ignored).
+// Returns null when there's nothing to average. `digits` = decimal places.
+function avgOf(items, key, digits = 0) {
+    const vals = items.map((h) => h[key]).filter((v) => typeof v === "number");
+    if (vals.length === 0) return null;
+    const avg = vals.reduce((sum, v) => sum + v, 0) / vals.length;
+    const f = 10 ** digits;
+    return Math.round(avg * f) / f;
+}
+
+// metres -> km, one decimal. Tolerates missing values (e.g. an older cached payload).
+const toKm = (m) => (typeof m === "number" ? Math.round(m / 100) / 10 : null);
+
 function getDayLabel(dateStr, index, lang) {
     const forecastCopy = lang?.modules?.weather?.forecast ?? {};
 
@@ -68,6 +81,14 @@ export function mapWeatherResponse(weather, lang) {
             precipChance: day.precipitation,
             precipSum: day.precipitationSum,
             windSpeed: day.windSpeed,
+            windGust: day.windGust ?? null,
+            // Feels-like keeps the max/min pair like temperature does.
+            maxFeelsLike: day.feelsLikeHigh ?? null,
+            minFeelsLike: day.feelsLikeLow ?? null,
+            // No daily values from the API for these two — average the hours.
+            dewPoint: avgOf(hoursForDay, "dewPoint", 1),
+            visibility: toKm(avgOf(hoursForDay, "visibility")),
+            uvIndex: day.uvIndex ?? null,
         };
     });
 
@@ -76,6 +97,11 @@ export function mapWeatherResponse(weather, lang) {
         hourlyByDay[index] = (hourlyByDate[day.date] || []).map((h) => ({
             time: toHHMM(h.time),
             temp: h.temperature,
+            feelsLike: h.feelsLike ?? null,
+            dewPoint: h.dewPoint ?? null,
+            visibility: toKm(h.visibility),
+            uvIndex: h.uvIndex ?? null,
+            windGust: h.windGust ?? null,
             humidity: h.humidity,
             precipChance: h.precipitation,
             precipSum: h.precipitationSum,

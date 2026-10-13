@@ -172,20 +172,79 @@ export function WeatherVisualIcon({ code, isDay, className = "" }) {
 // Shared metric card definitions. `value` is filled in per-instance by the
 // component that has access to current/daily data. Display names live in
 // en.js / ja.js under modules.weather.metrics[labelKey].
+//
+// Chart series:
+//   `lines`      — what WeatherChart draws (hourly view, and daily too unless
+//                  `dailyLines` is given). Each line: { key, nameKey, color,
+//                  fill?, kind?, axis?, unit?, allowNegative?, toggle? }.
+//                    key     — field read from the hourly/daily item
+//                    nameKey — i18n key in modules.weather.metrics or .chart
+//                    fill    — draw the gradient area under the line
+//                    kind    — "bar" draws bars (from 0) instead of a line
+//                    axis    — any name other than "left" puts the line on its
+//                              own right-hand axis (used when units differ,
+//                              e.g. % vs °C vs km)
+//                    unit    — overrides the metric's unit for this line
+//                    allowNegative — lets that right axis go below 0
+//                    toggle  — id of an entry in `toggles`; the line is hidden
+//                              until the viewer turns that button on
+//   `dailyLines` — replaces `lines` on the 7-day view.
+//   `toggles`    — legend buttons for optional lines: { id, nameKey, color,
+//                  unit? }. One button can control several lines.
 export const METRIC_DEFS = [
     {
+        // Temperature. Feels-like (lighter shades) is switched on with its
+        // legend button. Hourly: one line each. Daily: max/min of both.
         id: "temp",
         labelKey: "temp",
         color: "#f87171",
         unit: "°C",
         icon: Thermometer,
+        allowNegative: true,
+        lines: [
+            { key: "temp", nameKey: "temp", color: "#f87171", fill: true },
+            { key: "feelsLike", nameKey: "feelsLike", color: "#fecaca", toggle: "feelsLike" },
+        ],
+        dailyLines: [
+            { key: "maxTemp", nameKey: "max", color: "#f87171", fill: true },
+            { key: "minTemp", nameKey: "min", color: "#60a5fa", fill: true },
+            { key: "maxFeelsLike", nameKey: "feelsMax", color: "#fecaca", toggle: "feelsLike" },
+            { key: "minFeelsLike", nameKey: "feelsMin", color: "#bfdbfe", toggle: "feelsLike" },
+        ],
+        toggles: [{ id: "feelsLike", nameKey: "feelsLike", color: "#fecaca" }],
     },
     {
+        // Humidity (%, left axis). Dew point (°C) and visibility (km) are
+        // optional, each on its own right-hand axis.
         id: "humidity",
         labelKey: "humidity",
         color: "#38bdf8",
         unit: "%",
         icon: Droplets,
+        lines: [
+            { key: "humidity", nameKey: "humidity", color: "#38bdf8", fill: true },
+            {
+                key: "dewPoint",
+                nameKey: "dewPoint",
+                color: "#22d3ee",
+                axis: "dewPoint",
+                unit: "°C",
+                allowNegative: true,
+                toggle: "dewPoint",
+            },
+            {
+                key: "visibility",
+                nameKey: "visibility",
+                color: "#94a3b8",
+                axis: "visibility",
+                unit: "km",
+                toggle: "visibility",
+            },
+        ],
+        toggles: [
+            { id: "dewPoint", nameKey: "dewPoint", color: "#22d3ee", unit: "°C" },
+            { id: "visibility", nameKey: "visibility", color: "#94a3b8", unit: "km" },
+        ],
     },
     {
         // Combined chart: chance (line, %) + amount (bars, mm) in one graph.
@@ -197,6 +256,7 @@ export const METRIC_DEFS = [
         unit: "%",
         unitSecondary: "mm",
         icon: CloudDrizzle,
+        lines: [{ key: "precipChance", nameKey: "precipChance", color: "#a78bfa" }],
     },
     {
         // Not a selector button any more (merged into "precip"); the
@@ -209,10 +269,24 @@ export const METRIC_DEFS = [
         selectable: false,
     },
     {
+        // Wind speed; gusts (lighter shade, same m/s axis) are optional.
         id: "windSpeed",
         labelKey: "windSpeed",
         color: "#2dd4bf",
         unit: "m/s",
         icon: Wind,
+        lines: [
+            { key: "windSpeed", nameKey: "windSpeed", color: "#2dd4bf", fill: true },
+            { key: "windGust", nameKey: "windGust", color: "#99f6e4", toggle: "windGust" },
+        ],
+        toggles: [{ id: "windGust", nameKey: "windGust", color: "#99f6e4" }],
+    },
+    {
+        id: "uvIndex",
+        labelKey: "uvIndex",
+        color: "#facc15",
+        unit: "", // UV index is unitless
+        icon: Sun,
+        lines: [{ key: "uvIndex", nameKey: "uvIndex", color: "#facc15", kind: "bar" }],
     },
 ];

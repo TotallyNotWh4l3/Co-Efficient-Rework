@@ -55,30 +55,14 @@ export default function WeatherModule({
     // value) keeps the original combined behavior.
     const showCombinedCurrent = localLayoutMode !== "current" && localLayoutMode !== "forecast";
 
-    // The combined precipitation chart plots chance as its main line (the
-    // amount rides along as valueSum); every other metric reads its own key.
-    const pickValue = (item) =>
-        activeMetric === "precip" ? item.precipChance : item[activeMetric];
-
-    const mapHourlyDay = (items) =>
-        (items || []).map((item) => ({
-            label: item.time,
-            value: pickValue(item),
-            valueSum: item.precipSum,
-            valueMax: item.maxTemp,
-            valueMin: item.minTemp,
-        }));
+    // Each chart point carries the whole hourly/daily item; WeatherChart reads
+    // whichever fields the active metric's lines need (see METRIC_DEFS).
+    const mapHourlyDay = (items) => (items || []).map((item) => ({ label: item.time, item }));
 
     const chartDataset =
         activeTab === "hourly"
             ? mapHourlyDay(hourlyByDay[selectedDayIdx])
-            : dailyList.map((item) => ({
-                  label: item.dayLabel,
-                  value: pickValue(item),
-                  valueSum: item.precipSum,
-                  valueMax: item.maxTemp,
-                  valueMin: item.minTemp,
-              }));
+            : dailyList.map((item) => ({ label: item.dayLabel, item }));
 
     // Same shape as chartDataset, but one array per day across the whole
     // week — lets WeatherChart scale its axis to the week's min/max on the

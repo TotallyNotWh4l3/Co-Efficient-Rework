@@ -704,6 +704,35 @@
     border-radius: var(--radius-full);
 }
 
+/* Legend buttons that show/hide an optional series (feels-like, gusts, ...) */
+.weather-chart__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(0.375 * var(--u));
+    padding: calc(0.0625 * var(--u)) calc(0.375 * var(--u));
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: rgba(255, 255, 255, 0.5);
+    background: transparent;
+    border: var(--hairline) dashed rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.weather-chart__toggle:hover {
+    color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.weather-chart__toggle--on {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.15);
+    border-style: solid;
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
 .weather-chart__range {
     font-size: calc(0.625 * var(--u));
     font-family: "JetBrains Mono", monospace;

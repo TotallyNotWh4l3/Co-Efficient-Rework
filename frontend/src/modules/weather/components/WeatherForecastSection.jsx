@@ -42,10 +42,10 @@ export default function WeatherForecastSection({
 
     return (
         <>
-            <div className="weather-section-title">
+            {/* <div className="weather-section-title">
                 <span className="weather-section-title__label">{t.title}</span>
                 <span className="weather-section-title__rule"></span>
-            </div>
+            </div> */}
 
             <WeatherMetricSelector activeMetric={activeMetric} onSelectMetric={onSelectMetric} />
 
