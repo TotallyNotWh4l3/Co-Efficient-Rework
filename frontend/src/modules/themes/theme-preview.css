@@ -2,8 +2,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    position: sticky;
-    top: 0;
 }
 
 .theme-preview__label {

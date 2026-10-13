@@ -8,12 +8,8 @@
 import React from "react";
 import { MapPin } from "lucide-react";
 import { useLanguage } from "../../settings/useLanguage";
-import "../weather.css";
 
-export default function WeatherHeader({
-    locationOptions = [],
-    selectedLocationId,
-}) {
+export default function WeatherHeader({ locationOptions = [], selectedLocationId }) {
     const lang = useLanguage();
     const t = lang.modules.weather.header;
 
@@ -21,10 +17,10 @@ export default function WeatherHeader({
         locationOptions.find((loc) => loc.id === selectedLocationId)?.label ?? t.selectLocation;
 
     return (
-        <div className="weather-header">
-            <div className="weather-header__location">
-                <MapPin className="weather-header__pin-icon" color="#f88" />
-                <span className="weather-header__select-label">{selectedLabel}</span>
+        <div className="wth-header">
+            <div className="wth-header-location">
+                <MapPin className="wth-header-pin-icon" color="#f88" />
+                <span className="wth-header-select-label">{selectedLabel}</span>
             </div>
         </div>
     );

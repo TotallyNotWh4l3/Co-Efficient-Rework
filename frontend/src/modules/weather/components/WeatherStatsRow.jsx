@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: WeatherStatsRow.jsx
 // 作成日: 2026/08/27
@@ -9,38 +8,37 @@
 import React from "react";
 import { Droplet, Wind, CloudRain } from "lucide-react";
 import { useLanguage } from "../../settings/useLanguage";
-import "../weather.css";
 
 export default function WeatherStatsRow({ humidity, windSpeed, precipChance }) {
     const lang = useLanguage();
     const t = lang.modules.weather.current;
 
     return (
-        <div className="weather-stats">
-            <div className="weather-stats__item">
-                <Droplet className="weather-stats__icon weather-stats__icon--humidity" />
-                <div className="weather-stats__text">
-                    <span className="weather-stats__label">{t.humidity}</span>
-                    <span className="weather-stats__value">{humidity}%</span>
+        <div className="wth-stats">
+            <div className="wth-stats-item">
+                <Droplet className="wth-stats-icon wth-stats-icon-humidity" />
+                <div className="wth-stats-text">
+                    <span className="wth-stats-label">{t.humidity}</span>
+                    <span className="wth-stats-value">{humidity}%</span>
                 </div>
             </div>
 
-            <div className="weather-stats__item weather-stats__item--middle">
-                <Wind className="weather-stats__icon weather-stats__icon--wind" />
-                <div className="weather-stats__text">
-                    <span className="weather-stats__label">{t.wind}</span>
-                    <span className="weather-stats__value">
-                        {windSpeed} <span className="weather-stats__unit">m/s</span>
+            <div className="wth-stats-item wth-stats-item-middle">
+                <Wind className="wth-stats-icon wth-stats-icon-wind" />
+                <div className="wth-stats-text">
+                    <span className="wth-stats-label">{t.wind}</span>
+                    <span className="wth-stats-value">
+                        {windSpeed} <span className="wth-stats-unit">m/s</span>
                     </span>
                 </div>
             </div>
 
-            <div className="weather-stats__item">
-                <CloudRain className="weather-stats__icon weather-stats__icon--precip" />
-                <div className="weather-stats__text">
-                    <span className="weather-stats__label">{t.precipitation}</span>
-                    <span className="weather-stats__value">
-                        {precipChance} <span className="weather-stats__unit">%</span>
+            <div className="wth-stats-item">
+                <CloudRain className="wth-stats-icon wth-stats-icon-precip" />
+                <div className="wth-stats-text">
+                    <span className="wth-stats-label">{t.precipitation}</span>
+                    <span className="wth-stats-value">
+                        {precipChance} <span className="wth-stats-unit">%</span>
                     </span>
                 </div>
             </div>

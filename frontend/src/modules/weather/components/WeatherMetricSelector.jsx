@@ -7,7 +7,6 @@
 
 import React from "react";
 import { METRIC_DEFS } from "../utils/weatherHelpers.jsx";
-import "../weather.css";
 
 /**
  * Props:
@@ -16,7 +15,7 @@ import "../weather.css";
  */
 export default function WeatherMetricSelector({ activeMetric, onSelectMetric }) {
     return (
-        <div className="weather-metrics">
+        <div className="wth-metrics">
             {METRIC_DEFS.filter((m) => m.selectable !== false).map((metric) => {
                 const isActive = activeMetric === metric.id;
                 const IconComp = metric.icon;
@@ -24,7 +23,7 @@ export default function WeatherMetricSelector({ activeMetric, onSelectMetric }) 
                     <button
                         key={metric.id}
                         onClick={() => onSelectMetric(metric.id)}
-                        className={`weather-metrics__btn${isActive ? " weather-metrics__btn--active" : ""}`}
+                        className={`wth-metrics-btn${isActive ? " wth-metrics-btn-active" : ""}`}
                         style={{
                             boxShadow: isActive
                                 ? `0 0 calc(0.625 * var(--u)) ${metric.color}25`
@@ -32,7 +31,7 @@ export default function WeatherMetricSelector({ activeMetric, onSelectMetric }) 
                         }}
                     >
                         <IconComp
-                            className="weather-metrics__icon"
+                            className="wth-metrics-icon"
                             style={{
                                 color: isActive ? "#fff" : metric.color,
                                 filter: isActive

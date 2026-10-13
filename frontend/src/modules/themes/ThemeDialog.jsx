@@ -3,11 +3,13 @@
 // 作成日: 2026/08/27
 // 作成者: ゴンザガ　ウェイン
 // 概要: テーマ設定ダイアログ コンポーネント
+//       Normal(ベースカラーから自動生成) / Advanced(全色を個別編集) の2モード
 // ===================================================
 
 import "./theme-dialog.css";
 
 import { useState } from "react";
+import { Link2, Link2Off } from "lucide-react";
 
 import { useLanguage } from "../settings/useLanguage";
 import { useAuth } from "../auth/useAuth";
@@ -15,15 +17,19 @@ import { uuidv4 } from "../../shared/utils/uuid";
 
 import Settings from "../settings/components/SettingsComponents";
 import ThemePreview from "./ThemePreview";
-import { useRef } from "react";
+import ColorField from "./ColorField";
+import NormalCustomizer from "./NormalCustomizer";
 
+import { parseColor } from "./utils/colorUtils";
 import {
-    HEX_COLOR_PATTERN,
-    hexToRgb,
-    parseRgbString,
-    rgbToHex,
-    valueToRgbText,
-} from "./utils/colorUtils";
+    BASE_KEYS,
+    DEFAULT_TUNING,
+    FOLLOWERS,
+    FOLLOWS,
+    generateColors,
+    generateShadows,
+    paletteFromColors,
+} from "./utils/themeGenerator";
 
 const COLOR_GROUPS = [
     {
@@ -58,144 +64,6 @@ const COLOR_GROUPS = [
 
 const SHADOW_FIELDS = ["sm", "md", "lg"];
 
-function ColorField({ label, value, onChange, disabled }) {
-    const dialogCopy = useLanguage().settings.interface.appearance.dialog;
-    const fill = (tpl, vars) => tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
-    const colorInputRef = useRef(null);
-    const [format, setFormat] = useState("hex"); // "hex" | "rgb"
-    const switchLabel = fill(dialogCopy.switchTo, { format: format === "hex" ? "RGB" : "HEX" });
-
-    // <input type="color"> only accepts #rrggbb — some theme values here
-    // are rgba(...) (e.g. accentMuted, accentBorder), so fall back to a
-    // neutral hex for the picker itself when the current value isn't a
-    // plain hex. Picking a new color always writes back a plain hex,
-    // which will drop any alpha component the field previously had.
-    const pickerValue = HEX_COLOR_PATTERN.test(value ?? "") ? value : "#000000";
-
-    const openPicker = () => {
-        if (disabled) return;
-        colorInputRef.current?.click();
-    };
-
-    const toggleFormat = () => {
-        if (disabled) return;
-        setFormat((prev) => (prev === "hex" ? "rgb" : "hex"));
-    };
-
-    // What the text input shows, given the current format.
-    const hexDisplay = HEX_COLOR_PATTERN.test(value ?? "")
-        ? value.slice(1)
-        : (value ?? "").replace(/^#/, "");
-    const rgbDisplay = valueToRgbText(value) || "";
-
-    const displayValue = format === "hex" ? hexDisplay : rgbDisplay;
-
-    const handleTextChange = (raw) => {
-        if (format === "hex") {
-            // "#" prefix is fixed/rendered separately and can't be
-            // backspaced — raw here is just whatever follows it.
-            const cleaned = raw.replace(/^#/, "");
-            onChange(`#${cleaned}`);
-        } else {
-            // Keep the raw "r, g, b" text as typed; only commit a real
-            // color once it parses to three valid components.
-            const rgb = parseRgbString(raw);
-            if (rgb) {
-                onChange(rgbToHex(rgb));
-            } else {
-                // Not fully valid yet (mid-typing) — still reflect what
-                // they've typed so the field doesn't fight the user.
-                onChange(raw);
-            }
-        }
-    };
-
-    return (
-        <div className="theme-dialog__color-field">
-            <span
-                className="theme-dialog__swatch"
-                style={{ background: value || "transparent" }}
-                aria-hidden="true"
-            />
-
-            <input
-                ref={colorInputRef}
-                type="color"
-                className="theme-dialog__color-picker-input"
-                value={pickerValue}
-                onChange={(e) => onChange(e.target.value)}
-                disabled={disabled}
-                tabIndex={-1}
-                aria-hidden="true"
-            />
-
-            <button
-                type="button"
-                className="theme-dialog__picker-btn"
-                onClick={openPicker}
-                disabled={disabled}
-                aria-label={fill(dialogCopy.pickColorFor, { label })}
-                title={dialogCopy.pickColor}
-            >
-                {/* eyedropper icon */}
-                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                    <path
-                        fill="currentColor"
-                        d="M19.23 3.55a2.5 2.5 0 0 1 0 3.54l-1.94 1.94 1.06 1.06a1 1 0 0 1-1.41 1.41l-.3-.3-8.4 8.4a1 1 0 0 1-.53.28l-4.24.85a.75.75 0 0 1-.88-.88l.85-4.24a1 1 0 0 1 .28-.53l8.4-8.4-.3-.3a1 1 0 1 1 1.41-1.41l1.06 1.06 1.94-1.94a2.5 2.5 0 0 1 3.54 0Z"
-                    />
-                </svg>
-            </button>
-
-            <div className="theme-dialog__color-inputs">
-                <span className="theme-dialog__color-label">{label}</span>
-
-                <div className="theme-dialog__color-text-wrap">
-                    {format === "hex" && (
-                        <span className="theme-dialog__color-hash" aria-hidden="true">
-                            #
-                        </span>
-                    )}
-                    <input
-                        type="text"
-                        className="theme-dialog__color-text"
-                        value={displayValue}
-                        onChange={(e) => handleTextChange(e.target.value)}
-                        onKeyDown={(e) => {
-                            // Prevent backspacing the "#" itself in hex mode:
-                            // if selection is at position 0 and backspace is
-                            // pressed with nothing before the caret to delete,
-                            // just no-op (there's nothing left to remove since
-                            // the "#" isn't part of the input's own value).
-                            if (
-                                format === "hex" &&
-                                e.key === "Backspace" &&
-                                e.currentTarget.selectionStart === 0 &&
-                                e.currentTarget.selectionEnd === 0
-                            ) {
-                                e.preventDefault();
-                            }
-                        }}
-                        spellCheck={false}
-                        disabled={disabled}
-                        placeholder={format === "hex" ? "rrggbb" : "r, g, b"}
-                    />
-                </div>
-
-                <button
-                    type="button"
-                    className="theme-dialog__format-toggle"
-                    onClick={toggleFormat}
-                    disabled={disabled}
-                    aria-label={switchLabel}
-                    title={switchLabel}
-                >
-                    {format === "hex" ? "HEX" : "RGB"}
-                </button>
-            </div>
-        </div>
-    );
-}
-
 export default function ThemeDialog({
     initialTheme = null,
     baseTheme = null,
@@ -218,6 +86,15 @@ export default function ThemeDialog({
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState(null);
 
+    // "normal" | "advanced". Switching never alters the colors by itself —
+    // Normal only regenerates shades once a base color or slider changes.
+    const [mode, setMode] = useState("normal");
+    const [tuning, setTuning] = useState(DEFAULT_TUNING);
+    // Advanced: which shade fields the user has overridden by hand, and
+    // whether editing a base color re-shades the rest.
+    const [autoShade, setAutoShade] = useState(true);
+    const [manual, setManual] = useState({});
+
     const isEditing = Boolean(initialTheme);
     const isBuiltIn = Boolean(initialTheme?.builtIn);
     // Built-in themes are locked for everyone except admins, who can edit
@@ -227,13 +104,102 @@ export default function ThemeDialog({
     const trimmedName = name.trim();
     const isValid = trimmedName.length > 0;
 
+    // ---------- Normal mode ----------
+
+    const regenerate = (palette, nextTuning) => {
+        setColors((prev) => ({ ...prev, ...generateColors(palette, nextTuning) }));
+        setShadows(generateShadows(palette, nextTuning));
+        setManual({});
+    };
+
+    const handleBaseChange = (patch) => {
+        // A half-typed value can't be shaded yet — keep it as typed.
+        if (Object.values(patch).some((value) => !parseColor(value))) {
+            setColors((prev) => ({ ...prev, ...patch }));
+            return;
+        }
+        regenerate({ ...paletteFromColors(colors), ...patch }, tuning);
+    };
+
+    const handleTuningChange = (patch) => {
+        const next = { ...tuning, ...patch };
+        setTuning(next);
+        regenerate(paletteFromColors(colors), next);
+    };
+
+    // ---------- Advanced mode ----------
+
     const updateColor = (key, value) => {
-        setColors((prev) => ({ ...prev, [key]: value }));
+        setColors((prev) => {
+            const next = { ...prev, [key]: value };
+            if (autoShade && BASE_KEYS.includes(key) && parseColor(value)) {
+                const generated = generateColors(paletteFromColors(next), tuning);
+                FOLLOWERS[key].forEach((follower) => {
+                    if (!manual[follower]) next[follower] = generated[follower];
+                });
+            }
+            return next;
+        });
+        if (FOLLOWS[key]) setManual((prev) => ({ ...prev, [key]: true }));
+    };
+
+    const relinkField = (key) => {
+        const generated = generateColors(paletteFromColors(colors), tuning);
+        setColors((prev) => ({ ...prev, [key]: generated[key] }));
+        setManual((prev) => {
+            const next = { ...prev };
+            delete next[key];
+            return next;
+        });
+    };
+
+    const regenerateAllShades = () => {
+        const generated = generateColors(paletteFromColors(colors), tuning);
+        setColors((prev) => {
+            const next = { ...prev };
+            Object.keys(FOLLOWS).forEach((key) => {
+                next[key] = generated[key];
+            });
+            return next;
+        });
+        setManual({});
     };
 
     const updateShadow = (key, value) => {
         setShadows((prev) => ({ ...prev, [key]: value }));
     };
+
+    const renderLinkBadge = (key) => {
+        if (BASE_KEYS.includes(key)) {
+            return <span className="theme-dialog__badge">{t.dialog.advanced.base}</span>;
+        }
+        const base = FOLLOWS[key];
+        if (!base || !autoShade || isLocked) return null;
+
+        const baseLabel = base;
+        if (manual[key]) {
+            const label = t.dialog.advanced.unlinked.replace("{base}", baseLabel);
+            return (
+                <button
+                    type="button"
+                    className="theme-dialog__link-btn is-manual"
+                    onClick={() => relinkField(key)}
+                    title={label}
+                    aria-label={label}
+                >
+                    <Link2Off size={12} aria-hidden="true" />
+                </button>
+            );
+        }
+        const label = t.dialog.advanced.linked.replace("{base}", baseLabel);
+        return (
+            <span className="theme-dialog__link-btn" title={label} aria-label={label}>
+                <Link2 size={12} aria-hidden="true" />
+            </span>
+        );
+    };
+
+    // ---------- Save / delete ----------
 
     async function handleSave() {
         if (!isValid || saving || isLocked) return;
@@ -280,24 +246,48 @@ export default function ThemeDialog({
 
     return (
         <div className="theme-dialog">
-            <Settings.Title className="theme-dialog__title">
-                {isEditing ? t.dialog.titleEdit : t.dialog.titleCreate}
-            </Settings.Title>
+            {/* Fixed header: stays put while the body scrolls */}
+            <div className="theme-dialog__header">
+                <Settings.Title className="theme-dialog__title">
+                    {isEditing ? t.dialog.titleEdit : t.dialog.titleCreate}
+                </Settings.Title>
 
-            <Settings.Divider />
+                {isLocked && (
+                    <Settings.Description className="theme-dialog__builtin-note">
+                        {t.dialog.builtInNote}
+                    </Settings.Description>
+                )}
 
-            {isLocked && (
-                <Settings.Description className="theme-dialog__builtin-note">
-                    {t.dialog.builtInNote}
-                </Settings.Description>
-            )}
+                {isBuiltIn && isAdmin && (
+                    <Settings.Description className="theme-dialog__builtin-note">
+                        {t.dialog.builtInAdminNote}
+                    </Settings.Description>
+                )}
 
-            {isBuiltIn && isAdmin && (
-                <Settings.Description className="theme-dialog__builtin-note">
-                    {t.dialog.builtInAdminNote}
-                </Settings.Description>
-            )}
+                <div className="theme-dialog__mode-bar">
+                    <div
+                        className="theme-dialog__segmented"
+                        role="tablist"
+                        aria-label={t.dialog.mode.label}
+                    >
+                        {["normal", "advanced"].map((key) => (
+                            <button
+                                key={key}
+                                type="button"
+                                role="tab"
+                                aria-selected={mode === key}
+                                className={`theme-dialog__segment${mode === key ? " is-active" : ""}`}
+                                onClick={() => setMode(key)}
+                            >
+                                {t.dialog.mode[key]}
+                            </button>
+                        ))}
+                    </div>
+                    <span className="theme-dialog__mode-hint">{t.dialog.mode[`${mode}Hint`]}</span>
+                </div>
+            </div>
 
+            {/* Scrolling body: controls on the left, preview pinned on the right */}
             <div className="theme-dialog__layout">
                 <div className="theme-dialog__controls">
                     <Settings.Section className="theme-dialog__section">
@@ -316,44 +306,83 @@ export default function ThemeDialog({
 
                     <Settings.Divider />
 
-                    {COLOR_GROUPS.map((group) => (
-                        <Settings.Section key={group.key} className="theme-dialog__section">
-                            <Settings.SectionTitle>
-                                {t.dialog.groups[group.key] ?? group.key}
-                            </Settings.SectionTitle>
-
-                            <div className="theme-dialog__color-grid">
-                                {group.fields.map((field) => (
-                                    <ColorField
-                                        key={field}
-                                        label={field}
-                                        value={colors[field]}
-                                        onChange={(value) => updateColor(field, value)}
-                                        disabled={isLocked}
-                                    />
-                                ))}
-                            </div>
-                        </Settings.Section>
-                    ))}
-
-                    <Settings.Section className="theme-dialog__section">
-                        <Settings.SectionTitle>{t.dialog.groups.shadows}</Settings.SectionTitle>
-                        <div className="theme-dialog__color-grid">
-                            {SHADOW_FIELDS.map((field) => (
-                                <div className="theme-dialog__shadow-field" key={field}>
-                                    <span className="theme-dialog__color-label">{field}</span>
+                    {mode === "normal" ? (
+                        <NormalCustomizer
+                            colors={colors}
+                            tuning={tuning}
+                            disabled={isLocked}
+                            onBaseChange={handleBaseChange}
+                            onTuningChange={handleTuningChange}
+                        />
+                    ) : (
+                        <>
+                            <div className="theme-dialog__advanced-bar">
+                                <label className="theme-dialog__check">
                                     <input
-                                        type="text"
-                                        className="theme-dialog__color-text"
-                                        value={shadows[field] ?? ""}
-                                        onChange={(e) => updateShadow(field, e.target.value)}
-                                        spellCheck={false}
+                                        type="checkbox"
+                                        checked={autoShade}
+                                        onChange={(e) => setAutoShade(e.target.checked)}
                                         disabled={isLocked}
                                     />
-                                </div>
+                                    <span>{t.dialog.advanced.autoShade}</span>
+                                </label>
+                                <button
+                                    type="button"
+                                    className="theme-dialog__ghost-btn"
+                                    onClick={regenerateAllShades}
+                                    disabled={isLocked}
+                                >
+                                    {t.dialog.advanced.regenerate}
+                                </button>
+                            </div>
+
+                            {COLOR_GROUPS.map((group) => (
+                                <Settings.Section key={group.key} className="theme-dialog__section">
+                                    <Settings.SectionTitle>
+                                        {t.dialog.groups[group.key] ?? group.key}
+                                    </Settings.SectionTitle>
+
+                                    <div className="theme-dialog__color-grid">
+                                        {group.fields.map((field) => (
+                                            <ColorField
+                                                key={field}
+                                                label={field}
+                                                value={colors[field]}
+                                                onChange={(value) => updateColor(field, value)}
+                                                disabled={isLocked}
+                                                extra={renderLinkBadge(field)}
+                                            />
+                                        ))}
+                                    </div>
+                                </Settings.Section>
                             ))}
-                        </div>
-                    </Settings.Section>
+
+                            <Settings.Section className="theme-dialog__section">
+                                <Settings.SectionTitle>
+                                    {t.dialog.groups.shadows}
+                                </Settings.SectionTitle>
+                                <div className="theme-dialog__color-grid">
+                                    {SHADOW_FIELDS.map((field) => (
+                                        <div className="theme-dialog__shadow-field" key={field}>
+                                            <span className="theme-dialog__color-label">
+                                                {field}
+                                            </span>
+                                            <input
+                                                type="text"
+                                                className="theme-dialog__color-text"
+                                                value={shadows[field] ?? ""}
+                                                onChange={(e) =>
+                                                    updateShadow(field, e.target.value)
+                                                }
+                                                spellCheck={false}
+                                                disabled={isLocked}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </Settings.Section>
+                        </>
+                    )}
                 </div>
 
                 <div className="theme-dialog__preview-pane">
@@ -361,36 +390,39 @@ export default function ThemeDialog({
                 </div>
             </div>
 
-            <Settings.Divider />
+            {/* Fixed footer */}
+            <div className="theme-dialog__bottom">
+                <Settings.Divider />
 
-            {saveError && (
-                <Settings.Description className="theme-dialog__error">
-                    {saveError}
-                </Settings.Description>
-            )}
-
-            <div className="theme-dialog__footer">
-                {isEditing && !isBuiltIn && (
-                    <Settings.Button
-                        variant="secondary"
-                        className="theme-dialog__delete"
-                        onClick={handleDelete}
-                        disabled={saving}
-                    >
-                        {t.dialog.delete}
-                    </Settings.Button>
+                {saveError && (
+                    <Settings.Description className="theme-dialog__error">
+                        {saveError}
+                    </Settings.Description>
                 )}
 
-                <div className="theme-dialog__footer-right">
-                    <Settings.Button variant="secondary" onClick={onClose}>
-                        {t.dialog.cancel}
-                    </Settings.Button>
-
-                    {!isLocked && (
-                        <Settings.Button onClick={handleSave} disabled={!isValid || saving}>
-                            {saving ? t.dialog.saving : t.dialog.save}
+                <div className="theme-dialog__footer">
+                    {isEditing && !isBuiltIn && (
+                        <Settings.Button
+                            variant="secondary"
+                            className="theme-dialog__delete"
+                            onClick={handleDelete}
+                            disabled={saving}
+                        >
+                            {t.dialog.delete}
                         </Settings.Button>
                     )}
+
+                    <div className="theme-dialog__footer-right">
+                        <Settings.Button variant="secondary" onClick={onClose}>
+                            {t.dialog.cancel}
+                        </Settings.Button>
+
+                        {!isLocked && (
+                            <Settings.Button onClick={handleSave} disabled={!isValid || saving}>
+                                {saving ? t.dialog.saving : t.dialog.save}
+                            </Settings.Button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

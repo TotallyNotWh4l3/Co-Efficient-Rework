@@ -5,7 +5,7 @@
 // 概要: モジュールレンダラーコンポーネント
 // ===================================================
 
-import WeatherModuleContainer from "../../modules/weather/WeatherModuleContainer";
+import WeatherModule from "../../modules/weather/WeatherModule";
 import AnnouncementCard from "../../modules/announcements/AnnouncementModule";
 import ScheduleModule from "../../modules/schedule/ScheduleModule";
 import TodayScheduleModule from "../../modules/schedule/TodayScheduleModule";
@@ -13,7 +13,7 @@ import ClockModule from "../../modules/clock/ClockModule";
 import TransitModule from "../../modules/transit/TransitModule";
 import "./module-renderer.css";
 const MODULE_COMPONENTS = {
-    weather: WeatherModuleContainer,
+    weather: WeatherModule,
     announcement: AnnouncementCard,
     schedule: ScheduleModule,
     todaySchedule: TodayScheduleModule,

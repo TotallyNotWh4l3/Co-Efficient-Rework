@@ -10,7 +10,6 @@ import React from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { WeatherVisualIcon, getWeatherDescText, METRIC_DEFS } from "../utils/weatherHelpers.jsx";
 import { useLanguage } from "../../settings/useLanguage";
-import "../weather.css";
 
 const metricDef = (id) => METRIC_DEFS.find((m) => m.id === id);
 
@@ -58,52 +57,55 @@ export default function WeatherCurrentView({
     ];
 
     return (
-        <div className="wcv">
-            <div className="wcv__hero">
-                <WeatherVisualIcon code={weatherCode} isDay={isDay} className="wcv__icon" />
+        <div className="wth-cv">
+            <div className="wth-cv-hero">
+                <WeatherVisualIcon code={weatherCode} isDay={isDay} className="wth-cv-icon" />
 
-                <div className="wcv__hero-text">
-                    <div className="wcv__temp">
-                        <span className="wcv__temp-value">{Math.round(temp)}</span>
-                        <span className="wcv__temp-unit">°C</span>
+                <div className="wth-cv-hero-text">
+                    <div className="wth-cv-temp">
+                        <span className="wth-cv-temp-value">{Math.round(temp)}</span>
+                        <span className="wth-cv-temp-unit">°C</span>
                     </div>
-                    <span className="wcv__condition">
+                    <span className="wth-cv-condition">
                         {getWeatherDescText(weatherCode, conditions)}
                     </span>
-                    <div className="wcv__hilo">
-                        <span className="wcv__hi">
-                            <ArrowUp className="wcv__hilo-icon" />
+                    <div className="wth-cv-hilo">
+                        <span className="wth-cv-hi">
+                            <ArrowUp className="wth-cv-hilo-icon" />
                             {t.high} {highTemp}°
                         </span>
-                        <span className="wcv__lo">
-                            <ArrowDown className="wcv__hilo-icon" />
+                        <span className="wth-cv-lo">
+                            <ArrowDown className="wth-cv-hilo-icon" />
                             {t.low} {lowTemp}°
                         </span>
                     </div>
                 </div>
             </div>
 
-            <div className="wcv__metrics">
+            <div className="wth-cv-metrics">
                 {tiles.map(({ def, label, value, unit, percent }) => {
                     const Icon = def.icon;
                     return (
                         <div
                             key={def.id}
-                            className="wcv__tile"
+                            className="wth-cv-tile"
                             style={{ "--metric": def.color, "--fill": `${percent}%` }}
                         >
-                            <span className="wcv__tile-badge">
-                                <Icon className="wcv__tile-icon" />
+                            <span className="wth-cv-tile-badge">
+                                <Icon className="wth-cv-tile-icon" />
                             </span>
-                            <div className="wcv__tile-body">
-                                <span className="wcv__tile-value">
+                            <div className="wth-cv-tile-body">
+                                <span className="wth-cv-tile-value">
                                     {value}
-                                    <span className="wcv__tile-unit">{unit}</span>
+                                    <span className="wth-cv-tile-unit">{unit}</span>
                                 </span>
-                                <span className="wcv__tile-label">{label}</span>
+                                <span className="wth-cv-tile-label">{label}</span>
                             </div>
-                            <span className="wcv__bar">
-                                <span className="wcv__bar-fill" style={{ width: `${percent}%` }} />
+                            <span className="wth-cv-bar">
+                                <span
+                                    className="wth-cv-bar-fill"
+                                    style={{ width: `${percent}%` }}
+                                />
                             </span>
                         </div>
                     );

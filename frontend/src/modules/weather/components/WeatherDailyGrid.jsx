@@ -7,7 +7,6 @@
 
 import React from "react";
 import { WeatherVisualIcon } from "../utils/weatherHelpers.jsx";
-import "../weather.css";
 
 /**
  * Props:
@@ -23,14 +22,14 @@ export default function WeatherDailyGrid({
     onSelectDay,
 }) {
     return (
-        <div className="weather-days">
+        <div className="wth-days">
             {dailyList.map((dayItem, idx) => {
                 const isSelected = activeTab === "hourly" && selectedDayIdx === idx;
                 const isInteractive = activeTab === "hourly";
                 const classes = [
-                    "weather-days__btn",
-                    isInteractive && !isSelected ? "weather-days__btn--interactive" : "",
-                    isSelected ? "weather-days__btn--selected" : "",
+                    "wth-days-btn",
+                    isInteractive && !isSelected ? "wth-days-btn-interactive" : "",
+                    isSelected ? "wth-days-btn-selected" : "",
                 ]
                     .filter(Boolean)
                     .join(" ");
@@ -44,19 +43,19 @@ export default function WeatherDailyGrid({
                         disabled={activeTab !== "hourly"}
                         className={classes}
                     >
-                        <span className="weather-days__label">{dayItem.dayLabel}</span>
+                        <span className="wth-days-label">{dayItem.dayLabel}</span>
 
-                        <div className="weather-days__icon-wrap">
+                        <div className="wth-days-icon-wrap">
                             <WeatherVisualIcon
                                 code={dayItem.weatherCode}
                                 isDay={1}
-                                className="weather-days__icon"
+                                className="wth-days-icon"
                             />
                         </div>
 
-                        <div className="weather-days__temps">
-                            <span className="weather-days__max">{dayItem.maxTemp}°</span>
-                            <span className="weather-days__min">{dayItem.minTemp}°</span>
+                        <div className="wth-days-temps">
+                            <span className="wth-days-max">{dayItem.maxTemp}°</span>
+                            <span className="wth-days-min">{dayItem.minTemp}°</span>
                         </div>
                     </button>
                 );

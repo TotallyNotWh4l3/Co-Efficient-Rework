@@ -8,7 +8,6 @@
 import React from "react";
 import { Settings } from "lucide-react";
 import { useLanguage } from "../../settings/useLanguage";
-import "../weather.css";
 
 const LAYOUT_MODES = ["combined", "current", "forecast"];
 
@@ -24,22 +23,22 @@ export default function WeatherSettingsPanel({
     const t = lang.modules.weather.settings;
 
     return (
-        <div className="weather-settings">
-            <div className="weather-settings__header">
-                <span className="weather-settings__title">
-                    <Settings className="weather-settings__title-icon" />
+        <div className="wth-settings">
+            <div className="wth-settings-header">
+                <span className="wth-settings-title">
+                    <Settings className="wth-settings-title-icon" />
                     {t.title}
                 </span>
-                <button onClick={onClose} className="weather-settings__back">
+                <button onClick={onClose} className="wth-settings-back">
                     {t.back}
                 </button>
             </div>
 
-            <div className="weather-settings__body">
-                <div className="weather-settings__group">
-                    <label className="weather-settings__group-label">{t.layout.title}</label>
+            <div className="wth-settings-body">
+                <div className="wth-settings-group">
+                    <label className="wth-settings-group-label">{t.layout.title}</label>
 
-                    <div className="weather-settings__options">
+                    <div className="wth-settings-options">
                         {LAYOUT_MODES.map((mode) => {
                             const isActive = layoutMode === mode;
                             const optionText = t.layout[mode];
@@ -47,19 +46,19 @@ export default function WeatherSettingsPanel({
                                 <button
                                     key={mode}
                                     onClick={() => onLayoutModeChange && onLayoutModeChange(mode)}
-                                    className={`weather-settings__option${isActive ? " weather-settings__option--active" : ""}`}
+                                    className={`wth-settings-option${isActive ? " wth-settings-option-active" : ""}`}
                                 >
-                                    <div className="weather-settings__option-top">
-                                        <span className="weather-settings__option-name">
+                                    <div className="wth-settings-option-top">
+                                        <span className="wth-settings-option-name">
                                             {optionText.title}
                                         </span>
                                         {isActive && (
-                                            <span className="weather-settings__option-active-tag">
+                                            <span className="wth-settings-option-active-tag">
                                                 {t.active}
                                             </span>
                                         )}
                                     </div>
-                                    <span className="weather-settings__option-desc">
+                                    <span className="wth-settings-option-desc">
                                         {optionText.description}
                                     </span>
                                 </button>
@@ -68,10 +67,10 @@ export default function WeatherSettingsPanel({
                     </div>
                 </div>
 
-                <div className="weather-settings__group">
-                    <label className="weather-settings__group-label">{t.schoolHours.title}</label>
-                    <div className="weather-settings__time-row">
-                        <label className="weather-settings__time-field">
+                <div className="wth-settings-group">
+                    <label className="wth-settings-group-label">{t.schoolHours.title}</label>
+                    <div className="wth-settings-time-row">
+                        <label className="wth-settings-time-field">
                             <span>{t.schoolHours.start}</span>
                             <input
                                 type="time"
@@ -82,7 +81,7 @@ export default function WeatherSettingsPanel({
                                 }
                             />
                         </label>
-                        <label className="weather-settings__time-field">
+                        <label className="wth-settings-time-field">
                             <span>{t.schoolHours.end}</span>
                             <input
                                 type="time"
@@ -96,7 +95,7 @@ export default function WeatherSettingsPanel({
                     </div>
                 </div>
 
-                {/* <div className="weather-settings__tip">💡 {t.tip}</div> */}
+                {/* <div className="wth-settings-tip">💡 {t.tip}</div> */}
             </div>
         </div>
     );

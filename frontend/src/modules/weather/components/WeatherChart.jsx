@@ -6,7 +6,6 @@
 // ===================================================
 
 import React, { useState, useRef, useEffect } from "react";
-import "../weather.css";
 
 import { useLanguage } from "../../settings/useLanguage";
 const CURVE_SMOOTHNESS = 0;
@@ -380,13 +379,13 @@ export default function WeatherChart({
     const gradId = (color) => `grad-${color.replace("#", "")}`;
 
     return (
-        <div className="weather-chart">
-            <div className="weather-chart__header">
-                <span className="weather-chart__title">
+        <div className="wth-chart">
+            <div className="wth-chart-header">
+                <span className="wth-chart-title">
                     {legendItems.map((item) => (
-                        <span key={item.text} className="weather-chart__legend-item">
+                        <span key={item.text} className="wth-chart-legend-item">
                             <span
-                                className="weather-chart__dot"
+                                className="wth-chart-dot"
                                 style={{
                                     backgroundColor: item.color,
                                     boxShadow: `0 0 calc(0.5 * var(--u)) ${item.color}`,
@@ -402,11 +401,11 @@ export default function WeatherChart({
                                 key={tg.id}
                                 type="button"
                                 aria-pressed={on}
-                                className={`weather-chart__toggle${on ? " weather-chart__toggle--on" : ""}`}
+                                className={`wth-chart-toggle${on ? " wth-chart-toggle-on" : ""}`}
                                 onClick={() => toggleSeries(tg.id)}
                             >
                                 <span
-                                    className="weather-chart__dot"
+                                    className="wth-chart-dot"
                                     style={{
                                         backgroundColor: tg.color,
                                         opacity: on ? 1 : 0.45,
@@ -421,11 +420,11 @@ export default function WeatherChart({
                         );
                     })}
                 </span>
-                <span className="weather-chart__range">{rangeText}</span>
+                <span className="wth-chart-range">{rangeText}</span>
             </div>
 
-            <div className="weather-chart__svg-wrap" ref={wrapRef}>
-                <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`} className="weather-chart__svg">
+            <div className="wth-chart-svg-wrap" ref={wrapRef}>
+                <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`} className="wth-chart-svg">
                     <defs>
                         {gradientColors.map((color) => (
                             <linearGradient
@@ -722,36 +721,34 @@ export default function WeatherChart({
 
                 {hoveredIdx !== null && dataset[hoveredIdx] && (
                     <div
-                        className="weather-chart__tooltip"
+                        className="wth-chart-tooltip"
                         style={{
                             left: `${Math.min(85, Math.max(3, (xGridPoints[hoveredIdx].x / width) * 100 - 8))}%`,
                             top: `${Math.min(65, Math.max(2, (hoveredY / height) * 100 - 32))}%`,
                         }}
                     >
-                        <div className="weather-chart__tooltip-label">
-                            {dataset[hoveredIdx].label}
-                        </div>
+                        <div className="wth-chart-tooltip-label">{dataset[hoveredIdx].label}</div>
                         {lines.length === 1 && !isPrecip ? (
-                            <div className="weather-chart__tooltip-single">
-                                <span className="weather-chart__tooltip-num">
+                            <div className="wth-chart-tooltip-single">
+                                <span className="wth-chart-tooltip-num">
                                     {fmt(valueOf(dataset[hoveredIdx], lines[0].key))}
                                     {lines[0].unit}
                                 </span>
                             </div>
                         ) : (
-                            <div className="weather-chart__tooltip-dual">
+                            <div className="wth-chart-tooltip-dual">
                                 {lines.map((l) => {
                                     const v = valueOf(dataset[hoveredIdx], l.key);
                                     return (
-                                        <div key={l.key} className="weather-chart__tooltip-row">
+                                        <div key={l.key} className="wth-chart-tooltip-row">
                                             <span
-                                                className="weather-chart__tooltip-swatch"
+                                                className="wth-chart-tooltip-swatch"
                                                 style={{ backgroundColor: l.color }}
                                             ></span>
-                                            <span className="weather-chart__tooltip-name">
+                                            <span className="wth-chart-tooltip-name">
                                                 {nameOf(l.nameKey)}:
                                             </span>
-                                            <span className="weather-chart__tooltip-num">
+                                            <span className="wth-chart-tooltip-num">
                                                 {fmt(v)}
                                                 {v === null ? "" : l.unit}
                                             </span>
@@ -759,15 +756,15 @@ export default function WeatherChart({
                                     );
                                 })}
                                 {isPrecip && (
-                                    <div className="weather-chart__tooltip-row">
+                                    <div className="wth-chart-tooltip-row">
                                         <span
-                                            className="weather-chart__tooltip-swatch"
+                                            className="wth-chart-tooltip-swatch"
                                             style={{ backgroundColor: metricInfo.colorSecondary }}
                                         ></span>
-                                        <span className="weather-chart__tooltip-name">
+                                        <span className="wth-chart-tooltip-name">
                                             {metricNames[metricInfo.labelKeySecondary]}:
                                         </span>
-                                        <span className="weather-chart__tooltip-num">
+                                        <span className="wth-chart-tooltip-num">
                                             {dataset[hoveredIdx].item?.precipSum ?? 0}mm
                                         </span>
                                     </div>
