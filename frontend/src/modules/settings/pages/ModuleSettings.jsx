@@ -13,10 +13,10 @@ import { Blocks, Plus } from "lucide-react";
 import { useDashboard } from "../../dashboard/useDashboard";
 import { useSettings } from "../useSettings";
 import { useLanguage } from "../useLanguage";
+import { useDialog } from "../../../shared/dialog/useDialog";
 
 import Settings from "../components/SettingsComponents";
 import ModulePositionPreview from "../components/ModulePositionPreview";
-import ModuleSpecificSettings from "../components/ModuleSpecificSettings";
 
 // A module's cell-span is entered as a width and height (in grid cells)
 // rather than picked from a fixed set of buttons, so any size the grid can
@@ -90,13 +90,13 @@ function SizeInputs({ value, onChange, maxW, maxH, labels, disabled }) {
 export default function ModuleSettings() {
     const { dashboard, addModule, removeModule, updateModuleLayout, moveModule } = useDashboard();
     const { settings, loading } = useSettings();
+    const { openDialog } = useDialog();
     const [pendingSpan, setPendingSpan] = useState({ w: 1, h: 1 });
 
     const T = useLanguage();
     const copy = T?.settings?.modules ?? {};
     const sizeCopy = copy.size ?? {};
     const positionCopy = copy.position ?? {};
-    const moduleSettingsCopy = copy.moduleSettings ?? {};
     const maxW = dashboard.layout?.columns ?? 3;
     const maxH = dashboard.layout?.rows ?? 4;
 
@@ -131,9 +131,7 @@ export default function ModuleSettings() {
         <div className="module-settings">
             <Settings.Title Icon={Blocks}>{copy.title}</Settings.Title>
 
-            <Settings.Description>
-                {copy.description}
-            </Settings.Description>
+            <Settings.Description>{copy.description}</Settings.Description>
 
             <Settings.Divider mod="thick" />
 
@@ -144,9 +142,7 @@ export default function ModuleSettings() {
             <Settings.Section>
                 <Settings.SectionTitle>{copy.available}</Settings.SectionTitle>
 
-                <Settings.Description>
-                    {copy.availableDescription}
-                </Settings.Description>
+                <Settings.Description>{copy.availableDescription}</Settings.Description>
 
                 <span className="module-settings__span-label">{sizeCopy.label}</span>
                 <SizeInputs
@@ -189,9 +185,7 @@ export default function ModuleSettings() {
             <Settings.Section>
                 <Settings.SectionTitle>{positionCopy.title}</Settings.SectionTitle>
 
-                <Settings.Description>
-                    {positionCopy.description}
-                </Settings.Description>
+                <Settings.Description>{positionCopy.description}</Settings.Description>
 
                 <ModulePositionPreview
                     layout={dashboard.layout}
@@ -200,25 +194,17 @@ export default function ModuleSettings() {
                     onMove={moveModule}
                     onResize={updateModuleLayout}
                     onRemove={removeModule}
+                    onOpenSettings={(module, startMove) =>
+                        openDialog({
+                            type: "moduleSettings",
+                            props: {
+                                moduleId: module.id,
+                                title: labelFor(module),
+                                onMove: startMove,
+                            },
+                        })
+                    }
                     copy={positionCopy}
-                />
-            </Settings.Section>
-
-            <Settings.Divider />
-
-            {/* =======================
-                PER-MODULE SETTINGS
-            ======================== */}
-
-            <Settings.Section>
-                <Settings.SectionTitle>{moduleSettingsCopy.title}</Settings.SectionTitle>
-
-                <Settings.Description>{moduleSettingsCopy.description}</Settings.Description>
-
-                <ModuleSpecificSettings
-                    modules={dashboard.modules ?? []}
-                    labelFor={labelFor}
-                    copy={moduleSettingsCopy}
                 />
             </Settings.Section>
         </div>

@@ -2,11 +2,13 @@
 // ファイル名: seed.js
 // 作成日: 2026/08/27
 // 作成者: ゴンザガ　ウェイン
-// 概要: デフォルトのユーザーをデータベースにシードするスクリプト。
+// 概要: デフォルトのユーザーをデータベースにシードする。
+//       init.js から呼ばれるほか、単体でも実行できる。
 // ===================================================
 
 import User from "../../modules/auth/User.js";
 import Password from "../utils/password.js";
+import isMain from "./isMain.js";
 
 const USERS_TO_SEED = [
     { username: "admin", password: "coefficientadministrator", role: "admin" },
@@ -38,26 +40,27 @@ const USERS_TO_SEED = [
     { username: "Yamaoka", password: "Tsutech*208", role: "manager" },
 ];
 
-async function seed() {
-    try {
-        for (const { username, password, role } of USERS_TO_SEED) {
-            const existingUser = await User.findByUsername(username);
+export async function seedUsers() {
+    for (const { username, password, role } of USERS_TO_SEED) {
+        const existingUser = await User.findByUsername(username);
 
-            if (existingUser) {
-                console.log(`${username} already exists, skipping.`);
-                continue;
-            }
-
-            const passwordHash = await Password.hashPassword(password);
-            const userId = await User.create(username, passwordHash, role);
-
-            console.log(`${role} user created: ${username} (ID: ${userId})`);
+        if (existingUser) {
+            console.log(`${username} already exists, skipping.`);
+            continue;
         }
-    } catch (error) {
-        console.error(error);
-    }
 
-    process.exit();
+        const passwordHash = await Password.hashPassword(password);
+        const userId = await User.create(username, passwordHash, role);
+
+        console.log(`${role} user created: ${username} (ID: ${userId})`);
+    }
 }
 
-seed();
+if (isMain(import.meta.url)) {
+    seedUsers()
+        .then(() => process.exit(0))
+        .catch((error) => {
+            console.error(error);
+            process.exit(1);
+        });
+}

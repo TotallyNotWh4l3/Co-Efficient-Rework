@@ -1,0 +1,20 @@
+.module-settings-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    padding: 20px;
+}
+
+.module-settings-dialog__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+}
+
+.module-settings-dialog .settings__row {
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+}

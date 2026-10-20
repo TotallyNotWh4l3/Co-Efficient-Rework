@@ -1,13 +1,13 @@
 // ===================================================
 // ファイル名: ModuleSpecificSettings.jsx
-// 概要: ダッシュボード上の各モジュール固有の設定をまとめて編集する。
+// 概要: 1つのモジュール固有の設定フォーム。モジュール配置プレビューで
+//       モジュールをクリックしたときのポップアップ (ModuleSettingsDialog) に表示される。
 //       値は module.settings に保存され、モジュール本体はそこから読み取る。
 // ===================================================
 
 import "./module-specific-settings.css";
 
 import { useEffect, useState } from "react";
-import { ChevronDown } from "lucide-react";
 
 import { useDashboard } from "../../dashboard/useDashboard";
 import { useLanguage } from "../useLanguage";
@@ -94,7 +94,11 @@ function ClockForm({ module }) {
     return (
         <Group>
             <Toggle label={t.hour12} checked={s.hour12 === true} onChange={set("hour12")} />
-            <Toggle label={t.showSeconds} checked={s.showSeconds !== false} onChange={set("showSeconds")} />
+            <Toggle
+                label={t.showSeconds}
+                checked={s.showSeconds !== false}
+                onChange={set("showSeconds")}
+            />
             <Toggle label={t.showDate} checked={s.showDate !== false} onChange={set("showDate")} />
         </Group>
     );
@@ -153,7 +157,9 @@ function WeatherForm({ module, copy }) {
                         <input
                             type="time"
                             value={s.schoolStart ?? DEFAULT_SCHOOL_START}
-                            onChange={(e) => updateModuleSettings(module.id, "schoolStart", e.target.value)}
+                            onChange={(e) =>
+                                updateModuleSettings(module.id, "schoolStart", e.target.value)
+                            }
                         />
                     </label>
                     <label className="mss__field">
@@ -161,7 +167,9 @@ function WeatherForm({ module, copy }) {
                         <input
                             type="time"
                             value={s.schoolEnd ?? DEFAULT_SCHOOL_END}
-                            onChange={(e) => updateModuleSettings(module.id, "schoolEnd", e.target.value)}
+                            onChange={(e) =>
+                                updateModuleSettings(module.id, "schoolEnd", e.target.value)
+                            }
                         />
                     </label>
                 </div>
@@ -209,7 +217,12 @@ function ScheduleForm({ module }) {
                         <span className="mss__group-label">
                             {rt.daysBeforeLabel} {daysBefore}
                         </span>
-                        <CommitSlider value={daysBefore} min={0} max={totalDays} onCommit={set("daysBefore")} />
+                        <CommitSlider
+                            value={daysBefore}
+                            min={0}
+                            max={totalDays}
+                            onCommit={set("daysBefore")}
+                        />
                         <button
                             type="button"
                             className="mss__btn"
@@ -298,8 +311,8 @@ function TransitForm({ module, copy }) {
                 <Choice
                     value={view}
                     options={[
-                        { value: "board", label: copy.views.board },
-                        { value: "line", label: copy.views.line },
+                        { value: "board", label: copy.views?.board },
+                        { value: "line", label: copy.views?.line },
                     ]}
                     onChange={(v) => {
                         updateModuleSettings(module.id, "view", v);
@@ -354,55 +367,15 @@ const FORMS = {
 };
 
 // ---------------------------------------------------
-// The list
+// The form for one module
 // ---------------------------------------------------
 
-export default function ModuleSpecificSettings({ modules, labelFor, copy = {} }) {
-    const [openId, setOpenId] = useState(null);
+export default function ModuleSpecificSettings({ module, copy = {} }) {
+    const Form = FORMS[module.type];
 
-    if (modules.length === 0) {
-        return <p className="mss__hint">{copy.empty}</p>;
+    if (!Form) {
+        return <p className="mss__hint">{copy.noOptions}</p>;
     }
 
-    // Number modules that share a name ("Weather #1", "Weather #2").
-    const names = modules.map(labelFor);
-    const seen = {};
-    const labels = names.map((name) => {
-        const total = names.filter((n) => n === name).length;
-        seen[name] = (seen[name] ?? 0) + 1;
-        return total > 1 ? `${name} #${seen[name]}` : name;
-    });
-
-    return (
-        <div className="mss">
-            {modules.map((module, i) => {
-                const Form = FORMS[module.type];
-                const isOpen = openId === module.id;
-
-                return (
-                    <div key={module.id} className={`mss__card${isOpen ? " mss__card--open" : ""}`}>
-                        <button
-                            type="button"
-                            className="mss__card-head"
-                            aria-expanded={isOpen}
-                            onClick={() => setOpenId(isOpen ? null : module.id)}
-                        >
-                            <span className="mss__card-title">{labels[i]}</span>
-                            <ChevronDown className="mss__card-chevron" size={16} />
-                        </button>
-
-                        {isOpen && (
-                            <div className="mss__card-body">
-                                {Form ? (
-                                    <Form module={module} copy={copy} />
-                                ) : (
-                                    <p className="mss__hint">{copy.noOptions}</p>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
-        </div>
-    );
+    return <Form module={module} copy={copy} />;
 }

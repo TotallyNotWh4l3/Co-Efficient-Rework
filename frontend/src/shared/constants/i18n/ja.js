@@ -351,10 +351,10 @@ export default {
             position: {
                 title: "配置",
                 description:
-                    "ダッシュボードのグリッドを縮小表示します。各モジュールのセルとサイズを確認しながら、位置の移動とサイズ変更ができます。",
+                    "ダッシュボードのグリッドを縮小表示します。モジュールをクリックすると設定を開けます。位置の移動とサイズ変更もここでできます。",
                 gridLabel: "グリッド",
                 cellApprox: "1セル ≈",
-                hint: "モジュールをドラッグで移動、端や角をドラッグでサイズ変更",
+                hint: "クリックで設定、ドラッグで移動、端や角をドラッグでサイズ変更",
                 selectedHint: "配置したいセルをクリックしてください。",
                 occupied: "その場所は他のモジュールが使用中です。",
                 outOfBounds: "その位置にはモジュールが収まりません。",
@@ -370,6 +370,24 @@ export default {
                 removeYes: "削除",
                 removeNo: "キャンセル",
                 removeFailed: "モジュールを削除できませんでした。もう一度お試しください。",
+                deleteMode: "モジュールを削除",
+                deleteModeDone: "完了",
+                deleteHint: "削除するモジュールをクリックして、確認してください。",
+                deleteConfirm: "{name} をダッシュボードから削除しますか？",
+            },
+            // モジュール配置プレビューでモジュールをクリックしたときのポップアップ用
+            moduleSettings: {
+                location: "場所",
+                station: "駅・バス停",
+                direction: "方面",
+                display: "表示",
+                views: {
+                    board: "発車一覧",
+                    line: "路線図",
+                },
+                noOptions: "このモジュールには設定がありません。",
+                move: "移動",
+                done: "完了",
             },
         },
 

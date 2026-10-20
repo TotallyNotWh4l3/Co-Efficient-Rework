@@ -324,10 +324,10 @@ export default {
             position: {
                 title: "Position",
                 description:
-                    "A miniature of your dashboard grid showing each module's cell and size. Move or resize modules right on the grid.",
+                    "A miniature of your dashboard grid showing each module's cell and size. Click a module to open its settings, or move and resize it right on the grid.",
                 gridLabel: "Grid",
                 cellApprox: "Each cell ≈",
-                hint: "Drag a module to move it, or drag its edge or corner to resize.",
+                hint: "Click a module for its settings. Drag it to move, or drag its edge or corner to resize.",
                 selectedHint: "Click a cell to place the module there.",
                 occupied: "That spot is already taken.",
                 outOfBounds: "The module doesn't fit there.",
@@ -343,6 +343,24 @@ export default {
                 removeYes: "Remove",
                 removeNo: "Cancel",
                 removeFailed: "Couldn't remove the module. Try again.",
+                deleteMode: "Remove modules",
+                deleteModeDone: "Done",
+                deleteHint: "Click a module, then confirm to remove it.",
+                deleteConfirm: "Remove {name} from the dashboard?",
+            },
+            // Shown in the pop-up that opens when a module is clicked in the position preview.
+            moduleSettings: {
+                location: "Location",
+                station: "Station / bus stop",
+                direction: "Direction",
+                display: "Display",
+                views: {
+                    board: "Departure list",
+                    line: "Line view",
+                },
+                noOptions: "This module has no settings.",
+                move: "Move",
+                done: "Done",
             },
         },
         users: {

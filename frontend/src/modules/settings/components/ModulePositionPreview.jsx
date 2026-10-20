@@ -48,6 +48,7 @@ export default function ModulePositionPreview({
     onMove,
     onResize,
     onRemove,
+    onOpenSettings,
     copy = {},
 }) {
     const { columns, rows, gap = 0, padding = 0 } = layout;
@@ -101,11 +102,7 @@ export default function ModulePositionPreview({
     const attemptMove = async (module, dest) => {
         if (!dest) return;
         if (!dest.ok) {
-            setMessage(
-                dest.reason === "occupied"
-                    ? (copy.occupied)
-                    : (copy.outOfBounds),
-            );
+            setMessage(dest.reason === "occupied" ? copy.occupied : copy.outOfBounds);
             return;
         }
 
@@ -265,14 +262,30 @@ export default function ModulePositionPreview({
         setMessage(null);
     };
 
-    // A click on a module: select it for moving, or (delete mode) target it for removal.
+    // Picks a module up for click-to-move (the touch fallback for dragging).
+    // Reached from the "Move" button in the module's settings pop-up.
+    const startMove = (module) => {
+        setSelectedId(module.id);
+        setHover(null);
+        setMessage(null);
+    };
+
+    // A click on a module:
+    //  - delete mode: target it for removal
+    //  - a module is already picked up: keep the pick-up / drop behaviour
+    //    (click the same one to put it down, another one to switch)
+    //  - otherwise: open that module's settings pop-up
     const activate = (module) => {
         if (deleteMode) {
             setConfirmRemoveId((prev) => (prev === module.id ? null : module.id));
             setMessage(null);
             return;
         }
-        toggleSelected(module);
+        if (selectedId || !onOpenSettings) {
+            toggleSelected(module);
+            return;
+        }
+        onOpenSettings(module, () => startMove(module));
     };
 
     const handleGridClick = (event) => {
@@ -377,7 +390,9 @@ export default function ModulePositionPreview({
                                 isSelected ? "mpp__module--selected" : "",
                                 isDragging ? "mpp__module--dragging" : "",
                                 deleteMode ? "mpp__module--deletable" : "",
-                                deleteMode && confirmRemoveId === module.id ? "mpp__module--pending-delete" : "",
+                                deleteMode && confirmRemoveId === module.id
+                                    ? "mpp__module--pending-delete"
+                                    : "",
                                 isResizing ? "mpp__module--resizing" : "",
                             ].join(" ")}
                             style={{
@@ -409,21 +424,21 @@ export default function ModulePositionPreview({
                             </div>
 
                             {!deleteMode && (
-                            <span
-                                className="mpp__grip"
-                                role="presentation"
-                                title={copy.resizeBoth}
-                                draggable={false}
-                                onPointerDown={(event) => startResize(event, module, "se")}
-                                onPointerMove={(event) => moveResize(event, module)}
-                                onPointerUp={() => endResize(module, true)}
-                                onPointerCancel={() => endResize(module, false)}
-                                onLostPointerCapture={() => endResize(module, false)}
-                                onDragStart={(event) => event.preventDefault()}
-                                onClick={(event) => event.stopPropagation()}
-                            >
-                                <span className="mpp__grip-dots" />
-                            </span>
+                                <span
+                                    className="mpp__grip"
+                                    role="presentation"
+                                    title={copy.resizeBoth}
+                                    draggable={false}
+                                    onPointerDown={(event) => startResize(event, module, "se")}
+                                    onPointerMove={(event) => moveResize(event, module)}
+                                    onPointerUp={() => endResize(module, true)}
+                                    onPointerCancel={() => endResize(module, false)}
+                                    onLostPointerCapture={() => endResize(module, false)}
+                                    onDragStart={(event) => event.preventDefault()}
+                                    onClick={(event) => event.stopPropagation()}
+                                >
+                                    <span className="mpp__grip-dots" />
+                                </span>
                             )}
                         </div>
                     );
@@ -491,11 +506,7 @@ export default function ModulePositionPreview({
                     role="status"
                 >
                     {message ??
-                        (deleteMode
-                            ? copy.deleteHint
-                            : selectedId
-                            ? (copy.selectedHint)
-                            : (copy.hint))}
+                        (deleteMode ? copy.deleteHint : selectedId ? copy.selectedHint : copy.hint)}
                 </span>
             </div>
         </div>

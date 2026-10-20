@@ -2,10 +2,13 @@
 // ファイル名: migrate.js
 // 作成日: 2026/08/27
 // 作成者: ゴンザガ　ウェイン
-// 概要: データベースのマイグレーションを実行するスクリプト。
+// 概要: データベースのマイグレーションを実行する。
+//       適用済みは schema_migrations テーブルに記録し、何度実行しても安全。
+//       init.js から呼ばれるほか、単体でも実行できる。
 // ===================================================
 
 import db from "../database.js";
+import isMain from "../isMain.js";
 
 import createUsersTable from "./001_create_users.js";
 import createUserSettingsTable from "./002_create_user_settings.js";
@@ -41,21 +44,61 @@ const migrations = [
     { name: "014_add_weather_fetch_claim", up: addWeatherFetchClaimColumn },
     { name: "015_fix_user_foreign_keys", up: fixUserForeignKeys },
     { name: "016_dashboard_grid_placement", up: addDashboardGridPlacement },
-
 ];
 
-async function runMigrations() {
+async function columnExists(table, column) {
+    const result = await db.execute(`PRAGMA table_info(${table})`);
+    return result.rows.some((row) => row.name === column);
+}
+
+async function markApplied(name) {
+    await db.execute({
+        sql: "INSERT OR IGNORE INTO schema_migrations (name) VALUES (?)",
+        args: [name],
+    });
+}
+
+export async function runMigrations() {
+    await db.execute(`
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+            name TEXT PRIMARY KEY,
+            applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    const recorded = await db.execute("SELECT name FROM schema_migrations");
+    const applied = new Set(recorded.rows.map((row) => row.name));
+
+    // A database set up before schema_migrations existed has no records, but
+    // it is already fully migrated. 016 is the last migration and adds
+    // dashboard_settings.rows, so seeing that column means everything ran.
+    if (applied.size === 0 && (await columnExists("dashboard_settings", "rows"))) {
+        for (const { name } of migrations) {
+            await markApplied(name);
+            applied.add(name);
+        }
+        console.log("[Migrate] Existing database detected — recorded all migrations as applied.");
+    }
+
     for (const migration of migrations) {
+        if (applied.has(migration.name)) {
+            console.log(`[Migrate] Already applied: ${migration.name}`);
+            continue;
+        }
+
         await migration.up(db);
+        await markApplied(migration.name);
         console.log(`[Migrate] Applied: ${migration.name}`);
     }
 
     console.log("[Migrate] All migrations applied.");
 }
 
-runMigrations()
-    .then(() => process.exit(0))
-    .catch((error) => {
-        console.error("[Migrate] Failed:", error);
-        process.exit(1);
-    });
+if (isMain(import.meta.url)) {
+    runMigrations()
+        .then(() => process.exit(0))
+        .catch((error) => {
+            console.error("[Migrate] Failed:", error);
+            process.exit(1);
+        });
+}
