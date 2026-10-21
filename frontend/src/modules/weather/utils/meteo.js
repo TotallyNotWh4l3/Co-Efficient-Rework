@@ -223,3 +223,70 @@ export function formatCoord(value, positive, negative) {
     if (!isNum(value)) return "--";
     return `${Math.abs(value).toFixed(4)}°${value >= 0 ? positive : negative}`;
 }
+
+// ---------- Moon ----------
+
+const MOON_KEYS = [
+    "new",
+    "waxingCrescent",
+    "firstQuarter",
+    "waxingGibbous",
+    "full",
+    "waningGibbous",
+    "lastQuarter",
+    "waningCrescent",
+];
+
+export const SYNODIC_DAYS = 29.530588;
+
+// Open-Meteo moon_phase: 0 = new, 0.25 = first quarter, 0.5 = full, 0.75 = last quarter.
+export function moonPhaseKey(phase) {
+    return isNum(phase) ? MOON_KEYS[Math.round(phase * 8) % 8] : null;
+}
+
+export const moonIllumination = (phase) =>
+    isNum(phase) ? (1 - Math.cos(2 * Math.PI * phase)) / 2 : null;
+
+/**
+ * The moon interval that matters right now, built from the daily moonrise /
+ * moonset list: the one containing `now` (up: true), else the next one to come
+ * (up: false). Times are location-local ISO strings, like the daily sunrise.
+ * When the moon rose before the first forecast day, the rise is unknown
+ * (riseKnown: false) and only estimated so the arc can still be drawn.
+ */
+export function moonWindow(daily, now) {
+    const t = localMs(now);
+    if (!isNum(t)) return null;
+
+    const rises = [];
+    const sets = [];
+    daily.forEach((d) => {
+        const r = localMs(d.moonrise);
+        const s = localMs(d.moonset);
+        if (isNum(r)) rises.push(r);
+        if (isNum(s)) sets.push(s);
+    });
+    rises.sort((a, b) => a - b);
+    sets.sort((a, b) => a - b);
+
+    const spans = [];
+    if (sets.length && (!rises.length || sets[0] < rises[0])) {
+        spans.push({ rise: sets[0] - 12 * 3600000, set: sets[0], riseKnown: false });
+    }
+    rises.forEach((r) => {
+        const s = sets.find((x) => x > r);
+        if (s !== undefined) spans.push({ rise: r, set: s, riseKnown: true });
+    });
+
+    const inside = spans.find((x) => t >= x.rise && t <= x.set);
+    const span = inside ?? spans.find((x) => x.rise > t);
+    if (!span) return null;
+
+    const iso = (ms) => new Date(ms).toISOString().slice(0, 16);
+    return {
+        up: Boolean(inside),
+        riseKnown: span.riseKnown,
+        rise: iso(span.rise),
+        set: iso(span.set),
+    };
+}

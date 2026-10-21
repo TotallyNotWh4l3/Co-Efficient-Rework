@@ -69,6 +69,9 @@ function buildApiUrl(latitude, longitude, timezone = DEFAULT_TIMEZONE) {
             "wind_gusts_10m_max",
             "wind_direction_10m_dominant",
             "sunshine_duration",
+            "moon_phase",
+            "moonrise",
+            "moonset",
         ].join(","),
 
         forecast_days: 7,

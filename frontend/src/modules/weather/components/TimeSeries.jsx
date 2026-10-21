@@ -2,10 +2,11 @@
 // ファイル名: TimeSeries.jsx
 // 作成日: 2026/10/21
 // 概要: 天気ページ用の軽量SVG時系列チャート
-//       （折れ線・棒、左右2軸、現在時刻マーカー、ホバー読み取り）
+//       （折れ線・棒、左右2軸、現在時刻マーカー、ホバー読み取り、
+//        グラデーション塗り・最高/最低ラベル・描画アニメーション）
 // ===================================================
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 const W = 800;
 const H = 220;
@@ -62,6 +63,27 @@ function pathFor(values, xAt, yAt) {
     return d;
 }
 
+function areaFor(values, xAt, yAt, baseY) {
+    let d = "";
+    let run = [];
+    const flush = () => {
+        if (run.length > 1) {
+            d += `M${xAt(run[0]).toFixed(1)},${baseY}`;
+            run.forEach((i) => {
+                d += `L${xAt(i).toFixed(1)},${yAt(values[i]).toFixed(1)}`;
+            });
+            d += `L${xAt(run[run.length - 1]).toFixed(1)},${baseY}Z`;
+        }
+        run = [];
+    };
+    values.forEach((v, i) => {
+        if (Number.isFinite(v)) run.push(i);
+        else flush();
+    });
+    flush();
+    return d;
+}
+
 function pickStride(n) {
     const target = n / 9;
     return [1, 2, 3, 4, 6, 12, 24].find((s) => s >= target) ?? 24;
@@ -70,7 +92,8 @@ function pickStride(n) {
 /**
  * @param {string[]} times — location-local ISO strings, one per point
  * @param {Array<{key, label, color, values:(number|null)[], axis?:"left"|"right",
- *   kind?:"line"|"bar", unit?:string, digits?:number, dashed?:boolean}>} series
+ *   kind?:"line"|"bar", unit?:string, digits?:number, dashed?:boolean,
+ *   area?:boolean (gradient fill under the line), extrema?:boolean (label high/low)}>} series
  * @param {number} nowIndex — index of "now" within `times` (or -1)
  * @param {[number, number]} [leftDomain] / [rightDomain] — fixed axis ranges
  */
@@ -82,6 +105,7 @@ export default function TimeSeries({
     leftDomain,
     rightDomain,
 }) {
+    const uid = useId().replace(/:/g, "");
     const svgRef = useRef(null);
     const [hover, setHover] = useState(null);
 
@@ -109,6 +133,9 @@ export default function TimeSeries({
     const readIdx = hover ?? (nowIndex >= 0 ? nowIndex : 0);
     const stride = pickStride(n);
     const refScale = leftScale ?? rightScale;
+    const baseY = PAD.t + INNER_H;
+    const lineSeries = series.filter((s) => s.kind !== "bar");
+    const areaSeries = lineSeries.filter((s) => s.area);
 
     return (
         <div className="wxp-chart">
@@ -120,6 +147,22 @@ export default function TimeSeries({
                 onPointerLeave={() => setHover(null)}
                 role="img"
             >
+                <defs>
+                    {areaSeries.map((s) => (
+                        <linearGradient
+                            key={s.key}
+                            id={`wxp-${uid}-${s.key}`}
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                        >
+                            <stop offset="0%" style={{ stopColor: s.color, stopOpacity: 0.34 }} />
+                            <stop offset="100%" style={{ stopColor: s.color, stopOpacity: 0 }} />
+                        </linearGradient>
+                    ))}
+                </defs>
+
                 {/* grid + left axis labels */}
                 {refScale?.ticks.map((t) => {
                     const y = yFor(refScale)(t);
@@ -214,18 +257,80 @@ export default function TimeSeries({
                         );
                     })}
 
-                {series
-                    .filter((s) => s.kind !== "bar")
+                {areaSeries.map((s) => {
+                    const scale = scaleOf(s);
+                    if (!scale) return null;
+                    return (
+                        <path
+                            key={`a${s.key}`}
+                            className="wxp-chart__area"
+                            d={areaFor(s.values, xAt, yFor(scale), baseY)}
+                            fill={`url(#wxp-${uid}-${s.key})`}
+                        />
+                    );
+                })}
+
+                {lineSeries.map((s) => {
+                    const scale = scaleOf(s);
+                    if (!scale) return null;
+                    return (
+                        <path
+                            key={s.key}
+                            className={`wxp-chart__line${s.dashed ? "" : " wxp-chart__line--draw"}`}
+                            d={pathFor(s.values, xAt, yFor(scale))}
+                            pathLength={s.dashed ? undefined : 1}
+                            style={{ stroke: s.color, color: s.color }}
+                            strokeDasharray={s.dashed ? "4 3" : undefined}
+                        />
+                    );
+                })}
+
+                {/* high / low labels */}
+                {lineSeries
+                    .filter((s) => s.extrema)
                     .map((s) => {
                         const scale = scaleOf(s);
-                        if (!scale) return null;
+                        const finite = s.values
+                            .map((v, i) => [v, i])
+                            .filter(([v]) => Number.isFinite(v));
+                        if (!scale || finite.length < 2) return null;
+                        const y = yFor(scale);
+                        const hi = finite.reduce((a, b) => (b[0] > a[0] ? b : a));
+                        const lo = finite.reduce((a, b) => (b[0] < a[0] ? b : a));
+                        if (hi[0] === lo[0]) return null;
+                        const anchor = (x) =>
+                            x < PAD.l + 24 ? "start" : x > W - PAD.r - 24 ? "end" : "middle";
+                        return [
+                            [hi, Math.max(PAD.t + 8, y(hi[0]) - 7), "▲"],
+                            [lo, Math.min(baseY - 3, y(lo[0]) + 15), "▼"],
+                        ].map(([[v, i], ty, mark]) => (
+                            <text
+                                key={`${s.key}${mark}`}
+                                className="wxp-chart__extreme"
+                                x={xAt(i)}
+                                y={ty}
+                                textAnchor={anchor(xAt(i))}
+                                style={{ fill: s.color }}
+                            >
+                                {mark} {v.toFixed(s.digits ?? 0)}
+                            </text>
+                        ));
+                    })}
+
+                {/* value dots at the read-out position */}
+                {n > 0 &&
+                    lineSeries.map((s) => {
+                        const scale = scaleOf(s);
+                        const v = s.values[readIdx];
+                        if (!scale || !Number.isFinite(v)) return null;
                         return (
-                            <path
-                                key={s.key}
-                                className="wxp-chart__line"
-                                d={pathFor(s.values, xAt, yFor(scale))}
-                                style={{ stroke: s.color }}
-                                strokeDasharray={s.dashed ? "4 3" : undefined}
+                            <circle
+                                key={`d${s.key}`}
+                                className="wxp-chart__dot"
+                                cx={xAt(readIdx)}
+                                cy={yFor(scale)(v)}
+                                r="3.5"
+                                style={{ fill: s.color }}
                             />
                         );
                     })}

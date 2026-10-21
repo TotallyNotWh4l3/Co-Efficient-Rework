@@ -17,6 +17,7 @@ import { useLanguage } from "../../settings/useLanguage";
 import TimeSeries from "../components/TimeSeries";
 import Compass from "../components/Compass";
 import SunArc from "../components/SunArc";
+import Sparkline from "../components/Sparkline";
 import {
     fmt,
     fmtSigned,
@@ -38,6 +39,10 @@ import {
     pressureTendency,
     solarPosition,
     noonAltitude,
+    moonWindow,
+    moonPhaseKey,
+    moonIllumination,
+    SYNODIC_DAYS,
 } from "../utils/meteo";
 import "./weather-page.css";
 
@@ -66,15 +71,78 @@ const C = {
     cape: "#f87171",
 };
 
-function Tile({ label, value, unit, sub, tone, hint, children }) {
+// Temperature -> hue (cold blue ... hot red). Drives the hero glow and table tints.
+const HEAT_STOPS = [
+    [-10, 220],
+    [5, 200],
+    [15, 160],
+    [22, 50],
+    [30, 22],
+    [38, 2],
+];
+
+function heatHue(t) {
+    if (!Number.isFinite(t)) return 215;
+    if (t <= HEAT_STOPS[0][0]) return HEAT_STOPS[0][1];
+    for (let i = 1; i < HEAT_STOPS.length; i++) {
+        const [t1, h1] = HEAT_STOPS[i];
+        const [t0, h0] = HEAT_STOPS[i - 1];
+        if (t <= t1) return h0 + ((t - t0) / (t1 - t0)) * (h1 - h0);
+    }
+    return HEAT_STOPS[HEAT_STOPS.length - 1][1];
+}
+
+// value -> 0..1 (null when unknown)
+const frac = (v, lo, hi) =>
+    Number.isFinite(v) ? Math.min(1, Math.max(0, (v - lo) / (hi - lo))) : null;
+
+// Inset shadow layers over the cell's own background, so the "today" row stays visible.
+const glow = (hue, f) =>
+    f > 0.02
+        ? { boxShadow: `inset 0 0 0 100vmax hsl(${hue} 85% 55% / ${(f * 0.35).toFixed(2)})` }
+        : undefined;
+const tint = (v, lo, hi, hue) => (Number.isFinite(v) ? glow(hue, frac(v, lo, hi)) : undefined);
+// " (+1d)" when an event falls on another date than the reference one.
+const dayShift = (iso, ref) => {
+    const d = Math.round((Date.parse(iso.slice(0, 10)) - Date.parse(ref.slice(0, 10))) / 86400000);
+    return d === 0 ? "" : ` (${d > 0 ? "+" : ""}${d}d)`;
+};
+
+const heatCell = (v) => (Number.isFinite(v) ? glow(heatHue(v), 0.7) : undefined);
+
+function Tile({
+    label,
+    value,
+    unit,
+    sub,
+    tone,
+    hint,
+    accent,
+    gauge = null,
+    spark,
+    sparkNow,
+    children,
+}) {
     return (
-        <div className={`wxp-tile${tone ? ` wxp-tile--${tone}` : ""}`} title={hint}>
+        <div
+            className={`wxp-tile${tone ? ` wxp-tile--${tone}` : ""}`}
+            style={tone || !accent ? undefined : { "--accent": accent }}
+            title={hint}
+        >
             <div className="wxp-tile__label">{label}</div>
             <div className="wxp-tile__value">
                 {value}
                 {unit && <span className="wxp-tile__unit">{unit}</span>}
             </div>
             {sub && <div className="wxp-tile__sub">{sub}</div>}
+            {spark && (
+                <Sparkline className="wxp-tile__spark" values={spark} nowIndex={sparkNow} area />
+            )}
+            {gauge !== null && (
+                <div className="wxp-gauge">
+                    <i style={{ "--fill": gauge }} />
+                </div>
+            )}
             {children}
         </div>
     );
@@ -194,6 +262,13 @@ export default function WeatherPage() {
     const today = daily[0] ?? {};
     const tomorrow = daily[1] ?? {};
 
+    // 25 h window (12 h back, 12 h ahead) behind each tile's sparkline.
+    const sparkStart = Math.max(0, nowIdx - 12);
+    const sparkWin = hourly.slice(sparkStart, nowIdx + 13);
+    const sparkNow = nowIdx - sparkStart;
+    const spark = (key) => sparkWin.map((h) => (Number.isFinite(h[key]) ? h[key] : null));
+    const heat = heatHue(cur.temperature);
+
     const td = dewPoint(cur.temperature, cur.humidity);
     const spread = td === null ? null : cur.temperature - td;
     const vpd = vaporPressureDeficit(cur.temperature, cur.humidity);
@@ -232,6 +307,18 @@ export default function WeatherPage() {
                   .slice(11, 16)
             : "--:--";
 
+    // After sunset / before sunrise the sun card turns into a moon card
+    // (needs the moonrise/moonset fields; older cached payloads keep the sun).
+    const nowLocal = localMs(cur.time);
+    const isNight =
+        Number.isFinite(nowLocal) &&
+        Number.isFinite(localMs(today.sunrise)) &&
+        Number.isFinite(localMs(today.sunset)) &&
+        (nowLocal < localMs(today.sunrise) || nowLocal > localMs(today.sunset));
+    const moon = isNight ? moonWindow(daily, cur.time) : null;
+    const illum = moonIllumination(today.moonPhase);
+    const moonKey = moonPhaseKey(today.moonPhase);
+
     const hours = RANGES.find((r) => r.id === rangeId)?.hours ?? 48;
     const start = Math.max(0, nowIdx - LOOKBACK_HOURS);
     const win = hourly.slice(start, start + hours);
@@ -260,7 +347,20 @@ export default function WeatherPage() {
             {header}
 
             {/* ---------- hero ---------- */}
-            <section className="wxp-hero">
+            <section
+                className="wxp-hero"
+                style={{
+                    "--heat": `hsl(${heat} 92% 62%)`,
+                    "--heat-soft": `hsl(${heat} 92% 62% / 0.18)`,
+                }}
+            >
+                <Sparkline
+                    className="wxp-hero__spark"
+                    values={col("temperature")}
+                    nowIndex={chartNow}
+                    area
+                    dot={false}
+                />
                 <div className="wxp-hero__main">
                     <div className="wxp-hero__loc">{locName}</div>
                     <div className="wxp-hero__temp">
@@ -275,6 +375,9 @@ export default function WeatherPage() {
                     <div>
                         <dt>{T.hero.dataTime}</dt>
                         <dd>
+                            <i
+                                className={`wxp-pulse${ageMin !== null && ageMin > 60 ? " is-stale" : ""}`}
+                            />
                             {cur.time?.replace("T", " ")}{" "}
                             {ageMin !== null && (
                                 <em>
@@ -311,6 +414,9 @@ export default function WeatherPage() {
                     unit="°C"
                     sub={`Δ ${fmtSigned(cur.feelsLike - cur.temperature)}°`}
                     hint={T.hints.feelsLike}
+                    accent={C.temp}
+                    spark={spark("feelsLike")}
+                    sparkNow={sparkNow}
                 />
                 <Tile
                     label={T.tiles.dewPoint}
@@ -318,6 +424,9 @@ export default function WeatherPage() {
                     unit="°C"
                     sub={`${T.tiles.spread} ${fmt(spread, 1)}°`}
                     hint={T.hints.dewPoint}
+                    accent={C.dew}
+                    spark={spark("dewPoint")}
+                    sparkNow={sparkNow}
                 />
                 <Tile
                     label={T.tiles.humidity}
@@ -325,6 +434,9 @@ export default function WeatherPage() {
                     unit="%"
                     sub={`VPD ${fmt(vpd, 2)} kPa`}
                     hint={T.hints.humidity}
+                    accent={C.rh}
+                    spark={spark("humidity")}
+                    sparkNow={sparkNow}
                 />
                 <Tile
                     label={T.tiles.wetBulb}
@@ -332,6 +444,8 @@ export default function WeatherPage() {
                     unit="°C"
                     sub={`T − Tw ${fmt(tw === null ? null : cur.temperature - tw, 1)}°`}
                     hint={T.hints.wetBulb}
+                    accent={C.dew}
+                    gauge={frac(tw, 0, 35)}
                 />
                 <Tile
                     label={T.tiles.pressure}
@@ -348,6 +462,9 @@ export default function WeatherPage() {
                         )
                     }
                     hint={T.hints.pressure}
+                    accent={C.pressure}
+                    spark={spark("pressureMsl")}
+                    sparkNow={sparkNow}
                 />
                 <Tile
                     label={T.tiles.cloud}
@@ -355,6 +472,9 @@ export default function WeatherPage() {
                     unit="%"
                     sub={cloudBase === null ? "—" : `${T.tiles.base} ≈ ${fmt(cloudBase)} m`}
                     hint={T.hints.cloud}
+                    accent={C.cloud}
+                    spark={spark("cloudCover")}
+                    sparkNow={sparkNow}
                 />
                 <Tile
                     label={T.tiles.visibility}
@@ -362,6 +482,9 @@ export default function WeatherPage() {
                     unit="km"
                     sub={T.tiles.hourlyModel}
                     hint={T.hints.visibility}
+                    accent="#94a3b8"
+                    spark={spark("visibility")}
+                    sparkNow={sparkNow}
                 />
                 <Tile
                     label={T.tiles.precip}
@@ -369,6 +492,9 @@ export default function WeatherPage() {
                     unit="mm"
                     sub={`${T.tiles.prob} ${fmt(nowHour.precipitation)}%`}
                     hint={T.hints.precip}
+                    accent={C.precip}
+                    spark={spark("precipitationSum")}
+                    sparkNow={sparkNow}
                 />
                 <Tile
                     label={T.tiles.uv}
@@ -378,6 +504,8 @@ export default function WeatherPage() {
                         uvClass ? `${T.uvLevels[uvClass.key]} · max ${fmt(today.uvIndex, 1)}` : "—"
                     }
                     hint={T.hints.uv}
+                    accent={C.uv}
+                    gauge={frac(nowHour.uvIndex, 0, 11)}
                 />
                 <Tile
                     label={T.tiles.wbgt}
@@ -386,6 +514,8 @@ export default function WeatherPage() {
                     tone={wbgtClass?.tone}
                     sub={wbgtClass ? T.wbgtLevels[wbgtClass.key] : "—"}
                     hint={T.hints.wbgt}
+                    accent={C.temp}
+                    gauge={frac(wbgt, 10, 35)}
                 />
                 <Tile
                     label={T.tiles.cape}
@@ -394,6 +524,8 @@ export default function WeatherPage() {
                     tone={capeClass?.tone}
                     sub={capeClass ? T.capeLevels[capeClass.key] : "—"}
                     hint={T.hints.cape}
+                    accent={C.cape}
+                    gauge={frac(nowHour.cape, 0, 2500)}
                 />
                 <Tile
                     label={T.tiles.freezing}
@@ -401,6 +533,9 @@ export default function WeatherPage() {
                     unit="m"
                     sub="0 °C isotherm"
                     hint={T.hints.freezing}
+                    accent="#67e8f9"
+                    spark={spark("freezingLevel")}
+                    sparkNow={sparkNow}
                 />
             </div>
 
@@ -409,7 +544,11 @@ export default function WeatherPage() {
             <div className="wxp-pair">
                 <Card title={T.wind.title}>
                     <div className="wxp-windcard">
-                        <Compass degrees={cur.windDirection} speed={cur.windSpeed} />
+                        <Compass
+                            degrees={cur.windDirection}
+                            speed={cur.windSpeed}
+                            gust={cur.windGust}
+                        />
                         <dl className="wxp-kv">
                             <div>
                                 <dt>{T.wind.from}</dt>
@@ -447,57 +586,111 @@ export default function WeatherPage() {
                     </div>
                 </Card>
 
-                <Card title={T.sun.title}>
+                <Card title={moon ? T.moon.title : T.sun.title}>
                     <div className="wxp-suncard">
-                        <SunArc sunrise={today.sunrise} sunset={today.sunset} now={cur.time} />
-                        <dl className="wxp-kv">
-                            <div>
-                                <dt>
-                                    {T.sun.sunrise} / {T.sun.sunset}
-                                </dt>
-                                <dd>
-                                    {hhmm(today.sunrise)} / {hhmm(today.sunset)}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt>{T.sun.solarNoon}</dt>
-                                <dd>{solarNoon}</dd>
-                            </div>
-                            <div>
-                                <dt>{T.sun.daylight}</dt>
-                                <dd>
-                                    {formatDuration(daylightSec)}{" "}
-                                    <em>
-                                        {dayDeltaSec === null
-                                            ? ""
-                                            : `(${fmtSigned(dayDeltaSec / 60, 1)} min ${T.sun.tomorrow})`}
-                                    </em>
-                                </dd>
-                            </div>
-                            <div>
-                                <dt>{T.sun.sunshine}</dt>
-                                <dd>{formatDuration(today.sunshineDuration)}</dd>
-                            </div>
-                            <div>
-                                <dt>{T.sun.altitude}</dt>
-                                <dd>
-                                    {sun ? `${fmt(sun.altitude, 1)}°` : "--"}{" "}
-                                    <em>
+                        {moon ? (
+                            <SunArc
+                                body="moon"
+                                sunrise={moon.rise}
+                                sunset={moon.set}
+                                now={cur.time}
+                                phase={today.moonPhase}
+                                riseLabel={moon.riseKnown ? undefined : "--:--"}
+                            />
+                        ) : (
+                            <SunArc sunrise={today.sunrise} sunset={today.sunset} now={cur.time} />
+                        )}
+                        {moon ? (
+                            <dl className="wxp-kv">
+                                <div>
+                                    <dt>
+                                        {T.moon.moonrise} / {T.moon.moonset}
+                                    </dt>
+                                    <dd>
+                                        {moon?.riseKnown
+                                            ? `${hhmm(moon.rise)}${dayShift(moon.rise, cur.time)}`
+                                            : "--:--"}{" "}
+                                        / {hhmm(moon?.set)}
+                                        {moon ? dayShift(moon.set, cur.time) : ""}
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>{T.moon.phase}</dt>
+                                    <dd>{moonKey ? T.moon.names[moonKey] : "--"}</dd>
+                                </div>
+                                <div>
+                                    <dt>{T.moon.illumination}</dt>
+                                    <dd>{illum === null ? "--" : `${fmt(illum * 100)}%`}</dd>
+                                </div>
+                                <div>
+                                    <dt>{T.moon.age}</dt>
+                                    <dd>
+                                        {Number.isFinite(today.moonPhase)
+                                            ? `${fmt(today.moonPhase * SYNODIC_DAYS, 1)} ${T.moon.days}`
+                                            : "--"}
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>{T.moon.visible}</dt>
+                                    <dd>
+                                        {moon?.riseKnown
+                                            ? formatDuration(
+                                                  (localMs(moon.set) - localMs(moon.rise)) / 1000,
+                                              )
+                                            : "--"}
+                                    </dd>
+                                </div>
+                            </dl>
+                        ) : (
+                            <dl className="wxp-kv">
+                                <div>
+                                    <dt>
+                                        {T.sun.sunrise} / {T.sun.sunset}
+                                    </dt>
+                                    <dd>
+                                        {hhmm(today.sunrise)} / {hhmm(today.sunset)}
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>{T.sun.solarNoon}</dt>
+                                    <dd>{solarNoon}</dd>
+                                </div>
+                                <div>
+                                    <dt>{T.sun.daylight}</dt>
+                                    <dd>
+                                        {formatDuration(daylightSec)}{" "}
+                                        <em>
+                                            {dayDeltaSec === null
+                                                ? ""
+                                                : `(${fmtSigned(dayDeltaSec / 60, 1)} min ${T.sun.tomorrow})`}
+                                        </em>
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>{T.sun.sunshine}</dt>
+                                    <dd>{formatDuration(today.sunshineDuration)}</dd>
+                                </div>
+                                <div>
+                                    <dt>{T.sun.altitude}</dt>
+                                    <dd>
+                                        {sun ? `${fmt(sun.altitude, 1)}°` : "--"}{" "}
+                                        <em>
+                                            {sun
+                                                ? `${T.sun.max} ${fmt(noonAltitude(lat, sun.declination), 1)}°`
+                                                : ""}
+                                        </em>
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>{T.sun.azimuth}</dt>
+                                    <dd>
                                         {sun
-                                            ? `${T.sun.max} ${fmt(noonAltitude(lat, sun.declination), 1)}°`
-                                            : ""}
-                                    </em>
-                                </dd>
-                            </div>
-                            <div>
-                                <dt>{T.sun.azimuth}</dt>
-                                <dd>
-                                    {sun
-                                        ? `${fmt(sun.azimuth, 1)}° ${toCardinal(sun.azimuth)}`
-                                        : "--"}
-                                </dd>
-                            </div>
-                        </dl>
+                                            ? `${fmt(sun.azimuth, 1)}° ${toCardinal(sun.azimuth)}`
+                                            : "--"}
+                                    </dd>
+                                </div>
+                            </dl>
+                        )}
                     </div>
                 </Card>
             </div>
@@ -513,6 +706,8 @@ export default function WeatherPage() {
                         series={[
                             {
                                 key: "t",
+                                area: true,
+                                extrema: true,
                                 label: "T",
                                 color: C.temp,
                                 values: col("temperature"),
@@ -546,6 +741,7 @@ export default function WeatherPage() {
                         series={[
                             {
                                 key: "rh",
+                                area: true,
                                 label: "RH",
                                 color: C.rh,
                                 values: col("humidity"),
@@ -570,6 +766,8 @@ export default function WeatherPage() {
                         series={[
                             {
                                 key: "p",
+                                area: true,
+                                extrema: true,
                                 label: "MSL",
                                 color: C.pressure,
                                 values: col("pressureMsl"),
@@ -587,6 +785,7 @@ export default function WeatherPage() {
                         series={[
                             {
                                 key: "w",
+                                area: true,
                                 label: "Wind",
                                 color: C.wind,
                                 values: col("windSpeed"),
@@ -641,6 +840,7 @@ export default function WeatherPage() {
                         series={[
                             {
                                 key: "uv",
+                                area: true,
                                 label: "UV",
                                 color: C.uv,
                                 values: col("uvIndex"),
@@ -686,20 +886,24 @@ export default function WeatherPage() {
                             <tr key={d.date} className={i === 0 ? "is-today" : ""}>
                                 <td>{dayName(d.date)}</td>
                                 <td title={d.description}>{d.weatherCode}</td>
-                                <td>
+                                <td style={heatCell(d.high)}>
                                     {fmt(d.high)} / {fmt(d.low)}
                                 </td>
                                 <td>
                                     {fmt(d.feelsLikeHigh)} / {fmt(d.feelsLikeLow)}
                                 </td>
-                                <td>{fmt(d.precipitationSum, 1)}</td>
+                                <td style={tint(d.precipitationSum, 0, 30, 210)}>
+                                    {fmt(d.precipitationSum, 1)}
+                                </td>
                                 <td>{fmt(d.precipitationHours)}</td>
-                                <td>{fmt(d.precipitation)}</td>
+                                <td style={tint(d.precipitation, 0, 100, 210)}>
+                                    {fmt(d.precipitation)}
+                                </td>
                                 <td>
                                     {fmt(d.windSpeed, 1)} / {fmt(d.windGust, 1)}
                                 </td>
                                 <td>{toCardinal(d.windDirection)}</td>
-                                <td>{fmt(d.uvIndex, 1)}</td>
+                                <td style={tint(d.uvIndex, 0, 11, 330)}>{fmt(d.uvIndex, 1)}</td>
                                 <td>{hhmm(d.sunrise)}</td>
                                 <td>{hhmm(d.sunset)}</td>
                                 <td>{formatDuration(d.daylightDuration)}</td>
@@ -739,7 +943,7 @@ export default function WeatherPage() {
                         {hourly.slice(nowIdx, nowIdx + 48).map((h, i) => (
                             <tr key={h.time} className={i === 0 ? "is-today" : ""}>
                                 <td>{h.time.slice(5, 16).replace("T", " ")}</td>
-                                <td>{fmt(h.temperature)}</td>
+                                <td style={heatCell(h.temperature)}>{fmt(h.temperature)}</td>
                                 <td>{fmt(h.feelsLike)}</td>
                                 <td>{fmt(h.dewPoint, 1)}</td>
                                 <td>{fmt(h.humidity)}</td>
@@ -754,10 +958,14 @@ export default function WeatherPage() {
                                 <td>{fmt(h.windSpeed, 1)}</td>
                                 <td>{fmt(h.windGust, 1)}</td>
                                 <td>{toCardinal(h.windDirection)}</td>
-                                <td>{fmt(h.precipitationSum, 1)}</td>
-                                <td>{fmt(h.precipitation)}</td>
-                                <td>{fmt(h.uvIndex, 1)}</td>
-                                <td>{fmt(h.cape)}</td>
+                                <td style={tint(h.precipitationSum, 0, 10, 210)}>
+                                    {fmt(h.precipitationSum, 1)}
+                                </td>
+                                <td style={tint(h.precipitation, 0, 100, 210)}>
+                                    {fmt(h.precipitation)}
+                                </td>
+                                <td style={tint(h.uvIndex, 0, 11, 330)}>{fmt(h.uvIndex, 1)}</td>
+                                <td style={tint(h.cape, 0, 2500, 0)}>{fmt(h.cape)}</td>
                                 <td>{fmt(h.shortwaveRadiation)}</td>
                                 <td>{h.weatherCode}</td>
                             </tr>

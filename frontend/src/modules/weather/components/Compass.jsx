@@ -2,6 +2,7 @@
 // ファイル名: Compass.jsx
 // 作成日: 2026/10/21
 // 概要: 風向・風速コンパス（風が吹いてくる方位を縁のマーカーで表示）
+//       外周アークが風速（と瞬間風速）を 0〜20 m/s で表し、針は向きへスイングする。
 // ===================================================
 
 const MAJOR = [
@@ -11,12 +12,42 @@ const MAJOR = [
     [270, "W"],
 ];
 
-export default function Compass({ degrees, speed, unit = "m/s" }) {
+// m/s at which the speed arc closes the full ring.
+const MAX_SPEED = 20;
+
+const frac = (v) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v / MAX_SPEED)) : null);
+
+export default function Compass({ degrees, speed, gust, unit = "m/s" }) {
     const hasDir = Number.isFinite(degrees);
+    const speedFrac = frac(speed);
+    const gustFrac = frac(gust);
 
     return (
         <svg className="wxp-compass" viewBox="0 0 200 200" role="img">
             <circle className="wxp-compass__ring" cx="100" cy="100" r="86" />
+
+            {gustFrac !== null && (
+                <circle
+                    className="wxp-compass__arc wxp-compass__arc--gust"
+                    cx="100"
+                    cy="100"
+                    r="86"
+                    pathLength="1"
+                    transform="rotate(-90 100 100)"
+                    style={{ "--f": gustFrac }}
+                />
+            )}
+            {speedFrac !== null && (
+                <circle
+                    className="wxp-compass__arc"
+                    cx="100"
+                    cy="100"
+                    r="86"
+                    pathLength="1"
+                    transform="rotate(-90 100 100)"
+                    style={{ "--f": speedFrac }}
+                />
+            )}
 
             {Array.from({ length: 36 }, (_, i) => {
                 const len = i % 9 === 0 ? 10 : i % 3 === 0 ? 7 : 4;
@@ -49,8 +80,10 @@ export default function Compass({ degrees, speed, unit = "m/s" }) {
             })}
 
             {hasDir && (
-                <g transform={`rotate(${degrees} 100 100)`}>
+                <g className="wxp-compass__needle" style={{ "--deg": `${degrees}deg` }}>
                     <polygon className="wxp-compass__marker" points="91,8 109,8 100,32" />
+                    <line className="wxp-compass__shaft" x1="100" x2="100" y1="36" y2="72" />
+                    <line className="wxp-compass__shaft" x1="100" x2="100" y1="134" y2="164" />
                 </g>
             )}
 
