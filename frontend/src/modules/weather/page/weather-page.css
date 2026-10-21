@@ -1,0 +1,542 @@
+/* ===================================================
+   weather-page.css — 独立した天気ページ（Weather Lab）
+   ページはダッシュボードのセル外に置かれるため --u は --ui-base (16px) のまま。
+   長さは他モジュールと同様 calc(n * var(--u)) で指定する。
+   =================================================== */
+
+.wxp {
+    height: 100%;
+    overflow-y: auto;
+    padding: calc(1.25 * var(--u));
+    display: flex;
+    flex-direction: column;
+    gap: calc(1 * var(--u));
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.wxp em {
+    font-style: normal;
+    color: var(--color-text-muted);
+}
+
+/* ===== Header ===== */
+.wxp-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(0.75 * var(--u));
+    /* leave room for the sidebar grip on the far left edge */
+    padding-left: calc(1.25 * var(--u));
+}
+
+.wxp-header__title {
+    display: flex;
+    align-items: baseline;
+    gap: calc(0.75 * var(--u));
+}
+
+.wxp-header__title h2 {
+    font-size: calc(1.25 * var(--u));
+    font-weight: 700;
+}
+
+.wxp-header__title span {
+    font-size: calc(0.6875 * var(--u));
+    color: var(--color-text-muted);
+}
+
+.wxp-header__controls {
+    display: flex;
+    align-items: center;
+    gap: calc(0.5 * var(--u));
+}
+
+.wxp-select {
+    display: flex;
+    align-items: center;
+    gap: calc(0.375 * var(--u));
+    padding: 0 calc(0.625 * var(--u));
+    height: calc(2 * var(--u));
+    background: var(--color-input-bg);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.5 * var(--u));
+    color: var(--color-text-secondary);
+}
+
+.wxp-select select {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--color-text);
+    font-size: calc(0.8125 * var(--u));
+    max-width: calc(14 * var(--u));
+}
+
+.wxp-select select option {
+    background: var(--color-surface-floating);
+    color: var(--color-text);
+}
+
+.wxp-segmented {
+    display: flex;
+    height: calc(2 * var(--u));
+    background: var(--color-input-bg);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.5 * var(--u));
+    overflow: hidden;
+}
+
+.wxp-segmented button {
+    padding: 0 calc(0.75 * var(--u));
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: calc(0.75 * var(--u));
+    cursor: pointer;
+}
+
+.wxp-segmented button:hover {
+    color: var(--color-text);
+    background: var(--color-element-hover);
+}
+
+.wxp-segmented button.is-active {
+    color: var(--color-text);
+    background: var(--color-element-selected);
+}
+
+.wxp-icon-btn,
+.wxp-retry {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: calc(2 * var(--u));
+    min-width: calc(2 * var(--u));
+    padding: 0 calc(0.75 * var(--u));
+    background: var(--color-input-bg);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.5 * var(--u));
+    color: var(--color-text-secondary);
+    font-size: calc(0.8125 * var(--u));
+    cursor: pointer;
+}
+
+.wxp-icon-btn:hover,
+.wxp-retry:hover {
+    color: var(--color-text);
+    background: var(--color-element-hover);
+    border-color: var(--color-border-hover);
+}
+
+.wxp-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(0.75 * var(--u));
+    color: var(--color-text-muted);
+    font-size: calc(0.875 * var(--u));
+}
+
+/* ===== Hero ===== */
+.wxp-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: calc(1.5 * var(--u));
+    padding: calc(1.25 * var(--u)) calc(1.5 * var(--u));
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(1 * var(--u));
+}
+
+.wxp-hero__loc {
+    font-size: calc(0.875 * var(--u));
+    color: var(--color-text-secondary);
+}
+
+.wxp-hero__temp {
+    font-size: calc(4.5 * var(--u));
+    font-weight: 700;
+    line-height: 1;
+}
+
+.wxp-hero__temp span {
+    font-size: calc(1.5 * var(--u));
+    margin-left: calc(0.25 * var(--u));
+    color: var(--color-text-muted);
+}
+
+.wxp-hero__desc {
+    margin-top: calc(0.375 * var(--u));
+    font-size: calc(1 * var(--u));
+}
+
+.wxp-hero__meta {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: calc(0.5 * var(--u)) calc(2 * var(--u));
+    font-size: calc(0.75 * var(--u));
+}
+
+.wxp-hero__meta dt {
+    color: var(--color-text-muted);
+}
+
+.wxp-hero__meta dd {
+    color: var(--color-text);
+}
+
+/* ===== Section heading ===== */
+.wxp-section {
+    margin-top: calc(0.5 * var(--u));
+    font-size: calc(0.6875 * var(--u));
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+/* ===== Instrument tiles ===== */
+.wxp-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(calc(11 * var(--u)), 1fr));
+    gap: calc(0.75 * var(--u));
+}
+
+.wxp-tile {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.25 * var(--u));
+    padding: calc(0.875 * var(--u)) calc(1 * var(--u));
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.75 * var(--u));
+    cursor: help;
+}
+
+.wxp-tile:hover {
+    border-color: var(--color-border-hover);
+}
+
+.wxp-tile__label {
+    font-size: calc(0.6875 * var(--u));
+    color: var(--color-text-muted);
+}
+
+.wxp-tile__value {
+    font-size: calc(1.75 * var(--u));
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.wxp-tile__unit {
+    margin-left: calc(0.25 * var(--u));
+    font-size: calc(0.75 * var(--u));
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+.wxp-tile__sub {
+    font-size: calc(0.6875 * var(--u));
+    color: var(--color-text-secondary);
+}
+
+.wxp-tile__trend {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(0.25 * var(--u));
+}
+
+.wxp-tile--ok {
+    border-color: var(--color-success);
+    background:
+        linear-gradient(var(--color-success-bg), var(--color-success-bg)), var(--color-surface);
+}
+
+.wxp-tile--warn {
+    border-color: var(--color-warning);
+    background:
+        linear-gradient(var(--color-warning-bg), var(--color-warning-bg)), var(--color-surface);
+}
+
+.wxp-tile--bad {
+    border-color: var(--color-error);
+    background: linear-gradient(var(--color-error-bg), var(--color-error-bg)), var(--color-surface);
+}
+
+/* ===== Cards ===== */
+.wxp-card {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.75 * var(--u));
+    padding: calc(1 * var(--u)) calc(1.25 * var(--u));
+    min-width: 0;
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.75 * var(--u));
+}
+
+.wxp-card__title {
+    font-size: calc(0.75 * var(--u));
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.wxp-pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(calc(22 * var(--u)), 1fr));
+    gap: calc(0.75 * var(--u));
+}
+
+.wxp-windcard,
+.wxp-suncard {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: calc(1.25 * var(--u));
+}
+
+.wxp-compass {
+    width: calc(11 * var(--u));
+    height: calc(11 * var(--u));
+    flex: none;
+}
+
+.wxp-sunarc {
+    width: calc(14 * var(--u));
+    flex: none;
+}
+
+.wxp-kv {
+    flex: 1;
+    min-width: calc(11 * var(--u));
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.375 * var(--u));
+    font-size: calc(0.75 * var(--u));
+}
+
+.wxp-kv > div {
+    display: flex;
+    justify-content: space-between;
+    gap: calc(1 * var(--u));
+    padding-bottom: calc(0.25 * var(--u));
+    border-bottom: var(--hairline) dashed var(--color-border);
+}
+
+.wxp-kv dt {
+    color: var(--color-text-muted);
+}
+
+.wxp-kv dd {
+    text-align: right;
+}
+
+/* ===== SVG instruments ===== */
+.wxp-compass__ring {
+    fill: none;
+    stroke: var(--color-border);
+    stroke-width: 1.5;
+}
+
+.wxp-compass__tick {
+    stroke: var(--color-text-disabled);
+    stroke-width: 1;
+}
+
+.wxp-compass__label {
+    fill: var(--color-text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.wxp-compass__marker {
+    fill: var(--color-accent);
+}
+
+.wxp-compass__speed {
+    fill: var(--color-text);
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.wxp-compass__unit {
+    fill: var(--color-text-muted);
+    font-size: 11px;
+}
+
+.wxp-sunarc__horizon {
+    stroke: var(--color-border);
+    stroke-width: 1;
+}
+
+.wxp-sunarc__track {
+    fill: none;
+    stroke: var(--color-text-disabled);
+    stroke-width: 1.5;
+    stroke-dasharray: 3 3;
+}
+
+.wxp-sunarc__done {
+    fill: none;
+    stroke: var(--color-warning);
+    stroke-width: 2;
+}
+
+.wxp-sunarc__sun {
+    fill: var(--color-warning);
+}
+
+.wxp-sunarc__sun--down {
+    fill: var(--color-surface);
+    stroke: var(--color-text-muted);
+    stroke-width: 1.5;
+}
+
+.wxp-sunarc__time {
+    fill: var(--color-text-secondary);
+    font-size: 10px;
+}
+
+/* ===== Charts ===== */
+.wxp-charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(calc(26 * var(--u)), 1fr));
+    gap: calc(0.75 * var(--u));
+}
+
+.wxp-chart {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.5 * var(--u));
+}
+
+.wxp-chart__svg {
+    width: 100%;
+    height: auto;
+    touch-action: none;
+}
+
+.wxp-chart__grid {
+    stroke: var(--color-border);
+    stroke-width: 1;
+}
+
+.wxp-chart__day {
+    stroke: var(--color-text-disabled);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+}
+
+.wxp-chart__tick {
+    fill: var(--color-text-muted);
+    font-size: 10px;
+}
+
+.wxp-chart__line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.wxp-chart__now {
+    stroke: var(--color-accent);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+}
+
+.wxp-chart__now-label {
+    fill: var(--color-text-accent);
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.wxp-chart__cursor {
+    stroke: var(--color-text-secondary);
+    stroke-width: 1;
+}
+
+.wxp-chart__readout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: calc(0.25 * var(--u)) calc(1 * var(--u));
+    font-size: calc(0.6875 * var(--u));
+    color: var(--color-text-secondary);
+}
+
+.wxp-chart__readout-time {
+    color: var(--color-text-muted);
+}
+
+.wxp-chart__readout-item b {
+    color: var(--color-text);
+    font-weight: 700;
+}
+
+.wxp-chart__readout-item em {
+    margin-left: calc(0.125 * var(--u));
+}
+
+.wxp-chart__swatch {
+    display: inline-block;
+    width: calc(0.5 * var(--u));
+    height: calc(0.5 * var(--u));
+    margin-right: calc(0.25 * var(--u));
+    border-radius: var(--radius-full);
+}
+
+/* ===== Tables ===== */
+.wxp-tablewrap {
+    overflow-x: auto;
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.75 * var(--u));
+}
+
+.wxp-tablewrap--raw {
+    max-height: calc(26 * var(--u));
+    overflow-y: auto;
+}
+
+.wxp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: calc(0.6875 * var(--u));
+    white-space: nowrap;
+}
+
+.wxp-table th,
+.wxp-table td {
+    padding: calc(0.4375 * var(--u)) calc(0.75 * var(--u));
+    text-align: right;
+    border-bottom: var(--hairline) solid var(--color-border);
+}
+
+.wxp-table th:first-child,
+.wxp-table td:first-child {
+    text-align: left;
+}
+
+.wxp-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--color-surface-elevated);
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+.wxp-table tbody tr:hover {
+    background: var(--color-element-hover);
+}
+
+.wxp-table tr.is-today td {
+    background: var(--color-element-selected);
+}

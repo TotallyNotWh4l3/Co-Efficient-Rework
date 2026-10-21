@@ -4,7 +4,7 @@
 // 概要: サイドバーのナビゲーションセクション定義
 // ===================================================
 
-import { LayoutGrid, ClipboardCheck } from "lucide-react";
+import { LayoutGrid, ClipboardCheck, CloudSun } from "lucide-react";
 
 // Central registry the sidebar renders buttons from. Adding a future
 // section (e.g. Poll/Survey) should only mean adding an entry here.
@@ -19,6 +19,12 @@ export const SIDEBAR_SECTIONS = [
     {
         id: "dashboard",
         icon: LayoutGrid,
+        roles: null,
+        comingSoon: false,
+    },
+    {
+        id: "weather",
+        icon: CloudSun,
         roles: null,
         comingSoon: false,
     },

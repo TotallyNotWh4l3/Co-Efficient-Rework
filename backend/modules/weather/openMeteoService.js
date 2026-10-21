@@ -5,7 +5,6 @@
 // 概要: Open-Meteo API サービス
 // ===================================================
 
-
 const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";
 
 const DEFAULT_TIMEZONE = "Asia/Tokyo";
@@ -28,6 +27,8 @@ function buildApiUrl(latitude, longitude, timezone = DEFAULT_TIMEZONE) {
             "wind_speed_10m",
             "wind_direction_10m",
             "wind_gusts_10m",
+            "pressure_msl",
+            "surface_pressure",
         ].join(","),
 
         hourly: [
@@ -42,6 +43,13 @@ function buildApiUrl(latitude, longitude, timezone = DEFAULT_TIMEZONE) {
             "wind_speed_10m",
             "wind_gusts_10m",
             "uv_index",
+            // Weather page ("nerd" view)
+            "pressure_msl",
+            "cloud_cover",
+            "wind_direction_10m",
+            "cape",
+            "freezing_level_height",
+            "shortwave_radiation",
         ].join(","),
 
         daily: [
@@ -60,6 +68,7 @@ function buildApiUrl(latitude, longitude, timezone = DEFAULT_TIMEZONE) {
             "wind_speed_10m_max",
             "wind_gusts_10m_max",
             "wind_direction_10m_dominant",
+            "sunshine_duration",
         ].join(","),
 
         forecast_days: 7,

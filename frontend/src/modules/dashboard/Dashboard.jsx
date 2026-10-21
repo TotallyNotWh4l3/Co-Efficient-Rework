@@ -10,6 +10,7 @@ import { useState } from "react";
 import DashboardWorkspace from "./DashboardWorkspace";
 import Sidebar from "../sidebar/Sidebar";
 import PlaceholderPage from "../sidebar/PlaceholderPage";
+import WeatherPage from "../weather/page/WeatherPage";
 import { useSidebar } from "../sidebar/useSidebar";
 
 import Settings from "../settings/Settings";
@@ -73,6 +74,8 @@ export default function Dashboard() {
             <div className="dashboard__content">
                 {activeSection === "dashboard" ? (
                     <DashboardWorkspace />
+                ) : activeSection === "weather" ? (
+                    <WeatherPage />
                 ) : (
                     <PlaceholderPage titleKey={activeSection} />
                 )}
