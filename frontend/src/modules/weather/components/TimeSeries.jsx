@@ -4,6 +4,7 @@
 // 概要: 天気ページ用の軽量SVG時系列チャート
 //       （折れ線・棒、左右2軸、現在時刻マーカー、ホバー読み取り＋ツールチップ、
 //        グラデーション塗り・最高/最低ラベル・描画アニメーション）
+//       凡例クリックで系列の表示/非表示、ドラッグ範囲選択でズーム（ダブルクリックで解除）。
 //       親要素のサイズに合わせてSVGを描画する（スクロール不要のレイアウト用）。
 //       負にならない系列（nonNegative）は、全値が0のとき軸を 0〜1 にして線を最下部に置く。
 // ===================================================
@@ -13,6 +14,7 @@ import { useEffect, useId, useRef, useState } from "react";
 const DEFAULT_W = 800;
 const DEFAULT_H = 220;
 const PAD = { l: 46, r: 46, t: 12, b: 24 };
+const RETRACT_MS = 420;
 
 function niceScale(min, max, count = 4) {
     let lo = min;
@@ -111,17 +113,22 @@ function pickStride(n, innerW) {
  * @param {[number, number]} [leftDomain] / [rightDomain] — fixed axis ranges
  */
 export default function TimeSeries({
-    times,
-    series,
-    nowIndex = -1,
+    times: fullTimes,
+    series: allSeries,
+    nowIndex: fullNow = -1,
     nowLabel = "NOW",
     leftDomain,
     rightDomain,
+    labels = {},
 }) {
     const uid = useId().replace(/:/g, "");
     const svgRef = useRef(null);
     const plotRef = useRef(null);
     const [hover, setHover] = useState(null);
+    const [off, setOff] = useState(() => new Set());
+    const [leaving, setLeaving] = useState(() => new Set()); // hidden, still retracting
+    const [zoom, setZoom] = useState(null); // [first, last] index into fullTimes
+    const [drag, setDrag] = useState(null); // { a, b } indices in the current view
     const [size, setSize] = useState({ w: DEFAULT_W, h: DEFAULT_H });
 
     // Draw at the real pixel size of the container so text stays crisp and the
@@ -142,6 +149,22 @@ export default function TimeSeries({
         return () => ro.disconnect();
     }, []);
 
+    // A new window (range button / location change) invalidates the zoom.
+    const firstTime = fullTimes[0];
+    const count = fullTimes.length;
+    useEffect(() => setZoom(null), [firstTime, count]);
+
+    const lo = zoom?.[0] ?? 0;
+    const hi = zoom?.[1] ?? fullTimes.length - 1;
+    const times = fullTimes.slice(lo, hi + 1);
+    const nowIndex = fullNow - lo;
+    // A just-hidden series stays in `series` (flagged `leaving`) until its
+    // retract animation is done, so the axis doesn't jump while it plays.
+    const series = allSeries
+        .filter((s) => !off.has(s.key) || leaving.has(s.key))
+        .map((s) => ({ ...s, values: s.values.slice(lo, hi + 1), leaving: off.has(s.key) }));
+    const live = series.filter((s) => !s.leaving);
+
     const W = size.w;
     const H = size.h;
     const INNER_W = Math.max(10, W - PAD.l - PAD.r);
@@ -161,12 +184,65 @@ export default function TimeSeries({
 
     const scaleOf = (s) => ((s.axis ?? "left") === "left" ? leftScale : rightScale);
 
-    function handleMove(e) {
-        const rect = svgRef.current?.getBoundingClientRect();
-        if (!rect || n === 0) return;
+    function indexAt(e) {
+        const rect = svgRef.current.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * W;
-        setHover(Math.min(n - 1, Math.max(0, Math.floor((x - PAD.l) / step))));
+        return Math.min(n - 1, Math.max(0, Math.floor((x - PAD.l) / step)));
     }
+
+    function handleMove(e) {
+        if (n === 0) return;
+        const i = indexAt(e);
+        setHover(i);
+        if (drag) setDrag({ ...drag, b: i });
+    }
+
+    function handleDown(e) {
+        if (n === 0 || e.button !== 0) return;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        const i = indexAt(e);
+        setDrag({ a: i, b: i });
+    }
+
+    function handleUp() {
+        if (drag && Math.abs(drag.b - drag.a) >= 3) {
+            setZoom([lo + Math.min(drag.a, drag.b), lo + Math.max(drag.a, drag.b)]);
+        }
+        setDrag(null);
+    }
+
+    function toggle(key) {
+        const hiding = !off.has(key);
+        setOff((prev) => {
+            const next = new Set(prev);
+            if (hiding) next.add(key);
+            else next.delete(key);
+            return next;
+        });
+        setLeaving((prev) => {
+            const next = new Set(prev);
+            if (hiding) next.add(key);
+            else next.delete(key);
+            return next;
+        });
+        if (hiding) {
+            setTimeout(
+                () =>
+                    setLeaving((prev) => {
+                        const next = new Set(prev);
+                        next.delete(key);
+                        return next;
+                    }),
+                RETRACT_MS,
+            );
+        }
+    }
+
+    // Wipe-reveal clip: dashed lines can't use the dash-offset draw trick, and
+    // every series needs it to retract.
+    const clipId = (s) => `wxp-${uid}-clip-${s.key}`;
+    const clipFor = (s) =>
+        s.leaving || (s.dashed && s.kind !== "bar") ? `url(#${clipId(s)})` : undefined;
 
     const readIdx = hover ?? (nowIndex >= 0 ? nowIndex : 0);
     const stride = pickStride(n, INNER_W);
@@ -183,7 +259,11 @@ export default function TimeSeries({
                     className="wxp-chart__svg"
                     viewBox={`0 0 ${W} ${H}`}
                     onPointerMove={handleMove}
+                    onPointerDown={handleDown}
+                    onPointerUp={handleUp}
+                    onPointerCancel={() => setDrag(null)}
                     onPointerLeave={() => setHover(null)}
+                    onDoubleClick={() => setZoom(null)}
                     role="img"
                 >
                     <defs>
@@ -205,6 +285,17 @@ export default function TimeSeries({
                                     style={{ stopColor: s.color, stopOpacity: 0 }}
                                 />
                             </linearGradient>
+                        ))}
+                        {series.filter(clipFor).map((s) => (
+                            <clipPath key={s.key} id={clipId(s)}>
+                                <rect
+                                    className={`wxp-chart__clip wxp-chart__clip--${s.leaving ? "out" : "in"}`}
+                                    x={PAD.l}
+                                    y={0}
+                                    width={INNER_W}
+                                    height={H}
+                                />
+                            </clipPath>
                         ))}
                     </defs>
 
@@ -287,18 +378,26 @@ export default function TimeSeries({
                             if (!scale) return null;
                             const y = yFor(scale);
                             const base = y(Math.max(0, scale.lo));
-                            return s.values.map((v, i) =>
-                                Number.isFinite(v) && v > 0 ? (
-                                    <rect
-                                        key={`${s.key}${i}`}
-                                        x={xAt(i) - step * 0.35}
-                                        width={step * 0.7}
-                                        y={y(v)}
-                                        height={Math.max(0, base - y(v))}
-                                        style={{ fill: s.color }}
-                                        opacity="0.55"
-                                    />
-                                ) : null,
+                            return (
+                                <g key={s.key} clipPath={clipFor(s)}>
+                                    {s.values.map((v, i) =>
+                                        Number.isFinite(v) && v > 0 ? (
+                                            <rect
+                                                key={`${s.key}${i}`}
+                                                className="wxp-chart__bar"
+                                                x={xAt(i) - step * 0.35}
+                                                width={step * 0.7}
+                                                y={y(v)}
+                                                height={Math.max(0, base - y(v))}
+                                                style={{
+                                                    fill: s.color,
+                                                    animationDelay: `${Math.round((i / n) * 600)}ms`,
+                                                }}
+                                                opacity="0.55"
+                                            />
+                                        ) : null,
+                                    )}
+                                </g>
                             );
                         })}
 
@@ -309,6 +408,7 @@ export default function TimeSeries({
                             <path
                                 key={`a${s.key}`}
                                 className="wxp-chart__area"
+                                clipPath={clipFor(s)}
                                 d={areaFor(s.values, xAt, yFor(scale), baseY)}
                                 fill={`url(#wxp-${uid}-${s.key})`}
                             />
@@ -324,6 +424,7 @@ export default function TimeSeries({
                                 className={`wxp-chart__line${s.dashed ? "" : " wxp-chart__line--draw"}`}
                                 d={pathFor(s.values, xAt, yFor(scale))}
                                 pathLength={s.dashed ? undefined : 1}
+                                clipPath={clipFor(s)}
                                 style={{ stroke: s.color, color: s.color }}
                                 strokeDasharray={s.dashed ? "4 3" : undefined}
                             />
@@ -332,7 +433,7 @@ export default function TimeSeries({
 
                     {/* high / low labels */}
                     {lineSeries
-                        .filter((s) => s.extrema)
+                        .filter((s) => s.extrema && !s.leaving)
                         .map((s) => {
                             const scale = scaleOf(s);
                             const finite = s.values
@@ -367,7 +468,7 @@ export default function TimeSeries({
                         lineSeries.map((s) => {
                             const scale = scaleOf(s);
                             const v = s.values[readIdx];
-                            if (!scale || !Number.isFinite(v)) return null;
+                            if (s.leaving || !scale || !Number.isFinite(v)) return null;
                             return (
                                 <circle
                                     key={`d${s.key}`}
@@ -409,6 +510,16 @@ export default function TimeSeries({
                         />
                     )}
 
+                    {drag && drag.a !== drag.b && (
+                        <rect
+                            className="wxp-chart__select"
+                            x={xAt(Math.min(drag.a, drag.b)) - step / 2}
+                            y={PAD.t}
+                            width={(Math.abs(drag.b - drag.a) + 1) * step}
+                            height={INNER_H}
+                        />
+                    )}
+
                     {hover !== null && (
                         <line
                             className="wxp-chart__cursor"
@@ -429,7 +540,7 @@ export default function TimeSeries({
                         <div className="wxp-chart__tip-time">
                             {times[hover]?.slice(5, 16).replace("T", " ") ?? "--"}
                         </div>
-                        {series.map((s) => {
+                        {live.map((s) => {
                             const v = s.values[hover];
                             return (
                                 <div key={s.key} className="wxp-chart__tip-row">
@@ -449,11 +560,37 @@ export default function TimeSeries({
                 )}
             </div>
 
+            <div className="wxp-chart__legend">
+                {allSeries.map((s) => (
+                    <button
+                        key={s.key}
+                        type="button"
+                        className={`wxp-chart__chip${off.has(s.key) ? " is-off" : ""}`}
+                        onClick={() => toggle(s.key)}
+                        aria-pressed={!off.has(s.key)}
+                    >
+                        <i className="wxp-chart__swatch" style={{ background: s.color }} />
+                        {s.label}
+                    </button>
+                ))}
+                {zoom ? (
+                    <button
+                        type="button"
+                        className="wxp-chart__chip wxp-chart__reset"
+                        onClick={() => setZoom(null)}
+                    >
+                        {labels.resetZoom ?? "Reset zoom"}
+                    </button>
+                ) : (
+                    <span className="wxp-chart__zoomhint">{labels.zoomHint ?? ""}</span>
+                )}
+            </div>
+
             <div className="wxp-chart__readout">
                 <span className="wxp-chart__readout-time">
                     {times[readIdx]?.replace("T", " ") ?? "--"}
                 </span>
-                {series.map((s) => {
+                {live.map((s) => {
                     const v = s.values[readIdx];
                     return (
                         <span key={s.key} className="wxp-chart__readout-item">

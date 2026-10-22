@@ -47,7 +47,7 @@ export async function isWeatherCurrent(locationId) {
  * @param {{ id: string, latitude: number, longitude: number, timezone?: string }} location
  */
 export async function getWeather(location) {
-    const { id: locationId, timezone = "Asia/Tokyo" } = location;
+    const { id: locationId } = location;
 
     const latitude = Number(location.latitude);
     const longitude = Number(location.longitude);
@@ -104,7 +104,7 @@ export async function getWeather(location) {
         return inFlightFetches.get(locationId);
     }
 
-    const fetchPromise = refetchAndCache(locationId, latitude, longitude, timezone).finally(() => {
+    const fetchPromise = refetchAndCache(locationId, latitude, longitude).finally(() => {
         inFlightFetches.delete(locationId);
     });
 
@@ -112,7 +112,7 @@ export async function getWeather(location) {
     return fetchPromise;
 }
 
-async function refetchAndCache(locationId, latitude, longitude, timezone) {
+async function refetchAndCache(locationId, latitude, longitude) {
     const wonClaim = await claimFetch(locationId);
 
     if (!wonClaim) {
@@ -129,7 +129,7 @@ async function refetchAndCache(locationId, latitude, longitude, timezone) {
 
     try {
         const previous = await getCachedWeatherRow(locationId);
-        const raw = await fetchWeather(latitude, longitude, timezone);
+        const raw = await fetchWeather(latitude, longitude);
         const formatted = formatWeather(raw);
 
         const utcOffsetSeconds = raw.utc_offset_seconds ?? 0;

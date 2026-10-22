@@ -13,6 +13,7 @@ export const DEFAULT_SETTINGS = {
     preferences: {
         language: "en",
         locationId: "default-location",
+        weatherUnits: { system: "metric", wind: "ms" },
         appearance: {
             currentTheme: "dark-default",
         },

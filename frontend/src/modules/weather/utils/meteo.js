@@ -335,3 +335,29 @@ export function moonPosition(date, latDeg, lonDeg) {
         azimuth: (((azimuth / rad + 180) % 360) + 360) % 360,
     };
 }
+
+/**
+ * Times (location-local "HH:MM") at which the sun crosses `altDeg` on the
+ * date of `dateIso` (any ISO string starting YYYY-MM-DD). Scans the local day
+ * in 5-minute steps and interpolates. Missing crossing (polar day/night) -> null.
+ * @returns {{ rising: string|null, falling: string|null }}
+ */
+export function solarCrossings(dateIso, utcOffsetSeconds, latDeg, lonDeg, altDeg) {
+    const STEP = 300000;
+    const midnight = Date.parse(`${dateIso.slice(0, 10)}T00:00Z`); // pseudo-UTC
+    const alt = (ms) =>
+        solarPosition(new Date(ms - utcOffsetSeconds * 1000), latDeg, lonDeg).altitude - altDeg;
+
+    const out = { rising: null, falling: null };
+    let prev = alt(midnight);
+    for (let k = 1; k <= 288; k++) {
+        const cur = alt(midnight + k * STEP);
+        if (prev < 0 !== cur < 0) {
+            const ms = midnight + (k - 1 + prev / (prev - cur)) * STEP;
+            const key = cur > prev ? "rising" : "falling";
+            if (out[key] === null) out[key] = new Date(ms).toISOString().slice(11, 16);
+        }
+        prev = cur;
+    }
+    return out;
+}

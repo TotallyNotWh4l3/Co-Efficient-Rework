@@ -7,7 +7,11 @@
 
 const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";
 
-const DEFAULT_TIMEZONE = "Asia/Tokyo";
+// "auto" makes Open-Meteo resolve the timezone from the coordinates, so every
+// time in the payload (current/hourly/daily, sunrise...) is the location's own
+// local time. A stored per-location timezone defaulted to Asia/Tokyo for
+// locations added without one, which put e.g. London data on Tokyo time.
+const DEFAULT_TIMEZONE = "auto";
 
 const REQUEST_TIMEOUT = 5000;
 
