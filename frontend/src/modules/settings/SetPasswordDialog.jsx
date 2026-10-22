@@ -24,11 +24,11 @@ export default function SetPasswordDialog({ username, onConfirm, onClose }) {
         setError(null);
 
         if (password.length < 8) {
-            setError(t.validationErrorLength ?? "Password must be at least 8 characters.");
+            setError(t.validationErrorLength);
             return;
         }
         if (password !== confirmPassword) {
-            setError(t.validationErrorMismatch ?? "Passwords do not match.");
+            setError(t.validationErrorMismatch);
             return;
         }
 
@@ -36,37 +36,29 @@ export default function SetPasswordDialog({ username, onConfirm, onClose }) {
         try {
             await onConfirm(password);
         } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    err.message ||
-                    t.genericError ||
-                    "Failed to update password.",
-            );
+            setError(err.response?.data?.message || err.message || t.genericError);
             setSaving(false);
         }
     };
 
     return (
         <form className="confirm-dialog" onSubmit={handleSubmit}>
-            <Settings.Title>{t.title ?? "Set Password"}</Settings.Title>
+            <Settings.Title>{t.title}</Settings.Title>
             <Settings.Description>
-                {(
-                    t.description ??
-                    'Set a new password for "{username}". They\'ll need to use it next time they log in.'
-                ).replace("{username}", username)}
+                {t.description.replace("{username}", username)}
             </Settings.Description>
 
             <Settings.Divider />
 
             <Settings.Row>
                 <Settings.RowContent>
-                    <Settings.RowLabel>{t.newPasswordLabel ?? "New Password"}</Settings.RowLabel>
+                    <Settings.RowLabel>{t.newPasswordLabel}</Settings.RowLabel>
                 </Settings.RowContent>
                 <Settings.TextInput
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t.newPasswordPlaceholder ?? "At least 8 characters"}
+                    placeholder={t.newPasswordPlaceholder}
                     autoFocus
                 />
             </Settings.Row>
@@ -74,14 +66,14 @@ export default function SetPasswordDialog({ username, onConfirm, onClose }) {
             <Settings.Row>
                 <Settings.RowContent>
                     <Settings.RowLabel>
-                        {t.confirmPasswordLabel ?? "Confirm Password"}
+                        {t.confirmPasswordLabel}
                     </Settings.RowLabel>
                 </Settings.RowContent>
                 <Settings.TextInput
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder={t.confirmPasswordPlaceholder ?? "Re-enter password"}
+                    placeholder={t.confirmPasswordPlaceholder}
                 />
             </Settings.Row>
 
@@ -96,10 +88,10 @@ export default function SetPasswordDialog({ username, onConfirm, onClose }) {
                     onClick={onClose}
                     disabled={saving}
                 >
-                    {t.cancel ?? "Cancel"}
+                    {t.cancel}
                 </Settings.Button>
                 <Settings.Button type="submit" disabled={saving}>
-                    {saving ? (t.submitting ?? "Saving…") : (t.submit ?? "Set Password")}
+                    {saving ? (t.submitting) : (t.submit)}
                 </Settings.Button>
             </Settings.Row>
         </form>

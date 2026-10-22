@@ -1,7 +1,7 @@
 // ===================================================
 // ファイル名: server.js
 // 作成日: 2026/08/27
-// 作成者: ゴンザガ　ウェイン
+// 作成者: ゴンザガ ウェイン
 // 概要: サーバーのエントリーポイント (フルローカル版)
 // ===================================================
 
@@ -26,6 +26,7 @@ import scheduleRoutes from "./modules/schedule/scheduleRoutes.js";
 import geocodingRoutes from "./modules/geocoding/geocodingRoutes.js";
 import themeRoutes from "./modules/themes/themeRoutes.js";
 import userRoutes from "./modules/users/userRoutes.js";
+import transitRoutes from "./modules/transit/transitRoutes.js";
 
 import sseRoutes from "./sse/sseRoutes.js";
 
@@ -37,7 +38,22 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
-app.use(helmet());
+// The dashboard is served over plain HTTP on the LAN (e.g. http://192.168.x.x:3001),
+// which isn't a "trustworthy origin". Helmet's defaults assume HTTPS and break that:
+//  - CSP `upgrade-insecure-requests` rewrites asset URLs to https:// -> ERR_SSL_PROTOCOL_ERROR
+//  - HSTS would pin the host to https
+//  - COOP / Origin-Agent-Cluster are ignored (console noise) on untrusted origins
+// Everything else in helmet's defaults stays on.
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: { "upgrade-insecure-requests": null },
+        },
+        strictTransportSecurity: false,
+        crossOriginOpenerPolicy: false,
+        originAgentCluster: false,
+    }),
+);
 
 // In production the frontend is served statically by this same Express
 // process (see below), so it's same-origin and needs no CORS at all.
@@ -60,6 +76,13 @@ const corsOptions = isProduction
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Server time for kiosk clients whose own clock drifts (see frontend shared/utils/serverClock.js).
+// Deliberately unauthenticated and uncached: the clock must work on the login screen too.
+app.get("/api/time", (req, res) => {
+    res.set("Cache-Control", "no-store");
+    res.json({ now: Date.now() });
+});
+
 // Single central SSE channel for every module's realtime push.
 app.use("/api/sse", sseRoutes);
 
@@ -73,6 +96,7 @@ app.use("/api/schedule", scheduleRoutes);
 app.use("/api/geocoding", geocodingRoutes);
 app.use("/api/themes", themeRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/transit", transitRoutes);
 
 const PORT = process.env.PORT || 3001;
 

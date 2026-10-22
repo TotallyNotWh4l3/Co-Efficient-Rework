@@ -7,6 +7,7 @@
 
 export default {
     dateNames: {
+        dateFormat: "{year}年{month}{day}日 {weekday}",
         monthsLong: [
             "1月",
             "2月",
@@ -31,15 +32,219 @@ export default {
             subTitle: "更新情報",
         },
     },
+    common: {
+        loading: "読み込み中...",
+        confirm: "確認",
+        cancel: "キャンセル",
+        collapseHeader: "ヘッダーを隠す",
+        expandHeader: "ヘッダーを表示",
+    },
+
+    auth: {
+        login: {
+            username: "ユーザー名",
+            password: "パスワード",
+            submit: "ログイン",
+        },
+    },
+
+    userMenu: {
+        guest: "ゲスト",
+        account: "アカウント",
+    },
+
+    errors: {
+        loadUsers: "ユーザーを読み込めませんでした。",
+        loadLocations: "場所を読み込めませんでした。",
+        loadThemes: "テーマを読み込めませんでした。",
+        loadSchedule: "スケジュールを読み込めませんでした。",
+        loadTags: "タグを読み込めませんでした。",
+        loadAnnouncements: "お知らせを読み込めませんでした。",
+        geolocationUnsupported: "位置情報に対応していません。",
+    },
+
+    sidebar: {
+        toggle: "ナビゲーションを切り替え",
+        lock: "サイドバーを固定",
+        unlock: "サイドバーの固定を解除",
+        settings: "設定",
+        login: "ログイン",
+        logout: "サインアウト",
+        soon: "近日公開",
+        comingSoon: "このセクションはまだ準備中です。近日公開予定です。",
+        sections: {
+            dashboard: "ダッシュボード",
+            attendance: "出席",
+            weather: "天気",
+        },
+    },
+    weatherPage: {
+        title: "ウェザーラボ",
+        source: "データ提供: Open-Meteo",
+        location: "地点",
+        refresh: "更新",
+        loading: "天気を読み込み中...",
+        error: "天気を取得できませんでした",
+        noData: "天気データを受信できませんでした",
+        retry: "再試行",
+        now: "現在",
+        ranges: { h24: "24時間", h48: "48時間", h72: "72時間", d7: "7日" },
+        hero: {
+            dataTime: "データ時刻（現地）",
+            minAgo: "分前",
+            position: "座標",
+            timezone: "タイムゾーン",
+            today: "今日の最高 / 最低",
+        },
+        sections: {
+            instruments: "計器",
+            windSun: "風と太陽",
+            trends: "推移",
+            week: "7日間テーブル",
+            raw: "時間別データ（今後48時間）",
+        },
+        tiles: {
+            feelsLike: "体感温度",
+            dewPoint: "露点温度",
+            spread: "差",
+            humidity: "湿度",
+            wetBulb: "湿球温度",
+            pressure: "海面気圧",
+            cloud: "雲量",
+            base: "雲底",
+            visibility: "視程",
+            hourlyModel: "時間別モデル値",
+            precip: "降水量",
+            prob: "確率",
+            uv: "UVインデックス",
+            wbgt: "WBGT（推定）",
+            cape: "CAPE",
+            freezing: "0℃高度",
+        },
+        hints: {
+            feelsLike: "モデルが算出する体感温度（気温・湿度・風を総合）。",
+            dewPoint: "気温と湿度からMagnus式で算出。差（T − Td）が小さいほど飽和に近い状態です。",
+            humidity: "相対湿度。VPD（飽差）＝飽和水蒸気圧 ×（1 − 相対湿度）。",
+            wetBulb: "気温と湿度からStull（2011）の近似式で算出。",
+            pressure: "海面更正気圧。傾向は現在と3時間後の予報値の差です。",
+            cloud: "全雲量。雲底の目安は 125 m ×（T − Td）で、雲量25%以上のときのみ表示します。",
+            visibility: "現在の時間帯のモデル視程。",
+            precip: "現在の降水量（mm）と時間別の降水確率。",
+            uv: "現在時刻のUVインデックス。maxは本日のピーク値です。",
+            wbgt: "気温・湿度・日射・風から推定した屋外WBGT（小野・登内 2014）。区分は環境省の基準に準拠。",
+            cape: "対流有効位置エネルギー。雷雨の燃料の指標です。",
+            freezing: "0℃になる高度。",
+        },
+        tendency: {
+            risingFast: "急上昇",
+            rising: "上昇",
+            steady: "横ばい",
+            falling: "下降",
+            fallingFast: "急下降",
+        },
+        uvLevels: {
+            low: "弱い",
+            moderate: "中程度",
+            high: "強い",
+            veryHigh: "非常に強い",
+            extreme: "極端に強い",
+        },
+        wbgtLevels: {
+            safe: "ほぼ安全",
+            caution: "注意",
+            warning: "警戒",
+            severe: "厳重警戒",
+            danger: "危険",
+        },
+        capeLevels: {
+            negligible: "ごく小さい",
+            weak: "弱い",
+            moderate: "中程度",
+            strong: "強い",
+            extreme: "極めて強い",
+        },
+        wind: {
+            title: "風",
+            from: "風向（吹いてくる方位）",
+            gust: "突風",
+            gustFactor: "突風率",
+            beaufort: "ビューフォート風力",
+            dailyMax: "本日の最大 / 突風",
+            dominant: "卓越風向",
+            names: [
+                "静穏",
+                "至軽風",
+                "軽風",
+                "軟風",
+                "和風",
+                "疾風",
+                "雄風",
+                "強風",
+                "疾強風",
+                "大強風",
+                "全強風",
+                "暴風",
+                "颶風",
+            ],
+        },
+        sun: {
+            title: "太陽",
+            sunrise: "日の出",
+            sunset: "日の入り",
+            solarNoon: "南中",
+            daylight: "昼の長さ",
+            tomorrow: "明日",
+            sunshine: "日照時間（予報）",
+            altitude: "高度",
+            max: "最大",
+            azimuth: "方位角",
+        },
+        moon: {
+            title: "月",
+            moonrise: "月の出",
+            moonset: "月の入り",
+            phase: "月相",
+            illumination: "輝面比",
+            age: "月齢",
+            days: "日",
+            visible: "地平線上の時間",
+            names: {
+                new: "新月",
+                waxingCrescent: "三日月",
+                firstQuarter: "上弦",
+                waxingGibbous: "十三夜",
+                full: "満月",
+                waningGibbous: "十八夜",
+                lastQuarter: "下弦",
+                waningCrescent: "二十六夜",
+            },
+        },
+        charts: {
+            temperature: "気温と露点",
+            humidity: "湿度と雲量",
+            pressure: "海面気圧",
+            wind: "風速と突風",
+            precip: "降水量と降水確率",
+            instability: "UVインデックスとCAPE",
+        },
+        week: { date: "日付", daylight: "昼", sunshine: "日照" },
+    },
 
     settings: {
         title: "設定",
         autoSave: "自動保存済み",
+        close: "設定を閉じる",
+        status: {
+            loading: "設定を読み込み中...",
+            loadFailed: "設定を読み込めませんでした。",
+            contentFailed: "設定内容を読み込めませんでした。",
+        },
 
         sidebar: {
             interface: "インターフェース",
             dashboard: "ダッシュボード",
             modules: "モジュール",
+            users: "ユーザー",
             about: "このアプリについて",
         },
 
@@ -88,8 +293,50 @@ export default {
                     save: "保存",
                     saving: "保存中...",
                     saveFailed: "テーマを保存できませんでした。",
+                    defaultName: "{name}のコピー",
+                    customName: "カスタム",
+                    pickColor: "色を選択",
+                    pickColorFor: "「{label}」の色を選択",
+                    switchTo: "{format}に切り替え",
                     delete: "削除",
                     deleteFailed: "テーマを削除できませんでした。",
+                    mode: {
+                        label: "カスタマイズモード",
+                        normal: "ノーマル",
+                        advanced: "アドバンスド",
+                        normalHint: "ベースカラーを選ぶだけで、すべてのシェードを自動生成します。",
+                        advancedHint: "不透明度を含め、すべての色を個別に編集します。",
+                    },
+                    normal: {
+                        regenNote:
+                            "ここで変更すると、すべてのシェードカラーが再生成されます。細かい調整はアドバンスドで行ってください。",
+                        baseTitle: "ベース",
+                        dark: "ダーク",
+                        light: "ライト",
+                        colorsTitle: "メインカラー",
+                        accent: "アクセント",
+                        background: "背景",
+                        text: "テキスト",
+                        surprise: "おまかせ",
+                        statusTitle: "ステータスカラー",
+                        success: "成功",
+                        warning: "警告",
+                        error: "エラー",
+                        tuningTitle: "微調整",
+                        reset: "リセット",
+                        contrast: "サーフェスのコントラスト",
+                        border: "枠線の強さ",
+                        shadow: "シャドウの深さ",
+                        shadesTitle: "生成されたシェード",
+                    },
+                    advanced: {
+                        autoShade: "ベースカラーから自動でシェードを生成",
+                        regenerate: "すべてのシェードを再生成",
+                        base: "ベース",
+                        linked: "{base}から自動生成",
+                        unlinked: "手動で編集済み — クリックで{base}に再連動",
+                        alpha: "不透明度",
+                    },
 
                     groups: {
                         accent: "アクセント",
@@ -100,6 +347,26 @@ export default {
                         input: "入力フィールド",
                         status: "ステータス",
                         shadows: "シャドウ",
+                    },
+
+                    preview: {
+                        title: "ライブプレビュー",
+                        appName: "CoEfficient",
+                        appSubtitle: "ダッシュボード",
+                        weatherTitle: "天気",
+                        weatherHint: "晴れときどき曇り",
+                        scheduleTitle: "スケジュール",
+                        eventOne: "朝会",
+                        eventTwo: "デザインレビュー",
+                        badgeSuccess: "完了",
+                        badgeWarning: "まもなく",
+                        badgeError: "期限超過",
+                        textPrimary: "主要テキスト",
+                        textSecondary: "副次テキスト",
+                        textMuted: "補助テキスト",
+                        inputPlaceholder: "入力フィールド",
+                        secondaryButton: "キャンセル",
+                        primaryButton: "保存",
                     },
                 },
             },
@@ -115,6 +382,10 @@ export default {
 
                 add: "場所を追加",
                 empty: "保存された場所はありません。",
+                deleteTitle: "場所を削除しますか？",
+                deleteMessage:
+                    "「{name}」をすべてのユーザーから削除します。この操作は取り消せません。",
+                deleteConfirm: "削除",
 
                 dialog: {
                     titleAdd: "場所を追加",
@@ -178,6 +449,7 @@ export default {
                 title: "レイアウト",
                 description: "列・間隔を設定",
                 columns: "列数",
+                rows: "行数",
                 gap: "間隔",
                 padding: "パディング",
             },
@@ -206,8 +478,68 @@ export default {
                 title: "スケジュール",
             },
 
+            todaySchedule: {
+                title: "今日・明日の予定",
+            },
+
+            clock: {
+                title: "時計",
+            },
+
+            transit: {
+                title: "電車・バス",
+            },
+
             announcements: {
                 title: "お知らせ",
+            },
+
+            size: {
+                title: "サイズ",
+                label: "セルサイズ",
+                width: "幅",
+                height: "高さ",
+            },
+            position: {
+                title: "配置",
+                description:
+                    "ダッシュボードのグリッドを縮小表示します。モジュールをクリックすると設定を開けます。位置の移動とサイズ変更もここでできます。",
+                gridLabel: "グリッド",
+                cellApprox: "1セル ≈",
+                hint: "クリックで設定、ドラッグで移動、端や角をドラッグでサイズ変更",
+                selectedHint: "配置したいセルをクリックしてください。",
+                occupied: "その場所は他のモジュールが使用中です。",
+                outOfBounds: "その位置にはモジュールが収まりません。",
+                moveFailed: "モジュールを移動できませんでした。もう一度お試しください。",
+                resizeHint: "モジュールの端や角をドラッグしてサイズを変更できます。",
+                resizeBlocked: "その方向には広げる余裕がありません。",
+                resizeFailed: "モジュールのサイズを変更できませんでした。もう一度お試しください。",
+                resizeWidth: "幅を変更",
+                resizeHeight: "高さを変更",
+                resizeBoth: "サイズを変更",
+                remove: "モジュールを削除",
+                removeConfirm: "削除しますか？",
+                removeYes: "削除",
+                removeNo: "キャンセル",
+                removeFailed: "モジュールを削除できませんでした。もう一度お試しください。",
+                deleteMode: "モジュールを削除",
+                deleteModeDone: "完了",
+                deleteHint: "削除するモジュールをクリックして、確認してください。",
+                deleteConfirm: "{name} をダッシュボードから削除しますか？",
+            },
+            // モジュール配置プレビューでモジュールをクリックしたときのポップアップ用
+            moduleSettings: {
+                location: "場所",
+                station: "駅・バス停",
+                direction: "方面",
+                display: "表示",
+                views: {
+                    board: "発車一覧",
+                    line: "路線図",
+                },
+                noOptions: "このモジュールには設定がありません。",
+                move: "移動",
+                done: "完了",
             },
         },
 
@@ -298,7 +630,7 @@ export default {
                 low: "最低",
                 humidity: "湿度",
                 wind: "風速",
-                precipitation: "降水量",
+                precipitation: "降水確率",
                 loading: "読み込み中...",
                 error: "天気を取得できませんでした",
                 noData: "天気データがありません",
@@ -317,15 +649,51 @@ export default {
                 dayFallback: "{n}日目",
             },
 
+            conditions: {
+                clear: "快晴",
+                mainlyClear: "晴れ",
+                partlyCloudy: "晴れ時々曇り",
+                overcast: "曇り",
+                fog: "霧",
+                drizzle: "霧雨",
+                rain: "雨",
+                snow: "降雪",
+                showers: "にわか雨",
+                thunderstorm: "雷雨",
+                calm: "おだやか",
+            },
+
+            metrics: {
+                temp: "気温",
+                humidity: "湿度",
+                precipChance: "降水確率",
+                precipAmount: "降水量",
+                windSpeed: "風速",
+                feelsLike: "体感温度",
+                windGust: "突風",
+                dewPoint: "露点",
+                visibility: "視程",
+                uvIndex: "紫外線指数",
+            },
+
             chart: {
                 range: "範囲",
                 max: "最高",
                 min: "最低",
+                feelsMax: "体感最高",
+                feelsMin: "体感最低",
+                school: "授業",
+                now: "現在",
             },
 
             settings: {
                 title: "天気設定",
                 back: "戻る",
+                schoolHours: {
+                    title: "授業時間（時間別グラフに表示）",
+                    start: "開始",
+                    end: "終了",
+                },
 
                 layout: {
                     title: "表示レイアウト",
@@ -357,6 +725,90 @@ export default {
             },
         },
 
+        clock: {
+            am: "午前",
+            pm: "午後",
+            options: {
+                title: "時計の設定",
+                hour12: "12時間表示",
+                showSeconds: "秒",
+                showDate: "日付",
+            },
+        },
+        transit: {
+            header: {
+                title: "電車・バス",
+                changeStop: "駅・バス停を変更",
+            },
+            views: {
+                toLine: "路線図で表示",
+                toBoard: "発車一覧で表示",
+            },
+            options: {
+                title: "路線図の設定",
+                orientation: { label: "向き", horizontal: "横", vertical: "縦" },
+                colorMode: { label: "色", mono: "白黒", theme: "テーマ" },
+                timer: { label: "タイマー", seconds: "分と秒", minutes: "分のみ" },
+            },
+            line: {
+                phase: {
+                    waiting: "次の発車",
+                    inbound: "接近中",
+                    approaching: "まもなく到着",
+                    atStation: "停車中",
+                    atStop: "停車中",
+                },
+                departedAt: "{time} 発車",
+                comingTrain: "電車が向かっています · あと{n}分",
+                comingBus: "バスが向かっています · あと{n}分",
+                following: "その次",
+                arrivingSoon: "まもなく到着",
+                minutes: "{n}分",
+                hourMinutes: "{h}時間{m}分",
+                tip: { departs: "発車", type: "種別", dest: "行き先", line: "路線" },
+            },
+            dayTypes: {
+                weekday: "平日",
+                saturday: "土曜",
+                holiday: "日曜・祝日",
+            },
+            types: {
+                local: "普通",
+                express: "急行",
+                limited_express: "特急",
+                regular: "一般",
+                night: "深夜",
+            },
+            toDest: "{dest}行き",
+            now: "まもなく",
+            inMin: "あと{n}分",
+            inHourMin: "あと{h}時間{m}分",
+            tomorrow: "明日",
+            accessible: "車いす対応",
+            noService: "この後の発車はありません。",
+            selectStop: "駅・バス停を選択してください。",
+            stopMissing: "選択した駅・バス停は利用できません。別のものを選んでください。",
+            noStops: "駅・バス停が未登録です。管理者に時刻表ファイルの追加を依頼してください。",
+            status: {
+                loading: "時刻表を読み込み中...",
+                errorTitle: "時刻表を読み込めませんでした",
+                retry: "再試行",
+            },
+        },
+        todaySchedule: {
+            header: {
+                title: "今日・明日の予定",
+            },
+            today: "今日",
+            tomorrow: "明日",
+            emptyToday: "今日の予定はありません。",
+            emptyTomorrow: "明日の予定はありません。",
+            status: {
+                loading: "スケジュールを読み込み中...",
+                errorTitle: "スケジュールを読み込めませんでした",
+                retry: "再試行",
+            },
+        },
         schedule: {
             header: {
                 title: "スケジュール",
@@ -407,6 +859,19 @@ export default {
                     week: {
                         title: "週表示",
                         description: "1週間を表示",
+                    },
+                },
+
+                orientation: {
+                    title: "週表示の向き",
+                    horizontal: {
+                        title: "水平",
+                        description:
+                            "各日を横幅いっぱいの行にして、予定の詳細を表示しやすくします。",
+                    },
+                    vertical: {
+                        title: "垂直",
+                        description: "各日を縦の列にする、従来のカレンダー表示です。",
                     },
                 },
             },
@@ -473,7 +938,7 @@ export default {
             },
 
             footer: {
-                liveSync: "ライブ同期",
+                liveSync: "同期中",
             },
 
             status: {
@@ -553,8 +1018,15 @@ export default {
                 publish: "公開",
             },
 
+            archive: {
+                title: "アーカイブ済みのお知らせ",
+                empty: "アーカイブされたお知らせはありません。",
+                archivedOn: "アーカイブ日",
+                restore: "復元",
+            },
+
             footer: {
-                liveFeed: "ライブ同期中",
+                liveFeed: "同期中",
             },
 
             toast: {

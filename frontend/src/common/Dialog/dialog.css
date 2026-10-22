@@ -32,6 +32,12 @@
     animation: dialogPop 0.18s ease;
 }
 
+/* Wider variant for dialogs that need side-by-side content (e.g. the
+   theme editor's live preview alongside its color controls). */
+.dialog--wide {
+    width: min(960px, 95vw);
+}
+
 @keyframes dialogFadeIn {
     from {
         opacity: 0;

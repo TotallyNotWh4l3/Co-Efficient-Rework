@@ -5,7 +5,6 @@
 // 概要: ダッシュボードの管理を行うAPIコントローラー。ユーザーのダッシュボード状態の取得、モジュールの追加・削除・設定更新などの機能を提供します。
 // ===================================================
 
-
 // backend/controllers/dashboardController.js
 import Dashboard from "./Dashboard.js";
 import { broadcastToUser } from "../../sse/SSEController.js";
@@ -15,7 +14,14 @@ const dashboardController = {
     async getState(req, res) {
         try {
             await Dashboard.ensureSeeded(req.user.id);
-            res.json(await Dashboard.getState(req.user.id));
+            // Self-heal layouts left overlapping / off-grid by earlier column
+            // changes: a same-size update re-flows only modules that don't fit.
+            const current = await Dashboard.getState(req.user.id);
+            const { changedModuleIds, ...healed } = await Dashboard.updateLayout(req.user.id, {
+                columns: current.layout.columns,
+            });
+            void changedModuleIds;
+            res.json(healed);
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: "Failed to load dashboard." });
@@ -27,7 +33,17 @@ const dashboardController = {
     // PATCH /api/dashboard/layout
     async updateLayout(req, res) {
         try {
-            const state = await Dashboard.updateLayout(req.user.id, req.body);
+            const { changedModuleIds = [], ...state } = await Dashboard.updateLayout(
+                req.user.id,
+                req.body,
+            );
+            // Re-flowing after a column/row change can move or resize modules —
+            // push those too so other tabs don't keep the old positions.
+            for (const module of state.modules) {
+                if (changedModuleIds.includes(module.id)) {
+                    broadcastToUser(req.user.id, "dashboard:module-updated", module);
+                }
+            }
             broadcastToUser(req.user.id, "dashboard:layout-updated", state.layout);
             res.json(state);
         } catch (error) {
@@ -38,17 +54,72 @@ const dashboardController = {
 
     // POST /api/dashboard/modules
     async addModule(req, res) {
-        const { type, settings } = req.body;
+        const { type, settings, layout } = req.body;
         if (!type) {
             return res.status(400).json({ message: "Module type is required." });
         }
         try {
-            const module = await Dashboard.addModule(req.user.id, type, settings);
+            const module = await Dashboard.addModule(req.user.id, type, settings, layout);
             broadcastToUser(req.user.id, "dashboard:module-added", module);
+            // addModule can grow the grid's row count to fit the module —
+            // push the (possibly updated) layout too, so other connected
+            // tabs pick up the extra row instead of only seeing the module.
+            const state = await Dashboard.getState(req.user.id);
+            broadcastToUser(req.user.id, "dashboard:layout-updated", state.layout);
             res.status(201).json(module);
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: "Failed to add module." });
+        }
+    },
+
+    // PATCH /api/dashboard/modules/:id/layout
+    async updateModuleLayout(req, res) {
+        const { w, h } = req.body;
+        if (!w || !h) {
+            return res.status(400).json({ message: "A width and height are required." });
+        }
+        try {
+            const module = await Dashboard.updateModuleLayout(req.user.id, req.params.id, { w, h });
+            if (!module) return res.status(404).json({ message: "Module not found." });
+
+            broadcastToUser(req.user.id, "dashboard:module-updated", module);
+            // A resize can also move the module to a new cell (if it no
+            // longer fits in place) and/or grow the grid — refresh other
+            // tabs' row count too.
+            const state = await Dashboard.getState(req.user.id);
+            broadcastToUser(req.user.id, "dashboard:layout-updated", state.layout);
+            res.json(module);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Failed to update module size." });
+        }
+    },
+
+    // PATCH /api/dashboard/modules/:id/position
+    async moveModule(req, res) {
+        const cellIndex = Number(req.body?.cellIndex);
+        if (!Number.isInteger(cellIndex) || cellIndex < 0) {
+            return res.status(400).json({ message: "A valid cell index is required." });
+        }
+        try {
+            const result = await Dashboard.moveModule(req.user.id, req.params.id, cellIndex);
+            if (!result) return res.status(404).json({ message: "Module not found." });
+            if (result.error) {
+                return res.status(409).json({
+                    message:
+                        result.error === "occupied"
+                            ? "That position is already taken by another module."
+                            : "The module doesn't fit at that position.",
+                    reason: result.error,
+                });
+            }
+
+            broadcastToUser(req.user.id, "dashboard:module-updated", result.module);
+            res.json(result.module);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Failed to move module." });
         }
     },
 
@@ -73,7 +144,12 @@ const dashboardController = {
             return res.status(400).json({ message: "A settings key is required." });
         }
         try {
-            const module = await Dashboard.updateModuleSettings(req.user.id, req.params.id, key, value);
+            const module = await Dashboard.updateModuleSettings(
+                req.user.id,
+                req.params.id,
+                key,
+                value,
+            );
             if (!module) return res.status(404).json({ message: "Module not found." });
 
             broadcastToUser(req.user.id, "dashboard:module-updated", module);

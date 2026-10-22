@@ -15,6 +15,7 @@ import ModuleSettings from "./pages/ModuleSettings";
 import DashboardSettings from "./pages/DashboardSettings";
 import AboutSettings from "./pages/AboutSettings";
 import UserManagementSettings from "../users/UserManagementSettings";
+import { useLanguage } from "./useLanguage";
 
 const PAGE_COMPONENTS = {
     interface: InterfaceSettings,
@@ -25,6 +26,7 @@ const PAGE_COMPONENTS = {
 };
 
 export default function SettingsContent({ currentPage }) {
+    const lang = useLanguage();
     const CurrentPage = PAGE_COMPONENTS[currentPage];
 
     return (
@@ -33,7 +35,7 @@ export default function SettingsContent({ currentPage }) {
                 <CurrentPage />
             ) : (
                 <div className="settings-content__empty">
-                    <p>Unable to load settings content.</p>
+                    <p>{lang.settings.status.contentFailed}</p>
                 </div>
             )}
         </main>

@@ -6,10 +6,12 @@
 // ===================================================
 
 import "./settings-sidebar.css";
+import { useLanguage } from "./useLanguage";
 
 import { SETTINGS_PAGES } from "../../shared/constants/interface/options";
 
 export default function SettingsSidebar({ currentPage, onPageChange, isAdmin }) {
+    const lang = useLanguage();
     const visiblePages = SETTINGS_PAGES.filter((page) => !page.adminOnly || isAdmin);
 
     return (
@@ -27,7 +29,7 @@ export default function SettingsSidebar({ currentPage, onPageChange, isAdmin }) 
                                     ? "settings-sidebar__button settings-sidebar__button--active"
                                     : "settings-sidebar__button"
                             }
-                            title={page.title}
+                            title={lang.settings.sidebar[page.id]}
                             onClick={() => onPageChange(page.id)}
                         >
                             <Icon className="settings-sidebar__icon" size={22} />

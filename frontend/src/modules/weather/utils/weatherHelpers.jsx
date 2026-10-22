@@ -16,6 +16,7 @@ import {
     CloudLightning,
     Thermometer,
     Droplet,
+    Droplets,
     Wind,
 } from "lucide-react";
 
@@ -88,74 +89,40 @@ export function getWeatherGradient(code, isDay) {
     );
 }
 
-export function getWeatherDescText(code, isJapanese) {
-    if (isJapanese) {
-        switch (code) {
-            case 0:
-                return "快晴 (Clear sky)";
-            case 1:
-                return "晴れ (Mainly clear)";
-            case 2:
-                return "晴れ時々曇り (Partly cloudy)";
-            case 3:
-                return "曇り (Overcast)";
-            case 45:
-            case 48:
-                return "霧 (Fog)";
-            case 51:
-            case 53:
-            case 55:
-                return "霧雨 (Drizzle)";
-            case 61:
-            case 63:
-            case 65:
-                return "雨 (Rain)";
-            case 71:
-            case 73:
-            case 75:
-                return "降雪 (Snow)";
-            case 80:
-            case 81:
-            case 82:
-                return "にわか雨 (Rain Showers)";
-            case 95:
-                return "雷雨 (Thunderstorm)";
-            default:
-                return "おだやか (Calm)";
-        }
-    }
+// `conditions` is lang.modules.weather.conditions from en.js / ja.js.
+export function getWeatherDescText(code, conditions) {
     switch (code) {
         case 0:
-            return "Clear Sky";
+            return conditions.clear;
         case 1:
-            return "Mainly Clear";
+            return conditions.mainlyClear;
         case 2:
-            return "Partly Cloudy";
+            return conditions.partlyCloudy;
         case 3:
-            return "Overcast";
+            return conditions.overcast;
         case 45:
         case 48:
-            return "Foggy";
+            return conditions.fog;
         case 51:
         case 53:
         case 55:
-            return "Drizzle";
+            return conditions.drizzle;
         case 61:
         case 63:
         case 65:
-            return "Rainy";
+            return conditions.rain;
         case 71:
         case 73:
         case 75:
-            return "Snow Fall";
+            return conditions.snow;
         case 80:
         case 81:
         case 82:
-            return "Rain Showers";
+            return conditions.showers;
         case 95:
-            return "Thunderstorm";
+            return conditions.thunderstorm;
         default:
-            return "Calm Conditions";
+            return conditions.calm;
     }
 }
 
@@ -167,7 +134,7 @@ export function WeatherVisualIcon({ code, isDay, className = "" }) {
                     className={className}
                     style={{
                         color: "#facc15",
-                        filter: "drop-shadow(0 0 10px rgba(250,204,21,0.5))",
+                        filter: "drop-shadow(0 0 calc(0.625 * var(--u)) rgba(250,204,21,0.5))",
                     }}
                 />
             );
@@ -203,46 +170,123 @@ export function WeatherVisualIcon({ code, isDay, className = "" }) {
 }
 
 // Shared metric card definitions. `value` is filled in per-instance by the
-// component that has access to current/daily data.
+// component that has access to current/daily data. Display names live in
+// en.js / ja.js under modules.weather.metrics[labelKey].
+//
+// Chart series:
+//   `lines`      — what WeatherChart draws (hourly view, and daily too unless
+//                  `dailyLines` is given). Each line: { key, nameKey, color,
+//                  fill?, kind?, axis?, unit?, allowNegative?, toggle? }.
+//                    key     — field read from the hourly/daily item
+//                    nameKey — i18n key in modules.weather.metrics or .chart
+//                    fill    — draw the gradient area under the line
+//                    kind    — "bar" draws bars (from 0) instead of a line
+//                    axis    — any name other than "left" puts the line on its
+//                              own right-hand axis (used when units differ,
+//                              e.g. % vs °C vs km)
+//                    unit    — overrides the metric's unit for this line
+//                    allowNegative — lets that right axis go below 0
+//                    toggle  — id of an entry in `toggles`; the line is hidden
+//                              until the viewer turns that button on
+//   `dailyLines` — replaces `lines` on the 7-day view.
+//   `toggles`    — legend buttons for optional lines: { id, nameKey, color,
+//                  unit? }. One button can control several lines.
 export const METRIC_DEFS = [
     {
+        // Temperature. Feels-like (lighter shades) is switched on with its
+        // legend button. Hourly: one line each. Daily: max/min of both.
         id: "temp",
-        labelEn: "Temp",
-        labelJa: "気温",
+        labelKey: "temp",
         color: "#f87171",
         unit: "°C",
         icon: Thermometer,
+        allowNegative: true,
+        lines: [
+            { key: "temp", nameKey: "temp", color: "#f87171", fill: true },
+            { key: "feelsLike", nameKey: "feelsLike", color: "#fecaca", toggle: "feelsLike" },
+        ],
+        dailyLines: [
+            { key: "maxTemp", nameKey: "max", color: "#f87171", fill: true },
+            { key: "minTemp", nameKey: "min", color: "#60a5fa", fill: true },
+            { key: "maxFeelsLike", nameKey: "feelsMax", color: "#fecaca", toggle: "feelsLike" },
+            { key: "minFeelsLike", nameKey: "feelsMin", color: "#bfdbfe", toggle: "feelsLike" },
+        ],
+        toggles: [{ id: "feelsLike", nameKey: "feelsLike", color: "#fecaca" }],
     },
     {
+        // Humidity (%, left axis). Dew point (°C) and visibility (km) are
+        // optional, each on its own right-hand axis.
         id: "humidity",
-        labelEn: "Humidity",
-        labelJa: "ライブ湿度",
+        labelKey: "humidity",
         color: "#38bdf8",
         unit: "%",
-        icon: Droplet,
+        icon: Droplets,
+        lines: [
+            { key: "humidity", nameKey: "humidity", color: "#38bdf8", fill: true },
+            {
+                key: "dewPoint",
+                nameKey: "dewPoint",
+                color: "#22d3ee",
+                axis: "dewPoint",
+                unit: "°C",
+                allowNegative: true,
+                toggle: "dewPoint",
+            },
+            {
+                key: "visibility",
+                nameKey: "visibility",
+                color: "#94a3b8",
+                axis: "visibility",
+                unit: "km",
+                toggle: "visibility",
+            },
+        ],
+        toggles: [
+            { id: "dewPoint", nameKey: "dewPoint", color: "#22d3ee", unit: "°C" },
+            { id: "visibility", nameKey: "visibility", color: "#94a3b8", unit: "km" },
+        ],
     },
     {
+        // Combined chart: chance (line, %) + amount (bars, mm) in one graph.
+        id: "precip",
+        labelKey: "precipChance",
+        labelKeySecondary: "precipAmount",
+        color: "#a78bfa",
+        colorSecondary: "#60a5fa",
+        unit: "%",
+        unitSecondary: "mm",
+        icon: CloudDrizzle,
+        lines: [{ key: "precipChance", nameKey: "precipChance", color: "#a78bfa" }],
+    },
+    {
+        // Not a selector button any more (merged into "precip"); the
+        // current-weather view still reads its colour/icon from here.
         id: "precipChance",
-        labelEn: "Precip Chance",
-        labelJa: "降水確率",
+        labelKey: "precipChance",
         color: "#a78bfa",
         unit: "%",
-        icon: CloudSun,
+        icon: CloudDrizzle,
+        selectable: false,
     },
     {
-        id: "precipSum",
-        labelEn: "Precip Sum",
-        labelJa: "降雨量",
-        color: "#60a5fa",
-        unit: "mm",
-        icon: CloudRain,
-    },
-    {
+        // Wind speed; gusts (lighter shade, same m/s axis) are optional.
         id: "windSpeed",
-        labelEn: "Wind Speed",
-        labelJa: "予測風速",
+        labelKey: "windSpeed",
         color: "#2dd4bf",
         unit: "m/s",
         icon: Wind,
+        lines: [
+            { key: "windSpeed", nameKey: "windSpeed", color: "#2dd4bf", fill: true },
+            { key: "windGust", nameKey: "windGust", color: "#99f6e4", toggle: "windGust" },
+        ],
+        toggles: [{ id: "windGust", nameKey: "windGust", color: "#99f6e4" }],
+    },
+    {
+        id: "uvIndex",
+        labelKey: "uvIndex",
+        color: "#facc15",
+        unit: "", // UV index is unitless
+        icon: Sun,
+        lines: [{ key: "uvIndex", nameKey: "uvIndex", color: "#facc15", kind: "bar" }],
     },
 ];

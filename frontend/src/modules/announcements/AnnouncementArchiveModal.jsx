@@ -9,6 +9,7 @@
 import React, { useEffect, useState } from "react";
 import { Archive, RotateCcw, X } from "lucide-react";
 import announcementService from "./announcementService";
+import { useLanguage } from "../settings/useLanguage";
 import {
     getPrimaryCategory,
     CATEGORY_CONFIG,
@@ -21,6 +22,8 @@ export default function AnnouncementArchiveModal({
     onClose,
     onRestored,
 }) {
+    const lang = useLanguage();
+    const t = lang.modules.announcement;
     const [items, setItems] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -42,7 +45,7 @@ export default function AnnouncementArchiveModal({
             <div className="ann-overlay-header">
                 <span className="ann-overlay-title">
                     <Archive className="icon-sm" />
-                    {isJapanese ? "アーカイブ済みのお知らせ" : "Archived Bulletins"}
+                    {t.archive.title}
                 </span>
                 <button className="ann-icon-btn" onClick={onClose}>
                     <X className="icon-xs" />
@@ -51,15 +54,11 @@ export default function AnnouncementArchiveModal({
 
             <div className="ann-overlay-body">
                 {isLoading && (
-                    <p className="ann-empty-text">{isJapanese ? "読み込み中..." : "Loading..."}</p>
+                    <p className="ann-empty-text">{t.list.loading}</p>
                 )}
 
                 {!isLoading && items.length === 0 && (
-                    <p className="ann-empty-text">
-                        {isJapanese
-                            ? "アーカイブされたお知らせはありません。"
-                            : "No archived bulletins."}
-                    </p>
+                    <p className="ann-empty-text">{t.archive.empty}</p>
                 )}
 
                 {items.map((item) => {
@@ -80,7 +79,7 @@ export default function AnnouncementArchiveModal({
                                         {isJapanese ? item.contentJa || item.content : item.content}
                                     </p>
                                     <p className="ann-item-meta">
-                                        {isJapanese ? "アーカイブ日" : "Archived"}:{" "}
+                                        {t.archive.archivedOn}:{" "}
                                         {item.archivedAt?.split(" ")[0]}
                                     </p>
                                 </div>
@@ -92,7 +91,7 @@ export default function AnnouncementArchiveModal({
                                     onClick={() => handleRestore(item.id)}
                                 >
                                     <RotateCcw className="icon-xs" />
-                                    {isJapanese ? "復元" : "Restore"}
+                                    {t.archive.restore}
                                 </button>
                             )}
                         </div>

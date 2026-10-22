@@ -54,8 +54,8 @@ function createWindow() {
 }
 
 function loadApp() {
-    log("Attempting to load http://192.168.200.105:3001 ...");
-    mainWindow.loadURL("http://192.168.200.105:3001");
+    log("Attempting to load http://192.168.200.101:3001 ...");
+    mainWindow.loadURL("http://192.168.200.101:3001");
 }
 
 app.whenReady().then(() => {

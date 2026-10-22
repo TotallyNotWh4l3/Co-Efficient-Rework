@@ -7,11 +7,12 @@
 
 import { useState } from "react";
 import useAnnouncements from "./useAnnouncements";
-import { useDashboard } from "../dashboard/useDashboard";
 import { useSettings } from "../settings/useSettings";
 import { useAuth } from "../auth/useAuth";
 import { useLanguage } from "../settings/useLanguage";
 import AnnouncementHeader from "./components/AnnouncementHeader";
+import CollapsibleHeader from "../../common/ModuleHost/CollapsibleHeader";
+import useHeaderCollapse from "../../common/ModuleHost/useHeaderCollapse";
 import AnnouncementFilters from "./components/AnnouncementFilters";
 import AnnouncementList from "./components/AnnouncementList";
 import AnnouncementFooter from "./components/AnnouncementFooter";
@@ -22,7 +23,6 @@ import AnnouncementArchiveModal from "./AnnouncementArchiveModal";
 import "./announcement-module.css";
 
 export default function AnnouncementModule({ module }) {
-    const { removeModule, updateModuleSettings } = useDashboard();
     const { settings } = useSettings();
     const { user } = useAuth();
     const lang = useLanguage();
@@ -33,9 +33,7 @@ export default function AnnouncementModule({ module }) {
     const currentUser = user ? { id: user.id, name: user.username, role: user.role } : null;
 
     const isExtended = module.settings?.view === "extended";
-    const setIsExtended = (next) =>
-        updateModuleSettings(module.id, "view", next ? "extended" : "compact");
-    const onRemove = () => removeModule(module.id);
+    const header = useHeaderCollapse(module);
 
     const {
         announcements,
@@ -174,20 +172,19 @@ export default function AnnouncementModule({ module }) {
     });
 
     return (
-        <div className="ann-card" style={{ minHeight: isExtended ? "650px" : "320px" }}>
+        <div className="ann-card">
             <div className="ann-glow ann-glow-top" />
             <div className="ann-glow ann-glow-bottom" />
 
-            <AnnouncementHeader
-                filteredCount={filtered.length}
-                unreadCount={unreadCount}
-                currentUser={currentUser}
-                onCreate={openCreate}
-                onOpenArchive={() => setShowArchiveModal(true)}
-                isExtended={isExtended}
-                onToggleExtended={() => setIsExtended(!isExtended)}
-                onRemove={onRemove}
-            />
+            <CollapsibleHeader collapsed={header.collapsed} onToggle={header.toggle}>
+                <AnnouncementHeader
+                    filteredCount={filtered.length}
+                    unreadCount={unreadCount}
+                    currentUser={currentUser}
+                    onCreate={openCreate}
+                    onOpenArchive={() => setShowArchiveModal(true)}
+                />
+            </CollapsibleHeader>
 
             <div className="ann-body">
                 <AnnouncementFilters
@@ -210,7 +207,7 @@ export default function AnnouncementModule({ module }) {
                 />
             </div>
 
-            <AnnouncementFooter />
+            {/* <AnnouncementFooter /> */}
 
             <AnnouncementToast message={successToast} />
 

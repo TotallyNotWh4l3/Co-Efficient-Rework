@@ -6,20 +6,23 @@
 // ===================================================
 
 import Settings from "./components/SettingsComponents";
+import { useLanguage } from "./useLanguage";
 import "./confirm-dialog.css";
 
 export default function ConfirmDialog({
     title,
     description,
 
-    confirmText = "Confirm",
-    cancelText = "Cancel",
+    confirmText,
+    cancelText,
 
     danger = false,
 
     onConfirm,
     onClose,
 }) {
+    const { common } = useLanguage();
+
     return (
         <div className="confirm-dialog">
             <Settings.Title>{title}</Settings.Title>
@@ -30,11 +33,11 @@ export default function ConfirmDialog({
 
             <Settings.Row>
                 <Settings.Button variant="secondary" onClick={onClose}>
-                    {cancelText}
+                    {cancelText ?? common.cancel}
                 </Settings.Button>
 
                 <Settings.Button variant={danger ? "danger" : "primary"} onClick={onConfirm}>
-                    {confirmText}
+                    {confirmText ?? common.confirm}
                 </Settings.Button>
             </Settings.Row>
         </div>

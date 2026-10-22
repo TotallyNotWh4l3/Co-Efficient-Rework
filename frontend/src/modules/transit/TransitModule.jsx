@@ -1,0 +1,209 @@
+// ===================================================
+// ファイル名: TransitModule.jsx
+// 作成日: 2026/09/30
+// 作成者: ゴンザガ　ウェイン
+// 概要: 電車・バスモジュール。選んだ駅/バス停の「次の発車」を方面ごとに表示する。
+//       駅/バス停・方面の選択は module.settings (stopId / directionId) に保存される。
+//       時刻表データは backend/data/transit/ のJSONから取得する。
+// ===================================================
+
+import React from "react";
+import {
+    AlertCircle,
+    Accessibility,
+    BusFront,
+    RefreshCw,
+    TrainFront,
+} from "lucide-react";
+import useClock from "../clock/useClock";
+import useTransit from "./useTransit";
+import { useLanguage } from "../settings/useLanguage";
+import TransitLine from "./components/TransitLine";
+import TransitDiagram from "./components/TransitDiagram";
+import CollapsibleHeader from "../../common/ModuleHost/CollapsibleHeader";
+import useHeaderCollapse from "../../common/ModuleHost/useHeaderCollapse";
+import { getDayType, getUpcoming } from "./utils/transitHelpers";
+
+import "../schedule/schedule-module.css";
+import "./transit-module.css";
+
+const DEFAULT_COUNT = 5;
+
+const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
+
+const StopIcon = ({ type, className }) =>
+    type === "busStop" ? <BusFront className={className} /> : <TrainFront className={className} />;
+
+function formatWait(wait, t) {
+    if (wait < 1) return t.now;
+    if (wait < 60) return fill(t.inMin, { n: wait });
+    return fill(t.inHourMin, { h: Math.floor(wait / 60), m: wait % 60 });
+}
+
+function DepartureRow({ dep, isNext, t }) {
+    const typeLabel = t.types[dep.type] ?? dep.type;
+    const meta = [dep.multiLine ? dep.line : null, dep.series].filter(Boolean).join(" · ");
+
+    return (
+        <li className={`trn-row${isNext ? " trn-row--next" : ""}`}>
+            <span className="trn-time">{dep.displayTime}</span>
+
+            <span className="trn-main">
+                <span className="trn-dest">
+                    {dep.dest ? fill(t.toDest, { dest: dep.dest }) : dep.line}
+                </span>
+                {(meta || dep.tomorrow || dep.accessible) && (
+                    <span className="trn-meta">
+                        {dep.tomorrow && <span className="trn-tomorrow">{t.tomorrow}</span>}
+                        {meta && <span>{meta}</span>}
+                        {dep.accessible && (
+                            <Accessibility className="trn-access" aria-label={t.accessible} />
+                        )}
+                    </span>
+                )}
+            </span>
+
+            <span className={`trn-type trn-type--${dep.type}`}>{typeLabel}</span>
+            <span className="trn-wait">{formatWait(dep.wait, t)}</span>
+        </li>
+    );
+}
+
+export default function TransitModule({ module }) {
+    const lang = useLanguage();
+    const t = lang.modules.transit;
+    const header = useHeaderCollapse(module);
+
+    // "board": departure list (one direction at a time). "line": map-style line, one lane per direction.
+    const view = module.settings?.view === "line" ? "line" : "board";
+    // The line view animates per second; the list only needs the minute.
+    const now = useClock(view === "line");
+
+    const stopId = module.settings?.stopId ?? null;
+    const directionId = module.settings?.directionId ?? null;
+    const requestedCount = Number(module.settings?.count);
+    const count = Number.isInteger(requestedCount)
+        ? Math.min(Math.max(requestedCount, 1), 12)
+        : DEFAULT_COUNT;
+
+    const { stops, stop, isLoading, error, stopMissing, reload } = useTransit(stopId);
+
+    const lineSettings = {
+        orientation: module.settings?.orientation === "vertical" ? "vertical" : "horizontal",
+        colorMode: module.settings?.colorMode === "theme" ? "theme" : "mono",
+        timer: module.settings?.timer === "minutes" ? "minutes" : "seconds",
+    };
+
+    const direction = stop
+        ? (stop.directions.find((d) => d.id === directionId) ?? stop.directions[0])
+        : null;
+    const upcoming = direction ? getUpcoming(direction, now, count) : [];
+
+    let body;
+    if (isLoading) {
+        body = (
+            <div className="sch-empty-state">
+                <RefreshCw className="icon-sm sch-spin" />
+                <p className="sch-empty-text">{t.status.loading}</p>
+            </div>
+        );
+    } else if (error) {
+        body = (
+            <div className="sch-empty-state">
+                <AlertCircle className="icon-sm sch-error-text" />
+                <p className="sch-empty-title sch-error-text">{t.status.errorTitle}</p>
+                <p className="sch-empty-text">{error}</p>
+                <button className="sch-btn-secondary" onClick={reload}>
+                    {t.status.retry}
+                </button>
+            </div>
+        );
+    } else if (stops.length === 0) {
+        body = (
+            <div className="sch-empty-state">
+                <p className="sch-empty-text">{t.noStops}</p>
+            </div>
+        );
+    } else if (!stop) {
+        body = (
+            <div className="sch-empty-state">
+                <p className="sch-empty-text">{stopMissing ? t.stopMissing : t.selectStop}</p>
+            </div>
+        );
+    } else if (view === "line" && lineSettings.orientation === "vertical") {
+        // 縦表示: 上り/下りを1本の路線図にまとめる (上の端と下の端にそれぞれ行き先)
+        body = (
+            <div className="trl-lanes">
+                <TransitDiagram
+                    directions={stop.directions}
+                    mode={stop.type}
+                    now={now}
+                    t={t}
+                    themed={lineSettings.colorMode === "theme"}
+                    minutesOnly={lineSettings.timer === "minutes"}
+                />
+            </div>
+        );
+    } else if (view === "line") {
+        body = (
+            <div className="trl-lanes">
+                {stop.directions.map((d) => (
+                    <TransitLine
+                        key={d.id}
+                        direction={d}
+                        mode={stop.type}
+                        now={now}
+                        t={t}
+                        themed={lineSettings.colorMode === "theme"}
+                        minutesOnly={lineSettings.timer === "minutes"}
+                    />
+                ))}
+            </div>
+        );
+    } else {
+        body = (
+            <div className="trn-content">
+                <p className="trn-direction">{direction.label}</p>
+
+                {upcoming.length === 0 ? (
+                    <div className="sch-empty-state">
+                        <p className="sch-empty-text">{t.noService}</p>
+                    </div>
+                ) : (
+                    <ul className="trn-list">
+                        {upcoming.map((dep, i) => (
+                            <DepartureRow
+                                key={`${dep.line}-${dep.displayTime}-${dep.dest}-${dep.tomorrow ? "t" : "d"}-${i}`}
+                                dep={dep}
+                                isNext={i === 0}
+                                t={t}
+                            />
+                        ))}
+                    </ul>
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <div className={`sch-card${view === "board" ? " trn-card--board" : ""}`}>
+            <div className="sch-glow sch-glow-top" />
+
+            <CollapsibleHeader collapsed={header.collapsed} onToggle={header.toggle}>
+                <div className="sch-header">
+                    <div className="sch-header-left">
+                        <div className="sch-header-icon">
+                            <StopIcon type={stop?.type} className="icon-sm" />
+                        </div>
+                        <div>
+                            <h3 className="sch-header-title">{stop?.name ?? t.header.title}</h3>
+                            {stop && <p className="trn-daytype">{t.dayTypes[getDayType(now)]}</p>}
+                        </div>
+                    </div>
+                </div>
+            </CollapsibleHeader>
+
+            <div className="sch-body">{body}</div>
+        </div>
+    );
+}

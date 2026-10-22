@@ -15,6 +15,7 @@ import { useThemes } from "../../modules/themes/useThemes";
 // Dialogs
 import LocationDialog from "../../modules/locations/LocationDialog";
 import ConfirmDialog from "../../modules/settings/ConfirmDialog";
+import ModuleSettingsDialog from "../../modules/settings/components/ModuleSettingsDialog";
 import ThemeDialog from "../../modules/themes/ThemeDialog";
 
 export default function DialogManager() {
@@ -57,6 +58,16 @@ export default function DialogManager() {
                             />
                         );
                         break;
+                    case "moduleSettings":
+                        content = (
+                            <ModuleSettingsDialog
+                                moduleId={dialog.props?.moduleId}
+                                title={dialog.props?.title}
+                                onMove={dialog.props?.onMove}
+                                onClose={() => closeDialog(dialog.id)}
+                            />
+                        );
+                        break;
                     case "theme":
                         content = (
                             <ThemeDialog
@@ -91,7 +102,12 @@ export default function DialogManager() {
                         return null;
                 }
                 return (
-                    <Dialog key={dialog.id} zIndex={zIndex} onClose={() => closeDialog(dialog.id)}>
+                    <Dialog
+                        key={dialog.id}
+                        zIndex={zIndex}
+                        onClose={() => closeDialog(dialog.id)}
+                        className={dialog.type === "theme" ? "dialog--wide" : ""}
+                    >
                         {content}
                     </Dialog>
                 );

@@ -6,12 +6,17 @@
 //       配信する schedule:tag-updated/tag-removed を購読する方式に変更。
 // ===================================================
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
+import { useLanguage } from "../settings/useLanguage";
 import scheduleService from "./scheduleService";
 import { getSSEUrl } from "../../shared/sse/sseUrl";
 import { useRealtime } from "../../shared/sse/RealtimeContext";
 
 export default function useScheduleTags({ live = true } = {}) {
+    const lang = useLanguage();
+    const langRef = useRef(lang);
+    langRef.current = lang; // read inside callbacks without re-creating them
+
     const [tags, setTags] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -24,7 +29,7 @@ export default function useScheduleTags({ live = true } = {}) {
             const data = await scheduleService.getTags();
             setTags(Array.isArray(data) ? data : []);
         } catch (e) {
-            setError(e.message || "Failed to load tags.");
+            setError(e.message || langRef.current.errors.loadTags);
         } finally {
             if (!silent) setIsLoading(false);
         }

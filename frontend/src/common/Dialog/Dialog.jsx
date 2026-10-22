@@ -7,13 +7,13 @@
 
 import "./dialog.css";
 
-export default function Dialog({ children, onClose, zIndex = 1100 }) {
+export default function Dialog({ children, onClose, zIndex = 1100, className = "" }) {
     return (
         <>
             <div className="dialog__overlay" style={{ zIndex }} onClick={onClose} />
 
             <div
-                className="dialog"
+                className={`dialog${className ? ` ${className}` : ""}`}
                 style={{ zIndex: zIndex + 1 }}
                 onClick={(e) => e.stopPropagation()}
             >

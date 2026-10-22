@@ -25,12 +25,12 @@ export default function InterfaceSettings() {
     const { loading, settings, updatePreference, applyTheme, applyLocation } = useSettings();
 
     if (loading) {
-        return <div className="interface-settings">Loading settings...</div>;
+        return <div className="interface-settings">{T.settings.status.loading}</div>;
     }
 
     if (!settings) {
         console.log(settings);
-        return <div className="interface-settings">Unable to load settings.</div>;
+        return <div className="interface-settings">{T.settings.status.loadFailed}</div>;
     }
 
     const { locations, locationOptions, deleteLocation } = useLocation();
@@ -173,14 +173,12 @@ export default function InterfaceSettings() {
                                 openDialog({
                                     type: "confirm",
                                     props: {
-                                        title:
-                                            T.settings.interface.location.deleteTitle ??
-                                            "Delete location?",
-                                        description:
-                                            T.settings.interface.location.deleteMessage ??
-                                            `Remove "${location.name}" for everyone? This can't be undone.`,
-                                        confirmText:
-                                            T.settings.interface.location.deleteConfirm ?? "Delete",
+                                        title: T.settings.interface.location.deleteTitle,
+                                        description: T.settings.interface.location.deleteMessage.replace(
+                                            "{name}",
+                                            location.name,
+                                        ),
+                                        confirmText: T.settings.interface.location.deleteConfirm,
                                         danger: true,
                                         onConfirm: () => deleteLocation(location.id),
                                     },

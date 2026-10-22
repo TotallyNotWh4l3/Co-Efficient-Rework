@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: WeatherForecastSection.jsx
 // 作成日: 2026/08/27
@@ -14,10 +13,8 @@ import WeatherTabsBar from "./WeatherTabsBar";
 import WeatherChart from "./WeatherChart";
 import { METRIC_DEFS } from "../utils/weatherHelpers.jsx";
 import { useLanguage } from "../../settings/useLanguage";
-import "../weather.css";
 
 export default function WeatherForecastSection({
-    isJapanese,
     activeMetric,
     onSelectMetric,
     dailyList,
@@ -33,6 +30,10 @@ export default function WeatherForecastSection({
     // holds for the 7-day hourly forecast.
     allDaysHourlyDataset,
     timeString,
+    schoolStart,
+    schoolEnd,
+    nowTime,
+    showNow,
 }) {
     const lang = useLanguage();
     const t = lang.modules.weather.forecast;
@@ -40,16 +41,12 @@ export default function WeatherForecastSection({
 
     return (
         <>
-            <div className="weather-section-title">
-                <span className="weather-section-title__label">{t.title}</span>
-                <span className="weather-section-title__rule"></span>
-            </div>
+            {/* <div className="wth-section-title">
+                <span className="wth-section-title-label">{t.title}</span>
+                <span className="wth-section-title-rule"></span>
+            </div> */}
 
-            <WeatherMetricSelector
-                activeMetric={activeMetric}
-                onSelectMetric={onSelectMetric}
-                isJapanese={isJapanese}
-            />
+            <WeatherMetricSelector activeMetric={activeMetric} onSelectMetric={onSelectMetric} />
 
             <WeatherDailyGrid
                 dailyList={dailyList}
@@ -63,19 +60,22 @@ export default function WeatherForecastSection({
             <WeatherChart
                 dataset={chartDataset}
                 metricInfo={activeMetricInfo}
-                isJapanese={isJapanese}
                 isHourly={activeTab === "hourly"}
                 allDaysDataset={activeTab === "hourly" ? allDaysHourlyDataset : undefined}
+                schoolStart={schoolStart}
+                schoolEnd={schoolEnd}
+                nowTime={nowTime}
+                showNow={showNow}
             />
 
-            <div className="weather-updated">
-                <div className="weather-updated__inner">
-                    <Clock className="weather-updated__icon" />
-                    <span className="weather-updated__text">
+            {/* <div className="wth-updated">
+                <div className="wth-updated-inner">
+                    <Clock className="wth-updated-icon" />
+                    <span className="wth-updated-text">
                         {t.updated} {timeString}
                     </span>
                 </div>
-            </div>
+            </div> */}
         </>
     );
 }

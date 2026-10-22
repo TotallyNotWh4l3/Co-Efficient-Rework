@@ -62,7 +62,7 @@
 
 .module-settings__list {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 6px;
     margin-top: 10px;
     list-style: none;
@@ -77,6 +77,87 @@
     background: var(--color-element);
     border: 1px solid var(--color-border);
     border-radius: 8px;
+}
+
+/* A module row also carrying its own size picker needs its label/remove
+   row on top and the picker below, rather than everything on one line. */
+.module-settings__list-item--stacked {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.module-settings__list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ---------- Cell-size inputs ----------
+   Width x height number fields (in grid cells) instead of a fixed set of
+   size buttons. Reused both when adding a new module and when resizing
+   one already on the dashboard. */
+.module-settings__span-label {
+    display: block;
+    margin-top: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.module-settings__size-inputs {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.module-settings__size-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.module-settings__size-field-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    letter-spacing: 0.02em;
+}
+
+.module-settings__size-input {
+    width: 64px;
+    padding: 5px 8px;
+    background: var(--color-element);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    color: var(--color-text);
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.module-settings__size-input:hover:not(:disabled) {
+    background: var(--color-element-hover);
+    border-color: var(--color-border-hover);
+}
+
+.module-settings__size-input:focus {
+    outline: none;
+    background: var(--color-element-selected);
+    border-color: var(--color-accent-border);
+}
+
+.module-settings__size-input:disabled {
+    opacity: 0.5;
+}
+
+.module-settings__size-times {
+    padding-bottom: 6px;
+    color: var(--color-text-muted);
+    font-size: 12px;
 }
 
 .module-settings__list-label {

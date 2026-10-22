@@ -1,0 +1,60 @@
+/* The toggle is invisible until the pointer is over the header (or the
+   collapsed strip), or it has keyboard focus. */
+/* Wrapper around a module's own header. Expanded: the toggle straddles the
+   header's bottom edge. Collapsed: the header is unmounted and only a slim
+   strip stays so the user can bring it back. */
+.chdr {
+    position: relative;
+    flex: 0 0 auto;
+    z-index: 2;
+}
+
+.chdr__toggle {
+    position: absolute;
+    left: 50%;
+    bottom: calc(-0.5 * var(--u));
+    transform: translateX(-50%);
+    z-index: 3;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(2.25 * var(--u));
+    height: calc(1 * var(--u));
+    padding: 0;
+
+    color: var(--color-text-muted);
+    background: var(--color-bg-elevated);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.5 * var(--u));
+    cursor: pointer;
+
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.chdr:hover .chdr__toggle,
+.chdr__toggle:focus-visible {
+    opacity: 1;
+}
+
+.chdr__toggle:hover {
+    color: var(--color-text);
+}
+
+/* Collapsed: the wrapper takes no space at all. The toggle floats in the
+   card's top padding (so it never covers content) and is its own hover
+   target, since a zero-height wrapper can't be hovered. */
+.chdr--collapsed {
+    height: 0;
+    margin: 0;
+}
+
+.chdr--collapsed .chdr__toggle {
+    top: calc(-1.1 * var(--u));
+    bottom: auto;
+}
+
+.chdr__toggle:hover {
+    opacity: 1;
+}

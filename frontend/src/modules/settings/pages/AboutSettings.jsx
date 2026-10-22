@@ -39,11 +39,10 @@ export default function AboutSettings() {
         openDialog({
             type: "confirm",
             props: {
-                title: copy.resetTitle ?? "Reset settings?",
+                title: copy.resetTitle,
                 description:
-                    copy.resetMessage ??
-                    "This will reset your preferences, theme, and module defaults. This can't be undone.",
-                confirmText: copy.resetConfirm ?? "Reset",
+                    copy.resetMessage,
+                confirmText: copy.resetConfirm,
                 danger: true,
                 onConfirm: () => resetToDefaults(),
             },
@@ -52,16 +51,16 @@ export default function AboutSettings() {
 
     return (
         <div className="about-settings">
-            <Settings.Title Icon={Info}>{copy.title ?? "About"}</Settings.Title>
+            <Settings.Title Icon={Info}>{copy.title}</Settings.Title>
 
             <Settings.Description>
-                {copy.description ?? "App information and credits"}
+                {copy.description}
             </Settings.Description>
 
             <Settings.Divider mod="thick" />
 
             <Settings.Section>
-                <Settings.SectionTitle>{copy.versionTitle ?? "Version"}</Settings.SectionTitle>
+                <Settings.SectionTitle>{copy.versionTitle}</Settings.SectionTitle>
 
                 <Settings.Row>
                     <Settings.RowContent>
@@ -74,9 +73,9 @@ export default function AboutSettings() {
             <Settings.Divider />
 
             <Settings.Section>
-                <Settings.SectionTitle>{copy.stack?.title ?? "Built With"}</Settings.SectionTitle>
+                <Settings.SectionTitle>{copy.stack?.title}</Settings.SectionTitle>
                 <Settings.Description>
-                    {copy.stack?.description ?? "Services and technologies powering this app."}
+                    {copy.stack?.description}
                 </Settings.Description>
 
                 {TECH_STACK.map((tech) => (
@@ -94,16 +93,15 @@ export default function AboutSettings() {
             <Settings.Divider />
 
             <Settings.Section>
-                <Settings.SectionTitle>{copy.resetSectionTitle ?? "Reset"}</Settings.SectionTitle>
+                <Settings.SectionTitle>{copy.resetSectionTitle}</Settings.SectionTitle>
 
                 <Settings.Description>
-                    {copy.resetSectionDescription ??
-                        "Restore all settings to their default values."}
+                    {copy.resetSectionDescription}
                 </Settings.Description>
 
                 <Settings.Button variant="secondary" onClick={handleReset}>
                     <RotateCcw size={16} />
-                    {copy.resetButton ?? "Reset to Defaults"}
+                    {copy.resetButton}
                 </Settings.Button>
             </Settings.Section>
         </div>

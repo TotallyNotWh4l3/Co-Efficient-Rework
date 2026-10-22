@@ -9,16 +9,16 @@ import React, { useState, useMemo } from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import useSchedule from "./useSchedule";
 import useScheduleTags from "./useScheduleTags";
-import { useDashboard } from "../dashboard/useDashboard";
 import { useAuth } from "../auth/useAuth";
 import { useLanguage } from "../settings/useLanguage";
 import ScheduleHeader from "./components/ScheduleHeader";
+import CollapsibleHeader from "../../common/ModuleHost/CollapsibleHeader";
+import useHeaderCollapse from "../../common/ModuleHost/useHeaderCollapse";
 import ScheduleCalendarGrid from "./components/ScheduleCalendarGrid";
 import ScheduleDayListModal from "./components/ScheduleDayListModal";
 import ScheduleDetailModal from "./components/ScheduleDetailModal";
 import ScheduleEventFormModal from "./components/ScheduleEventFormModal";
 import ScheduleTagManagerModal from "./components/ScheduleTagManagerModal";
-import ScheduleSettingsPanel from "./components/ScheduleSettingsPanel";
 import ScheduleFooter from "./components/ScheduleFooter";
 import {
     formatDateStr,
@@ -29,20 +29,19 @@ import {
 import "./schedule-module.css";
 
 export default function ScheduleModule({ module }) {
-    const { removeModule } = useDashboard();
     const { user } = useAuth();
     const lang = useLanguage();
     const t = lang.modules.schedule;
-    const onRemove = () => removeModule(module.id);
-    const isAdmin = user?.role?.toLowerCase() === "admin";
+    const header = useHeaderCollapse(module);
+    const isManagerOrAdmin = ["admin", "manager"].includes(user?.role?.toLowerCase());
 
-    // ---- View mode state ----
-    const [viewMode, setViewMode] = useState("absolute"); // 'absolute' | 'relative'
-    const [layout, setLayout] = useState("month"); // 'month' | 'week'
+    // ---- View mode (stored in module.settings; edited on the Module Settings page) ----
+    const viewMode = module.settings?.viewMode === "relative" ? "relative" : "absolute";
+    const layout = module.settings?.layout === "week" ? "week" : "month";
+    const weekOrientation =
+        module.settings?.weekOrientation === "horizontal" ? "horizontal" : "vertical";
     const [anchorDate, setAnchorDate] = useState(new Date());
-    const [daysBefore, setDaysBefore] = useState(0);
-    const [showRelativeSettings, setShowRelativeSettings] = useState(false);
-    const [showSettings, setShowSettings] = useState(false);
+    const daysBefore = Math.max(0, Math.round(Number(module.settings?.daysBefore) || 0));
 
     // Relative view fetches a bounded range instead of the whole table.
     const relativeDays = useMemo(() => getRelativeRollingDays(daysBefore), [daysBefore]);
@@ -178,13 +177,13 @@ export default function ScheduleModule({ module }) {
         <div className="sch-card">
             <div className="sch-glow sch-glow-top" />
 
-            <ScheduleHeader
-                onOpenSettings={() => setShowSettings(true)}
-                onAdd={() => openAddForm(todayStr)}
-                onManageTags={() => setShowTagManager(true)}
-                isAdmin={isAdmin}
-                onRemove={onRemove}
-            />
+            <CollapsibleHeader collapsed={header.collapsed} onToggle={header.toggle}>
+                <ScheduleHeader
+                    onAdd={() => openAddForm(todayStr)}
+                    onManageTags={() => setShowTagManager(true)}
+                    canManageTags={isManagerOrAdmin}
+                />
+            </CollapsibleHeader>
 
             <div className="sch-body">
                 {isLoading ? (
@@ -205,6 +204,7 @@ export default function ScheduleModule({ module }) {
                     <ScheduleCalendarGrid
                         anchorDate={new Date()}
                         layout={layout}
+                        weekOrientation={weekOrientation}
                         days={layout === "week" ? relativeWeekDays : relativeDays}
                         onPrev={() => {}}
                         onNext={() => {}}
@@ -218,6 +218,7 @@ export default function ScheduleModule({ module }) {
                     <ScheduleCalendarGrid
                         anchorDate={anchorDate}
                         layout={layout}
+                        weekOrientation={weekOrientation}
                         onPrev={goPrev}
                         onNext={goNext}
                         onToday={goToday}
@@ -228,7 +229,7 @@ export default function ScheduleModule({ module }) {
                 )}
             </div>
 
-            <ScheduleFooter />
+            {/* <ScheduleFooter /> */}
 
             {dayListDate && (
                 <ScheduleDayListModal
@@ -270,27 +271,6 @@ export default function ScheduleModule({ module }) {
                     onClose={() => setShowTagManager(false)}
                     onUpsert={upsertTag}
                     onRemove={removeTag}
-                />
-            )}
-
-            {showRelativeSettings && (
-                <ScheduleRelativeSettings
-                    daysBefore={daysBefore}
-                    layout={layout}
-                    onChange={setDaysBefore}
-                    onClose={() => setShowRelativeSettings(false)}
-                />
-            )}
-
-            {showSettings && (
-                <ScheduleSettingsPanel
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                    layout={layout}
-                    onLayoutChange={setLayout}
-                    daysBefore={daysBefore}
-                    onDaysBeforeChange={setDaysBefore}
-                    onClose={() => setShowSettings(false)}
                 />
             )}
         </div>

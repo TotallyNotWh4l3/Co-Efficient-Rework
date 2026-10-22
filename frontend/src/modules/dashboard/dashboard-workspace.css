@@ -1,18 +1,50 @@
-
 .dashboard__workspace {
     display: grid;
     grid-template-columns: repeat(var(--workspace-columns), minmax(0, 1fr));
-    align-items: start;
+    /* Explicit row tracks, one per configured grid row (--workspace-rows),
+       rather than letting the grid invent tracks on demand. This is what
+       makes a fully-empty trailing row actually render as blank space —
+       with implicit auto-rows, a row with no module in it simply wouldn't
+       exist as a track at all.
+
+       Each track is an equal 1fr share of the workspace's own height
+       (the workspace itself fills all remaining space below the header
+       via flex: 1 on a flex-column ancestor), so the full grid always
+       fills the entire workspace regardless of how many rows are
+       configured: fewer rows means taller rows, more rows means more,
+       shorter rows — the workspace's total height never changes. A
+       module's rendered height is therefore that even share times its
+       own row-span (--module-row-span on .dashboard__cell), and modules
+       always line up instead of stretching to the tallest sibling or
+       being clipped by a fixed per-row pixel height. */
+    grid-template-rows: repeat(var(--workspace-rows), minmax(0, 1fr));
     gap: var(--workspace-gap);
     padding: var(--workspace-padding);
     flex: 1;
+    min-height: 0;
     box-sizing: border-box;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
-.dashboard__column {
-    display: flex;
-    flex-direction: column;
-    gap: var(--workspace-gap);
+.dashboard__cell {
+    /* Explicit placement at this module's stored cell_index (translated to
+       a 1-based column/row start in DashboardWorkspace.jsx), not source
+       order. Every other cell in the grid — anywhere no module's
+       start+span lands — is simply never given a grid item, which is all
+       "invisible placeholder" means: no DOM node, no visual, just the
+       grid's own blank track showing through. Placing modules explicitly
+       instead of relying on grid-auto-flow: dense is what lets an
+       intentional gap between two modules survive instead of being
+       auto-packed away. */
+    grid-column: var(--module-col-start, 1) / span var(--module-col-span, 1);
+    grid-row: var(--module-row-start, 1) / span var(--module-row-span, 1);
     min-width: 0;
+    min-height: 0;
+
+    /* Lets a module's CSS respond to the size of the cell it was given
+       (@container cell (...), cqw/cqh units) instead of the viewport.
+       The cell's size comes from the grid tracks, never from its content,
+       so size containment is safe here. */
+    container-type: size;
+    container-name: cell;
 }

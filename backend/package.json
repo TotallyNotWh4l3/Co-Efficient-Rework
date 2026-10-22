@@ -5,7 +5,7 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
-        "setup:db": "node shared/db/init.js && node shared/db/seed.js && node shared/db/seedLocations.js && node shared/db/seedThemes.js && node shared/db/migration/migrate.js",
+        "setup:db": "node shared/db/init.js",
         "start": "node server.js",
         "dev": "nodemon server.js"
     },
@@ -20,7 +20,8 @@
         "express": "^5.2.1",
         "express-rate-limit": "^8.7.0",
         "helmet": "^8.3.0",
-        "jsonwebtoken": "^9.0.3"
+        "jsonwebtoken": "^9.0.3",
+        "zod": "^4.6.5"
     },
     "devDependencies": {
         "nodemon": "^3.1.14"

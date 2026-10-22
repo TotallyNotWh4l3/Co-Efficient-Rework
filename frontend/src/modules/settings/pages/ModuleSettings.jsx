@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: ModuleSettings.jsx
 // 作成日: 2026/08/27
@@ -8,20 +7,98 @@
 
 import "./module-settings.css";
 
-import { Blocks, Plus, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Blocks, Plus } from "lucide-react";
 
 import { useDashboard } from "../../dashboard/useDashboard";
 import { useSettings } from "../useSettings";
 import { useLanguage } from "../useLanguage";
+import { useDialog } from "../../../shared/dialog/useDialog";
 
 import Settings from "../components/SettingsComponents";
+import ModulePositionPreview from "../components/ModulePositionPreview";
+
+// A module's cell-span is entered as a width and height (in grid cells)
+// rather than picked from a fixed set of buttons, so any size the grid can
+// hold is available. Values are clamped to 1..columns / 1..rows on commit
+// (blur or Enter), which lets the user type freely without the field
+// fighting them mid-edit.
+function SizeField({ label, value, min, max, onCommit, disabled }) {
+    const [draft, setDraft] = useState(String(value));
+
+    // Keep the field in step when the size changes from elsewhere (SSE
+    // sync from another tab, or a view change auto-growing the module).
+    useEffect(() => {
+        setDraft(String(value));
+    }, [value]);
+
+    const commit = () => {
+        const parsed = Math.round(Number(draft));
+        const next = Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : value;
+        setDraft(String(next));
+        if (next !== value) onCommit(next);
+    };
+
+    return (
+        <label className="module-settings__size-field">
+            <span className="module-settings__size-field-label">{label}</span>
+            <input
+                type="number"
+                className="module-settings__size-input"
+                min={min}
+                max={max}
+                step={1}
+                value={draft}
+                disabled={disabled}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                }}
+            />
+        </label>
+    );
+}
+
+function SizeInputs({ value, onChange, maxW, maxH, labels, disabled }) {
+    const w = value?.w ?? 1;
+    const h = value?.h ?? 1;
+
+    return (
+        <div className="module-settings__size-inputs">
+            <SizeField
+                label={labels?.width}
+                value={w}
+                min={1}
+                max={maxW}
+                disabled={disabled}
+                onCommit={(nextW) => onChange({ w: nextW, h })}
+            />
+            <span className="module-settings__size-times">×</span>
+            <SizeField
+                label={labels?.height}
+                value={h}
+                min={1}
+                max={maxH}
+                disabled={disabled}
+                onCommit={(nextH) => onChange({ w, h: nextH })}
+            />
+        </div>
+    );
+}
 
 export default function ModuleSettings() {
-    const { dashboard, addModule, removeModule } = useDashboard();
+    const { dashboard, addModule, removeModule, updateModuleLayout, moveModule } = useDashboard();
     const { settings, loading } = useSettings();
+    const { openDialog } = useDialog();
+    const [pendingSpan, setPendingSpan] = useState({ w: 1, h: 1 });
 
     const T = useLanguage();
     const copy = T?.settings?.modules ?? {};
+    const sizeCopy = copy.size ?? {};
+    const positionCopy = copy.position ?? {};
+    const maxW = dashboard.layout?.columns ?? 3;
+    const maxH = dashboard.layout?.rows ?? 4;
 
     // Mirrors ModuleManager.jsx's list — kept here too since this page owns
     // the "add module" UI now. If you add a new module type, add it in both
@@ -29,32 +106,32 @@ export default function ModuleSettings() {
     // settings.modules.<type>.title key in en.js/ja.js), or it won't render
     // or won't have a translated name.
     const AVAILABLE_MODULES = [
-        { type: "weather", name: copy.weather?.title ?? "Weather" },
-        { type: "schedule", name: copy.schedule?.title ?? "Schedule" },
-        { type: "announcement", name: copy.announcements?.title ?? "Announcements" },
+        { type: "weather", name: copy.weather?.title },
+        { type: "schedule", name: copy.schedule?.title },
+        { type: "todaySchedule", name: copy.todaySchedule?.title },
+        { type: "clock", name: copy.clock?.title },
+        { type: "transit", name: copy.transit?.title },
+        { type: "announcement", name: copy.announcements?.title },
     ];
 
+    const labelFor = (module) =>
+        module.settings?.title ||
+        AVAILABLE_MODULES.find((m) => m.type === module.type)?.name ||
+        module.type;
+
     if (loading) {
-        return <div className="module-settings">Loading settings...</div>;
+        return <div className="module-settings">{T.settings.status.loading}</div>;
     }
 
     if (!settings) {
-        return <div className="module-settings">Unable to load settings.</div>;
+        return <div className="module-settings">{T.settings.status.loadFailed}</div>;
     }
-
-    const activeModules = dashboard.modules ?? [];
-    const activeTypeCounts = activeModules.reduce((counts, module) => {
-        counts[module.type] = (counts[module.type] ?? 0) + 1;
-        return counts;
-    }, {});
 
     return (
         <div className="module-settings">
-            <Settings.Title Icon={Blocks}>{copy.title ?? "Modules"}</Settings.Title>
+            <Settings.Title Icon={Blocks}>{copy.title}</Settings.Title>
 
-            <Settings.Description>
-                {copy.description ?? "Add or remove modules from your dashboard."}
-            </Settings.Description>
+            <Settings.Description>{copy.description}</Settings.Description>
 
             <Settings.Divider mod="thick" />
 
@@ -63,11 +140,18 @@ export default function ModuleSettings() {
             ======================== */}
 
             <Settings.Section>
-                <Settings.SectionTitle>{copy.available ?? "Add a Module"}</Settings.SectionTitle>
+                <Settings.SectionTitle>{copy.available}</Settings.SectionTitle>
 
-                <Settings.Description>
-                    {copy.availableDescription ?? "Pick a module to add it to your dashboard."}
-                </Settings.Description>
+                <Settings.Description>{copy.availableDescription}</Settings.Description>
+
+                <span className="module-settings__span-label">{sizeCopy.label}</span>
+                <SizeInputs
+                    value={pendingSpan}
+                    onChange={setPendingSpan}
+                    maxW={maxW}
+                    maxH={maxH}
+                    labels={sizeCopy}
+                />
 
                 <div className="module-settings__grid">
                     {AVAILABLE_MODULES.map((module) => (
@@ -76,7 +160,11 @@ export default function ModuleSettings() {
                             type="button"
                             className="module-settings__add-card"
                             onClick={() =>
-                                addModule(module.type, settings.moduleDefaults?.[module.type] ?? {})
+                                addModule(
+                                    module.type,
+                                    settings.moduleDefaults?.[module.type] ?? {},
+                                    { w: pendingSpan.w, h: pendingSpan.h },
+                                )
                             }
                         >
                             <span className="module-settings__add-name">{module.name}</span>
@@ -91,52 +179,33 @@ export default function ModuleSettings() {
             <Settings.Divider />
 
             {/* =======================
-                CURRENT MODULES
+                POSITION PREVIEW
             ======================== */}
 
             <Settings.Section>
-                <Settings.SectionTitle>{copy.current ?? "Current Modules"}</Settings.SectionTitle>
+                <Settings.SectionTitle>{positionCopy.title}</Settings.SectionTitle>
 
-                <Settings.Description>
-                    {copy.currentDescription ?? "Modules currently on your dashboard."}
-                </Settings.Description>
+                <Settings.Description>{positionCopy.description}</Settings.Description>
 
-                {activeModules.length === 0 ? (
-                    <p className="module-settings__empty">
-                        {copy.empty ?? "No modules added yet — pick one above to get started."}
-                    </p>
-                ) : (
-                    <ul className="module-settings__list">
-                        {activeModules.map((module) => {
-                            const meta = AVAILABLE_MODULES.find((m) => m.type === module.type);
-                            const label = meta?.name ?? module.type;
-                            const count = activeTypeCounts[module.type];
-
-                            return (
-                                <li key={module.id} className="module-settings__list-item">
-                                    <span className="module-settings__list-label">
-                                        {module.settings?.title || label}
-                                        {count > 1 && (
-                                            <span className="module-settings__list-type">
-                                                {" "}
-                                                ({label})
-                                            </span>
-                                        )}
-                                    </span>
-
-                                    <button
-                                        type="button"
-                                        className="module-settings__remove-btn"
-                                        onClick={() => removeModule(module.id)}
-                                        title={copy.remove ?? "Remove"}
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
+                <ModulePositionPreview
+                    layout={dashboard.layout}
+                    modules={dashboard.modules ?? []}
+                    labelFor={labelFor}
+                    onMove={moveModule}
+                    onResize={updateModuleLayout}
+                    onRemove={removeModule}
+                    onOpenSettings={(module, startMove) =>
+                        openDialog({
+                            type: "moduleSettings",
+                            props: {
+                                moduleId: module.id,
+                                title: labelFor(module),
+                                onMove: startMove,
+                            },
+                        })
+                    }
+                    copy={positionCopy}
+                />
             </Settings.Section>
         </div>
     );

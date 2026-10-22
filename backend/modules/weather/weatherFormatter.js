@@ -17,6 +17,10 @@ function getWeatherInfo(code, isDay) {
     };
 }
 
+// Null-safe read for fields added after the first cache rows were written
+// (or that Open-Meteo may omit for a given model/location).
+const at = (series, index) => series?.[index] ?? null;
+
 export function formatWeather(raw) {
     const currentWeather = getWeatherInfo(raw.current.weather_code, Boolean(raw.current.is_day));
 
@@ -25,6 +29,7 @@ export function formatWeather(raw) {
             latitude: raw.latitude,
             longitude: raw.longitude,
             timezone: raw.timezone,
+            utcOffsetSeconds: raw.utc_offset_seconds ?? null,
         },
         current: {
             time: raw.current.time,
@@ -36,22 +41,38 @@ export function formatWeather(raw) {
             windSpeed: raw.current.wind_speed_10m,
             windDirection: raw.current.wind_direction_10m,
             windGust: raw.current.wind_gusts_10m,
+            pressureMsl: raw.current.pressure_msl ?? null,
+            surfacePressure: raw.current.surface_pressure ?? null,
             isDay: Boolean(raw.current.is_day),
             ...currentWeather,
         },
         hourly: raw.hourly.time.map((time, index) => ({
             time,
             temperature: Math.round(raw.hourly.temperature_2m[index]),
+            feelsLike: Math.round(raw.hourly.apparent_temperature[index]),
+            dewPoint: raw.hourly.dew_point_2m[index],
             humidity: raw.hourly.relative_humidity_2m[index],
             precipitation: raw.hourly.precipitation_probability[index],
             precipitationSum: raw.hourly.precipitation[index],
             windSpeed: raw.hourly.wind_speed_10m[index],
+            windGust: raw.hourly.wind_gusts_10m[index],
+            // Open-Meteo reports visibility in metres.
+            visibility: raw.hourly.visibility[index],
+            uvIndex: raw.hourly.uv_index[index],
             weatherCode: raw.hourly.weather_code[index],
+            pressureMsl: at(raw.hourly.pressure_msl, index),
+            cloudCover: at(raw.hourly.cloud_cover, index),
+            windDirection: at(raw.hourly.wind_direction_10m, index),
+            cape: at(raw.hourly.cape, index),
+            freezingLevel: at(raw.hourly.freezing_level_height, index),
+            shortwaveRadiation: at(raw.hourly.shortwave_radiation, index),
         })),
         daily: raw.daily.time.map((date, index) => ({
             date,
             high: Math.round(raw.daily.temperature_2m_max[index]),
             low: Math.round(raw.daily.temperature_2m_min[index]),
+            feelsLikeHigh: Math.round(raw.daily.apparent_temperature_max[index]),
+            feelsLikeLow: Math.round(raw.daily.apparent_temperature_min[index]),
             sunrise: raw.daily.sunrise[index],
             sunset: raw.daily.sunset[index],
             uvIndex: raw.daily.uv_index_max[index],
@@ -59,7 +80,14 @@ export function formatWeather(raw) {
             precipitationSum: raw.daily.precipitation_sum[index],
             precipitationHours: raw.daily.precipitation_hours[index],
             windSpeed: raw.daily.wind_speed_10m_max[index],
+            windGust: raw.daily.wind_gusts_10m_max[index],
             weatherCode: raw.daily.weather_code[index],
+            daylightDuration: at(raw.daily.daylight_duration, index),
+            sunshineDuration: at(raw.daily.sunshine_duration, index),
+            windDirection: at(raw.daily.wind_direction_10m_dominant, index),
+            moonPhase: at(raw.daily.moon_phase, index),
+            moonrise: at(raw.daily.moonrise, index),
+            moonset: at(raw.daily.moonset, index),
             description: getWeatherInfo(raw.daily.weather_code[index], true).description,
             icon: getWeatherInfo(raw.daily.weather_code[index], true).icon,
         })),

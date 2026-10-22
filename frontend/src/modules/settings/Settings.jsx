@@ -9,6 +9,7 @@ import { useState } from "react";
 
 import "./settings.css";
 
+import { useLanguage } from "./useLanguage";
 import { SETTINGS_PAGES } from "../../shared/constants/interface/options";
 import { useAuth } from "../auth/useAuth";
 
@@ -19,6 +20,7 @@ import { X } from "lucide-react";
 export default function Settings({ onClose, closing }) {
     const [currentPage, setCurrentPage] = useState(SETTINGS_PAGES[0].id);
     const { user } = useAuth();
+    const lang = useLanguage();
     const isAdmin = user?.role?.toLowerCase() === "admin";
 
     return (
@@ -26,7 +28,7 @@ export default function Settings({ onClose, closing }) {
             <button
                 className="settings__close-button"
                 type="button"
-                aria-label="Close Settings"
+                aria-label={lang.settings.close}
                 onClick={onClose}
             >
                 <X />

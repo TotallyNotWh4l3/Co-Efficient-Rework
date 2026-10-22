@@ -7,16 +7,18 @@
 //       (ユーザー単位配信 — 同じユーザーの他タブ/他端末との同期用)
 // ===================================================
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useDashboardContext } from "./DashboardContext";
 import dashboardService from "./dashboardService";
 import { getSSEUrl } from "../../shared/sse/sseUrl";
 import { useRealtime } from "../../shared/sse/RealtimeContext";
+import { getMinSize, growToMinSize } from "../../common/ModuleHost/moduleSizes";
+import { reflowModules } from "../../../../shared/utils/grid";
 
 const EMPTY_DASHBOARD = {
     id: "main",
     name: "Main Dashboard",
-    layout: { columns: 3, gap: 16, padding: 16 },
+    layout: { columns: 3, rows: 4, gap: 16, padding: 16 },
     modules: [],
 };
 
@@ -126,10 +128,38 @@ export function useDashboardState(user) {
     // =====================================================
     // Layout
     // =====================================================
+    const layoutRequestRef = useRef(0);
     const updateLayout = useCallback(async (key, value) => {
-        setDashboard((prev) => ({ ...prev, layout: { ...prev.layout, [key]: value } }));
+        setDashboard((prev) => {
+            const layout = { ...prev.layout, [key]: value };
+            if (key !== "columns" && key !== "rows") return { ...prev, layout };
+            // Columns/rows change what every row-major cell index means, so
+            // re-flow the modules locally in the same update — otherwise they
+            // render at the wrong cells (overlapping) until the server replies.
+            const result = reflowModules(
+                prev.modules,
+                prev.layout.columns,
+                layout.columns,
+                layout.rows,
+            );
+            return {
+                ...prev,
+                layout: { ...layout, rows: result.rows },
+                modules: prev.modules.map((m, i) => ({
+                    ...m,
+                    cellIndex: result.modules[i].cellIndex,
+                    layout: result.modules[i].layout,
+                })),
+            };
+        });
+
+        const requestId = (layoutRequestRef.current += 1);
         try {
-            await dashboardService.updateLayout({ [key]: value });
+            const state = await dashboardService.updateLayout({ [key]: value });
+            // Slider drags fire many requests; only the newest response may win.
+            if (requestId === layoutRequestRef.current && state?.modules) {
+                setDashboard((prev) => ({ ...prev, layout: state.layout, modules: state.modules }));
+            }
         } catch (e) {
             console.error("[useDashboard] Failed to update layout:", e);
         }
@@ -146,9 +176,9 @@ export function useDashboardState(user) {
     // =====================================================
     // Modules
     // =====================================================
-    const addModule = useCallback(async (type, settings = {}) => {
+    const addModule = useCallback(async (type, settings = {}, layout) => {
         try {
-            const module = await dashboardService.addModule(type, settings);
+            const module = await dashboardService.addModule(type, settings, layout);
             setDashboard((prev) => {
                 if (prev.modules.some((m) => m.id === module.id)) return prev;
                 return { ...prev, modules: [...prev.modules, module] };
@@ -192,6 +222,70 @@ export function useDashboardState(user) {
         setSelectedModuleId(moduleId);
     }, []);
 
+    // =====================================================
+    // Module size (cell-span)
+    // =====================================================
+    const updateModuleLayout = useCallback(async (moduleId, layout) => {
+        try {
+            const module = await dashboardService.updateModuleLayout(moduleId, layout);
+            setDashboard((prev) => ({
+                ...prev,
+                modules: prev.modules.map((m) => (m.id === moduleId ? module : m)),
+            }));
+            return module;
+        } catch (e) {
+            console.error("[useDashboard] Failed to update module size:", e);
+            throw e;
+        }
+    }, []);
+
+    // =====================================================
+    // Module position (top-left cell)
+    // =====================================================
+    const moveModule = useCallback(async (moduleId, cellIndex) => {
+        try {
+            const module = await dashboardService.moveModule(moduleId, cellIndex);
+            setDashboard((prev) => ({
+                ...prev,
+                modules: prev.modules.map((m) => (m.id === moduleId ? module : m)),
+            }));
+            return module;
+        } catch (e) {
+            console.error("[useDashboard] Failed to move module:", e);
+            throw e;
+        }
+    }, []);
+
+    // A view-mode change calls this so the module is never left too small
+    // for the view it just switched to. It only ever GROWS a module that's
+    // below that view's minimum (see moduleSizes.js); a module already at
+    // or above it keeps the user's chosen size untouched.
+    const dashboardRef = useRef(dashboard);
+    dashboardRef.current = dashboard;
+
+    const ensureModuleMinSize = useCallback(
+        async (moduleId, view) => {
+            const { modules, layout } = dashboardRef.current;
+            const module = modules.find((m) => m.id === moduleId);
+            if (!module) return;
+
+            const next = growToMinSize(
+                module.layout,
+                getMinSize(module.type, view),
+                layout.columns,
+                layout.rows,
+            );
+            if (!next) return;
+
+            try {
+                await updateModuleLayout(moduleId, next);
+            } catch {
+                // updateModuleLayout already logged it; the view change itself still applies.
+            }
+        },
+        [updateModuleLayout],
+    );
+
     return {
         dashboard,
         loading,
@@ -200,6 +294,9 @@ export function useDashboardState(user) {
         addModule,
         removeModule,
         updateModuleSettings,
+        updateModuleLayout,
+        moveModule,
+        ensureModuleMinSize,
         selectedModuleId,
         selectModule,
         setDashboard,

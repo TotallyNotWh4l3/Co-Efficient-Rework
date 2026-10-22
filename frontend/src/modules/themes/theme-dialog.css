@@ -1,8 +1,83 @@
+/* The dialog is a flex column with three parts: a fixed header, a body
+   that is the ONLY scroll container, and a fixed footer. Having a single
+   scroller is what lets the preview stay pinned: position: sticky sticks
+   relative to the nearest scrolling ancestor, and before this there were
+   two nested scrollers (.dialog and .theme-dialog) plus a sticky element
+   whose parent was exactly as tall as itself, so it had nowhere to travel. */
 .theme-dialog {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.75rem;
     width: 100%;
+    max-height: 90vh;
     padding: 1.5rem;
-    max-height: 80vh;
+    overflow: hidden;
+}
+
+.theme-dialog__header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex: 0 0 auto;
+}
+
+.theme-dialog__bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex: 0 0 auto;
+}
+
+/* Two columns on wide dialogs: color controls on the left, live preview on
+   the right. The grid itself scrolls; the preview pane is sticky inside it
+   (its grid area spans the whole row, so it can follow the scroll). */
+.theme-dialog__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(220px, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
+    padding-right: 0.5rem;
+    margin-right: -0.5rem;
+}
+
+.theme-dialog__controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.theme-dialog__preview-pane {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    min-width: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    z-index: 1;
+}
+
+/* Narrow: stack with the preview on top. A flex column (not a grid) is
+   used here because a sticky grid item can only move inside its own row,
+   whereas a sticky flex item can travel the full height of the container. */
+@media (max-width: 720px) {
+    .theme-dialog__layout {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .theme-dialog__preview-pane {
+        order: -1;
+        max-height: 40vh;
+        padding-bottom: 0.5rem;
+        background: var(--color-bg-elevated);
+    }
 }
 
 .theme-dialog__builtin-note {
@@ -24,12 +99,22 @@
     gap: 0.5rem;
 }
 
-.theme-dialog__swatch {
+.theme-dialog__swatch-wrap {
+    display: block;
     width: 28px;
     height: 28px;
+    flex-shrink: 0;
+    border-radius: 0.25rem;
+    background: conic-gradient(#8884 25%, transparent 0 50%, #8884 0 75%, transparent 0) 0 0 / 8px
+        8px;
+}
+
+.theme-dialog__swatch {
+    display: block;
+    width: 100%;
+    height: 100%;
     border-radius: 0.25rem;
     border: 1px solid var(--color-border);
-    flex-shrink: 0;
 }
 
 .theme-dialog__color-inputs {
@@ -181,4 +266,202 @@
 .theme-dialog__format-toggle:disabled {
     opacity: 0.5;
     cursor: default;
+}
+
+/* ---------- Mode switch (Normal / Advanced) ---------- */
+
+.theme-dialog__mode-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.theme-dialog__mode-hint,
+.theme-dialog__mode-note {
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+}
+
+.theme-dialog__segmented {
+    display: inline-flex;
+    padding: 0.15rem;
+    gap: 0.15rem;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+}
+
+.theme-dialog__segment {
+    background: transparent;
+    border: none;
+    border-radius: 0.35rem;
+    color: var(--color-text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3rem 0.8rem;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.theme-dialog__segment:hover:not(:disabled):not(.is-active) {
+    background: var(--color-element-hover);
+    color: var(--color-text);
+}
+
+.theme-dialog__segment.is-active {
+    background: var(--color-accent-muted);
+    color: var(--color-text-accent);
+    box-shadow: inset 0 0 0 1px var(--color-accent-border);
+}
+
+.theme-dialog__segment:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* ---------- Shared small controls ---------- */
+
+.theme-dialog__section-head,
+.theme-dialog__advanced-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.theme-dialog__ghost-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 0.35rem;
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+}
+
+.theme-dialog__ghost-btn:hover:not(:disabled) {
+    background: var(--color-element-hover);
+    color: var(--color-text);
+    border-color: var(--color-border-hover);
+}
+
+.theme-dialog__ghost-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.theme-dialog__check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--color-text-secondary);
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.theme-dialog__check input {
+    accent-color: var(--color-accent);
+}
+
+/* ---------- Color field extras ---------- */
+
+.theme-dialog__color-label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.theme-dialog__badge {
+    background: var(--color-accent-muted);
+    border-radius: 999px;
+    color: var(--color-text-accent);
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.05rem 0.4rem;
+    text-transform: uppercase;
+}
+
+.theme-dialog__link-btn {
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    padding: 0;
+}
+
+button.theme-dialog__link-btn {
+    cursor: pointer;
+}
+
+.theme-dialog__link-btn.is-manual {
+    color: var(--color-warning);
+}
+
+button.theme-dialog__link-btn:hover {
+    color: var(--color-text);
+}
+
+.theme-dialog__alpha-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.theme-dialog__alpha-slider,
+.theme-dialog__tuning-slider {
+    flex: 1;
+    min-width: 0;
+    height: 0.9rem;
+    accent-color: var(--color-accent);
+}
+
+.theme-dialog__alpha-value {
+    color: var(--color-text-muted);
+    font-family: monospace;
+    font-size: 0.65rem;
+    min-width: 2.5rem;
+    text-align: right;
+}
+
+/* ---------- Normal mode ---------- */
+
+.theme-dialog__normal {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.theme-dialog__tuning {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.theme-dialog__tuning-row {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.theme-dialog__shades {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.theme-dialog__shade {
+    flex: 1;
+    height: 1.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
 }

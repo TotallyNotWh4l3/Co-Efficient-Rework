@@ -11,11 +11,13 @@ import useWeather from "./useWeather";
 import { useLocation } from "../locations/useLocation";
 import { useDashboard } from "../dashboard/useDashboard";
 import { useSettings } from "../settings/useSettings";
-import { useAuth } from "../auth/useAuth";
 import { mapWeatherResponse } from "./utils/mapWeatherResponse";
 import "./weather.css";
 import { useLanguage } from "../settings/useLanguage";
-// ...
+
+// Used until a school start/end time is chosen in the module's settings.
+const DEFAULT_SCHOOL_START = "08:30";
+const DEFAULT_SCHOOL_END = "15:30";
 
 /**
  * Data-wiring layer for the weather module.
@@ -33,12 +35,8 @@ import { useLanguage } from "../settings/useLanguage";
  */
 export default function WeatherModuleContainer({ module }) {
     const { locationOptions } = useLocation();
-    const { removeModule, updateModuleSettings } = useDashboard();
+    const { updateModuleSettings } = useDashboard();
     const { settings } = useSettings();
-    const { user } = useAuth();
-
-    const isJapanese = settings?.preferences?.language === "ja";
-    const userRole = user?.role;
 
     const [selectedLocationId, setSelectedLocationId] = useState(module.settings?.location);
     const lang = useLanguage();
@@ -63,19 +61,6 @@ export default function WeatherModuleContainer({ module }) {
     }, [selectedLocationId, locationOptions, settings?.preferences?.locationId]);
 
     const { weather, loading, error, refresh } = useWeather(selectedLocationId);
-
-    const handleLocationChange = (id) => {
-        setSelectedLocationId(id);
-        updateModuleSettings(module.id, "location", id);
-    };
-
-    const handleLayoutModeChange = (mode) => {
-        updateModuleSettings(module.id, "view", mode);
-    };
-
-    const handleRemove = () => {
-        removeModule(module.id);
-    };
 
     if (!selectedLocationId || (loading && !weather)) {
         return (
@@ -123,15 +108,14 @@ export default function WeatherModuleContainer({ module }) {
         <WeatherModule
             locationOptions={locationOptions}
             selectedLocationId={selectedLocationId}
-            onLocationChange={handleLocationChange}
             current={mapped.current}
             dailyList={mapped.dailyList}
             hourlyByDay={mapped.hourlyByDay}
-            isJapanese={isJapanese}
-            userRole={userRole}
             layoutMode={module.settings?.view ?? "combined"}
-            onLayoutModeChange={handleLayoutModeChange}
-            onRemove={handleRemove}
+            schoolStart={module.settings?.schoolStart ?? DEFAULT_SCHOOL_START}
+            schoolEnd={module.settings?.schoolEnd ?? DEFAULT_SCHOOL_END}
+            headerCollapsed={module.settings?.headerCollapsed === true}
+            onToggleHeader={() => updateModuleSettings(module.id, "headerCollapsed", module.settings?.headerCollapsed !== true)}
         />
     );
 }

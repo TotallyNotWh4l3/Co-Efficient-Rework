@@ -6,7 +6,8 @@
 //       配信する schedule:created/updated/deleted を購読する方式に変更。
 // ===================================================
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useLanguage } from "../settings/useLanguage";
 import scheduleService from "./scheduleService";
 import { getSSEUrl } from "../../shared/sse/sseUrl";
 import { useRealtime } from "../../shared/sse/RealtimeContext";
@@ -17,6 +18,10 @@ export default function useSchedule({
     range = undefined,
     live = true,
 } = {}) {
+    const lang = useLanguage();
+    const langRef = useRef(lang);
+    langRef.current = lang; // read inside callbacks without re-creating them
+
     const [events, setEvents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -42,7 +47,7 @@ export default function useSchedule({
                     console.warn("[useSchedule] Expected an array, got:", data);
                 }
             } catch (e) {
-                setError(e.message || "Failed to load schedule.");
+                setError(e.message || langRef.current.errors.loadSchedule);
             } finally {
                 if (!silent) setIsLoading(false);
             }
