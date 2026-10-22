@@ -2,7 +2,8 @@
 // ファイル名: WeatherPage.jsx
 // 作成日: 2026/10/21
 // 概要: 独立した天気ページ（サイドバー「天気」セクション）
-//       計器タイル・風/太陽・時系列チャート・7日間表・時間別生データ表を表示する。
+//       計器タイル・風/太陽(+月)・時系列チャート・7日間表・時間別生データ表を
+//       ページ全体のスクロール無しで一画面に収めて表示する。
 //       データは既存の useWeather / GET /weather をそのまま利用する。
 // ===================================================
 
@@ -40,6 +41,7 @@ import {
     solarPosition,
     noonAltitude,
     moonWindow,
+    moonPosition,
     moonPhaseKey,
     moonIllumination,
     SYNODIC_DAYS,
@@ -307,15 +309,15 @@ export default function WeatherPage() {
                   .slice(11, 16)
             : "--:--";
 
-    // After sunset / before sunrise the sun card turns into a moon card
-    // (needs the moonrise/moonset fields; older cached payloads keep the sun).
-    const nowLocal = localMs(cur.time);
-    const isNight =
-        Number.isFinite(nowLocal) &&
-        Number.isFinite(localMs(today.sunrise)) &&
-        Number.isFinite(localMs(today.sunset)) &&
-        (nowLocal < localMs(today.sunrise) || nowLocal > localMs(today.sunset));
-    const moon = isNight ? moonWindow(daily, cur.time) : null;
+    // The moon joins the sun card whenever it is above the horizon (day or
+    // night). Needs the moonrise/moonset fields; older cached payloads simply
+    // show the sun alone.
+    const moonSpan = moonWindow(daily, cur.time);
+    const moon = moonSpan?.up ? moonSpan : null;
+    const moonPos =
+        moon && Number.isFinite(lat) && Number.isFinite(lon)
+            ? moonPosition(new Date(), lat, lon)
+            : null;
     const illum = moonIllumination(today.moonPhase);
     const moonKey = moonPhaseKey(today.moonPhase);
 
@@ -346,632 +348,683 @@ export default function WeatherPage() {
         <div className="wxp">
             {header}
 
-            {/* ---------- hero ---------- */}
-            <section
-                className="wxp-hero"
-                style={{
-                    "--heat": `hsl(${heat} 92% 62%)`,
-                    "--heat-soft": `hsl(${heat} 92% 62% / 0.18)`,
-                }}
-            >
-                <Sparkline
-                    className="wxp-hero__spark"
-                    values={col("temperature")}
-                    nowIndex={chartNow}
-                    area
-                    dot={false}
-                />
-                <div className="wxp-hero__main">
-                    <div className="wxp-hero__loc">{locName}</div>
-                    <div className="wxp-hero__temp">
-                        {fmt(cur.temperature)}
-                        <span>°C</span>
-                    </div>
-                    <div className="wxp-hero__desc">
-                        {cur.description} <em>WMO {cur.weatherCode}</em>
-                    </div>
-                </div>
-                <dl className="wxp-hero__meta">
-                    <div>
-                        <dt>{T.hero.dataTime}</dt>
-                        <dd>
-                            <i
-                                className={`wxp-pulse${ageMin !== null && ageMin > 60 ? " is-stale" : ""}`}
-                            />
-                            {cur.time?.replace("T", " ")}{" "}
-                            {ageMin !== null && (
-                                <em>
-                                    ({ageMin} {T.hero.minAgo})
-                                </em>
-                            )}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt>{T.hero.position}</dt>
-                        <dd>
-                            {formatCoord(lat, "N", "S")} {formatCoord(lon, "E", "W")}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt>{T.hero.timezone}</dt>
-                        <dd>{loc.timezone ?? "--"}</dd>
-                    </div>
-                    <div>
-                        <dt>{T.hero.today}</dt>
-                        <dd>
-                            {fmt(today.high)}° / {fmt(today.low)}°
-                        </dd>
-                    </div>
-                </dl>
-            </section>
-
-            {/* ---------- instruments ---------- */}
-            <h3 className="wxp-section">{T.sections.instruments}</h3>
-            <div className="wxp-tiles">
-                <Tile
-                    label={T.tiles.feelsLike}
-                    value={fmt(cur.feelsLike)}
-                    unit="°C"
-                    sub={`Δ ${fmtSigned(cur.feelsLike - cur.temperature)}°`}
-                    hint={T.hints.feelsLike}
-                    accent={C.temp}
-                    spark={spark("feelsLike")}
-                    sparkNow={sparkNow}
-                />
-                <Tile
-                    label={T.tiles.dewPoint}
-                    value={fmt(td, 1)}
-                    unit="°C"
-                    sub={`${T.tiles.spread} ${fmt(spread, 1)}°`}
-                    hint={T.hints.dewPoint}
-                    accent={C.dew}
-                    spark={spark("dewPoint")}
-                    sparkNow={sparkNow}
-                />
-                <Tile
-                    label={T.tiles.humidity}
-                    value={fmt(cur.humidity)}
-                    unit="%"
-                    sub={`VPD ${fmt(vpd, 2)} kPa`}
-                    hint={T.hints.humidity}
-                    accent={C.rh}
-                    spark={spark("humidity")}
-                    sparkNow={sparkNow}
-                />
-                <Tile
-                    label={T.tiles.wetBulb}
-                    value={fmt(tw, 1)}
-                    unit="°C"
-                    sub={`T − Tw ${fmt(tw === null ? null : cur.temperature - tw, 1)}°`}
-                    hint={T.hints.wetBulb}
-                    accent={C.dew}
-                    gauge={frac(tw, 0, 35)}
-                />
-                <Tile
-                    label={T.tiles.pressure}
-                    value={fmt(cur.pressureMsl, 1)}
-                    unit="hPa"
-                    sub={
-                        tendency ? (
-                            <span className="wxp-tile__trend">
-                                <TendencyIcon tendency={tendency} />
-                                {T.tendency[tendency.key]} {fmtSigned(tendency.delta, 1)} hPa/3h
-                            </span>
-                        ) : (
-                            `stn ${fmt(cur.surfacePressure, 1)}`
-                        )
-                    }
-                    hint={T.hints.pressure}
-                    accent={C.pressure}
-                    spark={spark("pressureMsl")}
-                    sparkNow={sparkNow}
-                />
-                <Tile
-                    label={T.tiles.cloud}
-                    value={fmt(cur.cloudCover)}
-                    unit="%"
-                    sub={cloudBase === null ? "—" : `${T.tiles.base} ≈ ${fmt(cloudBase)} m`}
-                    hint={T.hints.cloud}
-                    accent={C.cloud}
-                    spark={spark("cloudCover")}
-                    sparkNow={sparkNow}
-                />
-                <Tile
-                    label={T.tiles.visibility}
-                    value={fmt(visKm, 1)}
-                    unit="km"
-                    sub={T.tiles.hourlyModel}
-                    hint={T.hints.visibility}
-                    accent="#94a3b8"
-                    spark={spark("visibility")}
-                    sparkNow={sparkNow}
-                />
-                <Tile
-                    label={T.tiles.precip}
-                    value={fmt(cur.precipitation, 1)}
-                    unit="mm"
-                    sub={`${T.tiles.prob} ${fmt(nowHour.precipitation)}%`}
-                    hint={T.hints.precip}
-                    accent={C.precip}
-                    spark={spark("precipitationSum")}
-                    sparkNow={sparkNow}
-                />
-                <Tile
-                    label={T.tiles.uv}
-                    value={fmt(nowHour.uvIndex, 1)}
-                    tone={uvClass?.tone}
-                    sub={
-                        uvClass ? `${T.uvLevels[uvClass.key]} · max ${fmt(today.uvIndex, 1)}` : "—"
-                    }
-                    hint={T.hints.uv}
-                    accent={C.uv}
-                    gauge={frac(nowHour.uvIndex, 0, 11)}
-                />
-                <Tile
-                    label={T.tiles.wbgt}
-                    value={fmt(wbgt, 1)}
-                    unit="°C"
-                    tone={wbgtClass?.tone}
-                    sub={wbgtClass ? T.wbgtLevels[wbgtClass.key] : "—"}
-                    hint={T.hints.wbgt}
-                    accent={C.temp}
-                    gauge={frac(wbgt, 10, 35)}
-                />
-                <Tile
-                    label={T.tiles.cape}
-                    value={fmt(nowHour.cape)}
-                    unit="J/kg"
-                    tone={capeClass?.tone}
-                    sub={capeClass ? T.capeLevels[capeClass.key] : "—"}
-                    hint={T.hints.cape}
-                    accent={C.cape}
-                    gauge={frac(nowHour.cape, 0, 2500)}
-                />
-                <Tile
-                    label={T.tiles.freezing}
-                    value={fmt(nowHour.freezingLevel)}
-                    unit="m"
-                    sub="0 °C isotherm"
-                    hint={T.hints.freezing}
-                    accent="#67e8f9"
-                    spark={spark("freezingLevel")}
-                    sparkNow={sparkNow}
-                />
-            </div>
-
-            {/* ---------- wind + sun ---------- */}
-            <h3 className="wxp-section">{T.sections.windSun}</h3>
-            <div className="wxp-pair">
-                <Card title={T.wind.title}>
-                    <div className="wxp-windcard">
-                        <Compass
-                            degrees={cur.windDirection}
-                            speed={cur.windSpeed}
-                            gust={cur.windGust}
+            <div className="wxp-dash">
+                {/* ---------- left column: hero / wind / sun + moon ---------- */}
+                <aside className="wxp-side">
+                    {/* hero */}
+                    <section
+                        className="wxp-hero"
+                        style={{
+                            "--heat": `hsl(${heat} 92% 62%)`,
+                            "--heat-soft": `hsl(${heat} 92% 62% / 0.18)`,
+                        }}
+                    >
+                        <Sparkline
+                            className="wxp-hero__spark"
+                            values={col("temperature")}
+                            nowIndex={chartNow}
+                            area
+                            dot={false}
                         />
-                        <dl className="wxp-kv">
+                        <div className="wxp-hero__main">
+                            <div className="wxp-hero__loc">{locName}</div>
+                            <div className="wxp-hero__temp">
+                                {fmt(cur.temperature)}
+                                <span>°C</span>
+                            </div>
+                            <div className="wxp-hero__desc">
+                                {cur.description} <em>WMO {cur.weatherCode}</em>
+                            </div>
+                        </div>
+                        <dl className="wxp-hero__meta">
                             <div>
-                                <dt>{T.wind.from}</dt>
+                                <dt>{T.hero.dataTime}</dt>
                                 <dd>
-                                    {toCardinal(cur.windDirection)} {fmt(cur.windDirection)}°
+                                    <i
+                                        className={`wxp-pulse${ageMin !== null && ageMin > 60 ? " is-stale" : ""}`}
+                                    />
+                                    {cur.time?.replace("T", " ")}{" "}
+                                    {ageMin !== null && (
+                                        <em>
+                                            ({ageMin} {T.hero.minAgo})
+                                        </em>
+                                    )}
                                 </dd>
                             </div>
                             <div>
-                                <dt>{T.wind.gust}</dt>
-                                <dd>{fmt(cur.windGust, 1)} m/s</dd>
-                            </div>
-                            <div>
-                                <dt>{T.wind.gustFactor}</dt>
-                                <dd>{gustFactor === null ? "--" : `×${fmt(gustFactor, 2)}`}</dd>
-                            </div>
-                            <div>
-                                <dt>{T.wind.beaufort}</dt>
+                                <dt>{T.hero.position}</dt>
                                 <dd>
-                                    {force === null ? "--" : `${force} · ${T.wind.names[force]}`}
+                                    {formatCoord(lat, "N", "S")} {formatCoord(lon, "E", "W")}
                                 </dd>
                             </div>
                             <div>
-                                <dt>{T.wind.dailyMax}</dt>
-                                <dd>
-                                    {fmt(today.windSpeed, 1)} / {fmt(today.windGust, 1)} m/s
-                                </dd>
+                                <dt>{T.hero.timezone}</dt>
+                                <dd>{loc.timezone ?? "--"}</dd>
                             </div>
                             <div>
-                                <dt>{T.wind.dominant}</dt>
+                                <dt>{T.hero.today}</dt>
                                 <dd>
-                                    {toCardinal(today.windDirection)} {fmt(today.windDirection)}°
+                                    {fmt(today.high)}° / {fmt(today.low)}°
                                 </dd>
                             </div>
                         </dl>
-                    </div>
-                </Card>
+                    </section>
 
-                <Card title={moon ? T.moon.title : T.sun.title}>
-                    <div className="wxp-suncard">
-                        {moon ? (
-                            <SunArc
-                                body="moon"
-                                sunrise={moon.rise}
-                                sunset={moon.set}
-                                now={cur.time}
-                                phase={today.moonPhase}
-                                riseLabel={moon.riseKnown ? undefined : "--:--"}
+                    {/* wind */}
+                    <Card title={T.wind.title} className="wxp-card--grow">
+                        <div className="wxp-windcard">
+                            <Compass
+                                degrees={cur.windDirection}
+                                speed={cur.windSpeed}
+                                gust={cur.windGust}
                             />
-                        ) : (
-                            <SunArc sunrise={today.sunrise} sunset={today.sunset} now={cur.time} />
-                        )}
-                        {moon ? (
                             <dl className="wxp-kv">
                                 <div>
-                                    <dt>
-                                        {T.moon.moonrise} / {T.moon.moonset}
-                                    </dt>
+                                    <dt>{T.wind.from}</dt>
                                     <dd>
-                                        {moon?.riseKnown
-                                            ? `${hhmm(moon.rise)}${dayShift(moon.rise, cur.time)}`
-                                            : "--:--"}{" "}
-                                        / {hhmm(moon?.set)}
-                                        {moon ? dayShift(moon.set, cur.time) : ""}
+                                        {toCardinal(cur.windDirection)} {fmt(cur.windDirection)}°
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt>{T.moon.phase}</dt>
-                                    <dd>{moonKey ? T.moon.names[moonKey] : "--"}</dd>
+                                    <dt>{T.wind.gust}</dt>
+                                    <dd>{fmt(cur.windGust, 1)} m/s</dd>
                                 </div>
                                 <div>
-                                    <dt>{T.moon.illumination}</dt>
-                                    <dd>{illum === null ? "--" : `${fmt(illum * 100)}%`}</dd>
+                                    <dt>{T.wind.gustFactor}</dt>
+                                    <dd>{gustFactor === null ? "--" : `×${fmt(gustFactor, 2)}`}</dd>
                                 </div>
                                 <div>
-                                    <dt>{T.moon.age}</dt>
+                                    <dt>{T.wind.beaufort}</dt>
                                     <dd>
-                                        {Number.isFinite(today.moonPhase)
-                                            ? `${fmt(today.moonPhase * SYNODIC_DAYS, 1)} ${T.moon.days}`
-                                            : "--"}
+                                        {force === null
+                                            ? "--"
+                                            : `${force} · ${T.wind.names[force]}`}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt>{T.moon.visible}</dt>
+                                    <dt>{T.wind.dailyMax}</dt>
                                     <dd>
-                                        {moon?.riseKnown
-                                            ? formatDuration(
-                                                  (localMs(moon.set) - localMs(moon.rise)) / 1000,
-                                              )
-                                            : "--"}
+                                        {fmt(today.windSpeed, 1)} / {fmt(today.windGust, 1)} m/s
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>{T.wind.dominant}</dt>
+                                    <dd>
+                                        {toCardinal(today.windDirection)} {fmt(today.windDirection)}
+                                        °
                                     </dd>
                                 </div>
                             </dl>
-                        ) : (
-                            <dl className="wxp-kv">
-                                <div>
-                                    <dt>
-                                        {T.sun.sunrise} / {T.sun.sunset}
-                                    </dt>
-                                    <dd>
-                                        {hhmm(today.sunrise)} / {hhmm(today.sunset)}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt>{T.sun.solarNoon}</dt>
-                                    <dd>{solarNoon}</dd>
-                                </div>
-                                <div>
-                                    <dt>{T.sun.daylight}</dt>
-                                    <dd>
-                                        {formatDuration(daylightSec)}{" "}
-                                        <em>
-                                            {dayDeltaSec === null
-                                                ? ""
-                                                : `(${fmtSigned(dayDeltaSec / 60, 1)} min ${T.sun.tomorrow})`}
-                                        </em>
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt>{T.sun.sunshine}</dt>
-                                    <dd>{formatDuration(today.sunshineDuration)}</dd>
-                                </div>
-                                <div>
-                                    <dt>{T.sun.altitude}</dt>
-                                    <dd>
-                                        {sun ? `${fmt(sun.altitude, 1)}°` : "--"}{" "}
-                                        <em>
+                        </div>
+                    </Card>
+
+                    {/* sun (+ moon while it is above the horizon) */}
+                    <Card
+                        title={moon ? `${T.sun.title} / ${T.moon.title}` : T.sun.title}
+                        className="wxp-card--fill"
+                    >
+                        <div className={`wxp-celestial${moon ? " has-moon" : ""}`}>
+                            <div className="wxp-body">
+                                <SunArc
+                                    sunrise={today.sunrise}
+                                    sunset={today.sunset}
+                                    now={cur.time}
+                                />
+                                <dl className="wxp-kv">
+                                    <div>
+                                        <dt>
+                                            {T.sun.sunrise} / {T.sun.sunset}
+                                        </dt>
+                                        <dd>
+                                            {hhmm(today.sunrise)} / {hhmm(today.sunset)}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.sun.solarNoon}</dt>
+                                        <dd>{solarNoon}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.sun.daylight}</dt>
+                                        <dd>
+                                            {formatDuration(daylightSec)}{" "}
+                                            <em>
+                                                {dayDeltaSec === null
+                                                    ? ""
+                                                    : `(${fmtSigned(dayDeltaSec / 60, 1)} min ${T.sun.tomorrow})`}
+                                            </em>
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.sun.sunshine}</dt>
+                                        <dd>{formatDuration(today.sunshineDuration)}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.sun.altitude}</dt>
+                                        <dd>
+                                            {sun ? `${fmt(sun.altitude, 1)}°` : "--"}{" "}
+                                            <em>
+                                                {sun
+                                                    ? `${T.sun.max} ${fmt(noonAltitude(lat, sun.declination), 1)}°`
+                                                    : ""}
+                                            </em>
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.sun.azimuth}</dt>
+                                        <dd>
                                             {sun
-                                                ? `${T.sun.max} ${fmt(noonAltitude(lat, sun.declination), 1)}°`
-                                                : ""}
-                                        </em>
-                                    </dd>
+                                                ? `${fmt(sun.azimuth, 1)}° ${toCardinal(sun.azimuth)}`
+                                                : "--"}
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </div>
+
+                            {moon && (
+                                <div className="wxp-body wxp-body--moon">
+                                    <SunArc
+                                        body="moon"
+                                        sunrise={moon.rise}
+                                        sunset={moon.set}
+                                        now={cur.time}
+                                        phase={today.moonPhase}
+                                        riseLabel={moon.riseKnown ? undefined : "--:--"}
+                                    />
+                                    <dl className="wxp-kv">
+                                        <div>
+                                            <dt>
+                                                {T.moon.moonrise} / {T.moon.moonset}
+                                            </dt>
+                                            <dd>
+                                                {moon.riseKnown
+                                                    ? `${hhmm(moon.rise)}${dayShift(moon.rise, cur.time)}`
+                                                    : "--:--"}{" "}
+                                                / {hhmm(moon.set)}
+                                                {dayShift(moon.set, cur.time)}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt>{T.moon.phase}</dt>
+                                            <dd>{moonKey ? T.moon.names[moonKey] : "--"}</dd>
+                                        </div>
+                                        <div>
+                                            <dt>{T.moon.illumination}</dt>
+                                            <dd>
+                                                {illum === null ? "--" : `${fmt(illum * 100)}%`}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt>{T.moon.age}</dt>
+                                            <dd>
+                                                {Number.isFinite(today.moonPhase)
+                                                    ? `${fmt(today.moonPhase * SYNODIC_DAYS, 1)} ${T.moon.days}`
+                                                    : "--"}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt>{T.sun.altitude}</dt>
+                                            <dd>
+                                                {moonPos ? `${fmt(moonPos.altitude, 1)}°` : "--"}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt>{T.sun.azimuth}</dt>
+                                            <dd>
+                                                {moonPos
+                                                    ? `${fmt(moonPos.azimuth, 1)}° ${toCardinal(moonPos.azimuth)}`
+                                                    : "--"}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt>{T.moon.visible}</dt>
+                                            <dd>
+                                                {moon.riseKnown
+                                                    ? formatDuration(
+                                                          (localMs(moon.set) - localMs(moon.rise)) /
+                                                              1000,
+                                                      )
+                                                    : "--"}
+                                            </dd>
+                                        </div>
+                                    </dl>
                                 </div>
-                                <div>
-                                    <dt>{T.sun.azimuth}</dt>
-                                    <dd>
-                                        {sun
-                                            ? `${fmt(sun.azimuth, 1)}° ${toCardinal(sun.azimuth)}`
-                                            : "--"}
-                                    </dd>
-                                </div>
-                            </dl>
-                        )}
+                            )}
+                        </div>
+                    </Card>
+                </aside>
+
+                {/* ---------- right column: instruments + trend charts ---------- */}
+                <div className="wxp-main">
+                    <div className="wxp-tiles">
+                        <Tile
+                            label={T.tiles.feelsLike}
+                            value={fmt(cur.feelsLike)}
+                            unit="°C"
+                            sub={`Δ ${fmtSigned(cur.feelsLike - cur.temperature)}°`}
+                            hint={T.hints.feelsLike}
+                            accent={C.temp}
+                            spark={spark("feelsLike")}
+                            sparkNow={sparkNow}
+                        />
+                        <Tile
+                            label={T.tiles.dewPoint}
+                            value={fmt(td, 1)}
+                            unit="°C"
+                            sub={`${T.tiles.spread} ${fmt(spread, 1)}°`}
+                            hint={T.hints.dewPoint}
+                            accent={C.dew}
+                            spark={spark("dewPoint")}
+                            sparkNow={sparkNow}
+                        />
+                        <Tile
+                            label={T.tiles.humidity}
+                            value={fmt(cur.humidity)}
+                            unit="%"
+                            sub={`VPD ${fmt(vpd, 2)} kPa`}
+                            hint={T.hints.humidity}
+                            accent={C.rh}
+                            spark={spark("humidity")}
+                            sparkNow={sparkNow}
+                        />
+                        <Tile
+                            label={T.tiles.wetBulb}
+                            value={fmt(tw, 1)}
+                            unit="°C"
+                            sub={`T − Tw ${fmt(tw === null ? null : cur.temperature - tw, 1)}°`}
+                            hint={T.hints.wetBulb}
+                            accent={C.dew}
+                            gauge={frac(tw, 0, 35)}
+                        />
+                        <Tile
+                            label={T.tiles.pressure}
+                            value={fmt(cur.pressureMsl, 1)}
+                            unit="hPa"
+                            sub={
+                                tendency ? (
+                                    <span className="wxp-tile__trend">
+                                        <TendencyIcon tendency={tendency} />
+                                        {T.tendency[tendency.key]} {fmtSigned(tendency.delta, 1)}{" "}
+                                        hPa/3h
+                                    </span>
+                                ) : (
+                                    `stn ${fmt(cur.surfacePressure, 1)}`
+                                )
+                            }
+                            hint={T.hints.pressure}
+                            accent={C.pressure}
+                            spark={spark("pressureMsl")}
+                            sparkNow={sparkNow}
+                        />
+                        <Tile
+                            label={T.tiles.cloud}
+                            value={fmt(cur.cloudCover)}
+                            unit="%"
+                            sub={cloudBase === null ? "—" : `${T.tiles.base} ≈ ${fmt(cloudBase)} m`}
+                            hint={T.hints.cloud}
+                            accent={C.cloud}
+                            spark={spark("cloudCover")}
+                            sparkNow={sparkNow}
+                        />
+                        <Tile
+                            label={T.tiles.visibility}
+                            value={fmt(visKm, 1)}
+                            unit="km"
+                            sub={T.tiles.hourlyModel}
+                            hint={T.hints.visibility}
+                            accent="#94a3b8"
+                            spark={spark("visibility")}
+                            sparkNow={sparkNow}
+                        />
+                        <Tile
+                            label={T.tiles.precip}
+                            value={fmt(cur.precipitation, 1)}
+                            unit="mm"
+                            sub={`${T.tiles.prob} ${fmt(nowHour.precipitation)}%`}
+                            hint={T.hints.precip}
+                            accent={C.precip}
+                            spark={spark("precipitationSum")}
+                            sparkNow={sparkNow}
+                        />
+                        <Tile
+                            label={T.tiles.uv}
+                            value={fmt(nowHour.uvIndex, 1)}
+                            tone={uvClass?.tone}
+                            sub={
+                                uvClass
+                                    ? `${T.uvLevels[uvClass.key]} · max ${fmt(today.uvIndex, 1)}`
+                                    : "—"
+                            }
+                            hint={T.hints.uv}
+                            accent={C.uv}
+                            gauge={frac(nowHour.uvIndex, 0, 11)}
+                        />
+                        <Tile
+                            label={T.tiles.wbgt}
+                            value={fmt(wbgt, 1)}
+                            unit="°C"
+                            tone={wbgtClass?.tone}
+                            sub={wbgtClass ? T.wbgtLevels[wbgtClass.key] : "—"}
+                            hint={T.hints.wbgt}
+                            accent={C.temp}
+                            gauge={frac(wbgt, 10, 35)}
+                        />
+                        <Tile
+                            label={T.tiles.cape}
+                            value={fmt(nowHour.cape)}
+                            unit="J/kg"
+                            tone={capeClass?.tone}
+                            sub={capeClass ? T.capeLevels[capeClass.key] : "—"}
+                            hint={T.hints.cape}
+                            accent={C.cape}
+                            gauge={frac(nowHour.cape, 0, 2500)}
+                        />
+                        <Tile
+                            label={T.tiles.freezing}
+                            value={fmt(nowHour.freezingLevel)}
+                            unit="m"
+                            sub="0 °C isotherm"
+                            hint={T.hints.freezing}
+                            accent="#67e8f9"
+                            spark={spark("freezingLevel")}
+                            sparkNow={sparkNow}
+                        />
                     </div>
-                </Card>
-            </div>
 
-            {/* ---------- trends ---------- */}
-            <h3 className="wxp-section">{T.sections.trends}</h3>
-            <div className="wxp-charts">
-                <Card title={T.charts.temperature}>
-                    <TimeSeries
-                        times={times}
-                        nowIndex={chartNow}
-                        nowLabel={T.now}
-                        series={[
-                            {
-                                key: "t",
-                                area: true,
-                                extrema: true,
-                                label: "T",
-                                color: C.temp,
-                                values: col("temperature"),
-                                unit: "°C",
-                            },
-                            {
-                                key: "f",
-                                label: "Feels",
-                                color: C.feels,
-                                values: col("feelsLike"),
-                                unit: "°C",
-                                dashed: true,
-                            },
-                            {
-                                key: "d",
-                                label: "Td",
-                                color: C.dew,
-                                values: col("dewPoint"),
-                                unit: "°C",
-                                digits: 1,
-                            },
-                        ]}
-                    />
-                </Card>
-                <Card title={T.charts.humidity}>
-                    <TimeSeries
-                        times={times}
-                        nowIndex={chartNow}
-                        nowLabel={T.now}
-                        leftDomain={[0, 100]}
-                        series={[
-                            {
-                                key: "rh",
-                                area: true,
-                                label: "RH",
-                                color: C.rh,
-                                values: col("humidity"),
-                                unit: "%",
-                            },
-                            {
-                                key: "cc",
-                                label: "Cloud",
-                                color: C.cloud,
-                                values: col("cloudCover"),
-                                unit: "%",
-                                dashed: true,
-                            },
-                        ]}
-                    />
-                </Card>
-                <Card title={T.charts.pressure}>
-                    <TimeSeries
-                        times={times}
-                        nowIndex={chartNow}
-                        nowLabel={T.now}
-                        series={[
-                            {
-                                key: "p",
-                                area: true,
-                                extrema: true,
-                                label: "MSL",
-                                color: C.pressure,
-                                values: col("pressureMsl"),
-                                unit: "hPa",
-                                digits: 1,
-                            },
-                        ]}
-                    />
-                </Card>
-                <Card title={T.charts.wind}>
-                    <TimeSeries
-                        times={times}
-                        nowIndex={chartNow}
-                        nowLabel={T.now}
-                        series={[
-                            {
-                                key: "w",
-                                area: true,
-                                label: "Wind",
-                                color: C.wind,
-                                values: col("windSpeed"),
-                                unit: "m/s",
-                                digits: 1,
-                            },
-                            {
-                                key: "g",
-                                label: "Gust",
-                                color: C.gust,
-                                values: col("windGust"),
-                                unit: "m/s",
-                                digits: 1,
-                                dashed: true,
-                            },
-                        ]}
-                    />
-                </Card>
-                <Card title={T.charts.precip}>
-                    <TimeSeries
-                        times={times}
-                        nowIndex={chartNow}
-                        nowLabel={T.now}
-                        rightDomain={[0, 100]}
-                        series={[
-                            {
-                                key: "mm",
-                                label: "Precip",
-                                color: C.precip,
-                                kind: "bar",
-                                values: col("precipitationSum"),
-                                unit: "mm",
-                                digits: 1,
-                            },
-                            {
-                                key: "pp",
-                                label: "Prob",
-                                color: C.prob,
-                                axis: "right",
-                                values: col("precipitation"),
-                                unit: "%",
-                                dashed: true,
-                            },
-                        ]}
-                    />
-                </Card>
-                <Card title={T.charts.instability}>
-                    <TimeSeries
-                        times={times}
-                        nowIndex={chartNow}
-                        nowLabel={T.now}
-                        series={[
-                            {
-                                key: "uv",
-                                area: true,
-                                label: "UV",
-                                color: C.uv,
-                                values: col("uvIndex"),
-                                digits: 1,
-                            },
-                            {
-                                key: "cape",
-                                label: "CAPE",
-                                color: C.cape,
-                                axis: "right",
-                                values: col("cape"),
-                                unit: "J/kg",
-                            },
-                        ]}
-                    />
-                </Card>
-            </div>
+                    {/* ---------- trends ---------- */}
+                    <div className="wxp-charts">
+                        <Card title={T.charts.temperature}>
+                            <TimeSeries
+                                times={times}
+                                nowIndex={chartNow}
+                                nowLabel={T.now}
+                                series={[
+                                    {
+                                        key: "t",
+                                        area: true,
+                                        extrema: true,
+                                        label: "T",
+                                        color: C.temp,
+                                        values: col("temperature"),
+                                        unit: "°C",
+                                    },
+                                    {
+                                        key: "f",
+                                        label: "Feels",
+                                        color: C.feels,
+                                        values: col("feelsLike"),
+                                        unit: "°C",
+                                        dashed: true,
+                                    },
+                                    {
+                                        key: "d",
+                                        label: "Td",
+                                        color: C.dew,
+                                        values: col("dewPoint"),
+                                        unit: "°C",
+                                        digits: 1,
+                                    },
+                                ]}
+                            />
+                        </Card>
+                        <Card title={T.charts.humidity}>
+                            <TimeSeries
+                                times={times}
+                                nowIndex={chartNow}
+                                nowLabel={T.now}
+                                leftDomain={[0, 100]}
+                                series={[
+                                    {
+                                        key: "rh",
+                                        area: true,
+                                        label: "RH",
+                                        color: C.rh,
+                                        values: col("humidity"),
+                                        unit: "%",
+                                    },
+                                    {
+                                        key: "cc",
+                                        label: "Cloud",
+                                        color: C.cloud,
+                                        values: col("cloudCover"),
+                                        unit: "%",
+                                        dashed: true,
+                                    },
+                                ]}
+                            />
+                        </Card>
+                        <Card title={T.charts.pressure}>
+                            <TimeSeries
+                                times={times}
+                                nowIndex={chartNow}
+                                nowLabel={T.now}
+                                series={[
+                                    {
+                                        key: "p",
+                                        area: true,
+                                        extrema: true,
+                                        label: "MSL",
+                                        color: C.pressure,
+                                        values: col("pressureMsl"),
+                                        unit: "hPa",
+                                        digits: 1,
+                                    },
+                                ]}
+                            />
+                        </Card>
+                        <Card title={T.charts.wind}>
+                            <TimeSeries
+                                times={times}
+                                nowIndex={chartNow}
+                                nowLabel={T.now}
+                                series={[
+                                    {
+                                        key: "w",
+                                        area: true,
+                                        label: "Wind",
+                                        nonNegative: true,
+                                        color: C.wind,
+                                        values: col("windSpeed"),
+                                        unit: "m/s",
+                                        digits: 1,
+                                    },
+                                    {
+                                        key: "g",
+                                        label: "Gust",
+                                        nonNegative: true,
+                                        color: C.gust,
+                                        values: col("windGust"),
+                                        unit: "m/s",
+                                        digits: 1,
+                                        dashed: true,
+                                    },
+                                ]}
+                            />
+                        </Card>
+                        <Card title={T.charts.precip}>
+                            <TimeSeries
+                                times={times}
+                                nowIndex={chartNow}
+                                nowLabel={T.now}
+                                rightDomain={[0, 100]}
+                                series={[
+                                    {
+                                        key: "mm",
+                                        label: "Precip",
+                                        nonNegative: true,
+                                        color: C.precip,
+                                        kind: "bar",
+                                        values: col("precipitationSum"),
+                                        unit: "mm",
+                                        digits: 1,
+                                    },
+                                    {
+                                        key: "pp",
+                                        label: "Prob",
+                                        nonNegative: true,
+                                        color: C.prob,
+                                        axis: "right",
+                                        values: col("precipitation"),
+                                        unit: "%",
+                                        dashed: true,
+                                    },
+                                ]}
+                            />
+                        </Card>
+                        <Card title={T.charts.instability}>
+                            <TimeSeries
+                                times={times}
+                                nowIndex={chartNow}
+                                nowLabel={T.now}
+                                series={[
+                                    {
+                                        key: "uv",
+                                        area: true,
+                                        label: "UV",
+                                        nonNegative: true,
+                                        color: C.uv,
+                                        values: col("uvIndex"),
+                                        digits: 1,
+                                    },
+                                    {
+                                        key: "cape",
+                                        label: "CAPE",
+                                        nonNegative: true,
+                                        color: C.cape,
+                                        axis: "right",
+                                        values: col("cape"),
+                                        unit: "J/kg",
+                                    },
+                                ]}
+                            />
+                        </Card>
+                    </div>
+                </div>
 
-            {/* ---------- 7-day table ---------- */}
-            <h3 className="wxp-section">{T.sections.week}</h3>
-            <div className="wxp-tablewrap">
-                <table className="wxp-table">
-                    <thead>
-                        <tr>
-                            <th>{T.week.date}</th>
-                            <th>WMO</th>
-                            <th>Hi/Lo °C</th>
-                            <th>Feels °C</th>
-                            <th>mm</th>
-                            <th>h</th>
-                            <th>Pop %</th>
-                            <th>Wind/Gust m/s</th>
-                            <th>Dir</th>
-                            <th>UV</th>
-                            <th>↑</th>
-                            <th>↓</th>
-                            <th>{T.week.daylight}</th>
-                            <th>{T.week.sunshine}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {daily.map((d, i) => (
-                            <tr key={d.date} className={i === 0 ? "is-today" : ""}>
-                                <td>{dayName(d.date)}</td>
-                                <td title={d.description}>{d.weatherCode}</td>
-                                <td style={heatCell(d.high)}>
-                                    {fmt(d.high)} / {fmt(d.low)}
-                                </td>
-                                <td>
-                                    {fmt(d.feelsLikeHigh)} / {fmt(d.feelsLikeLow)}
-                                </td>
-                                <td style={tint(d.precipitationSum, 0, 30, 210)}>
-                                    {fmt(d.precipitationSum, 1)}
-                                </td>
-                                <td>{fmt(d.precipitationHours)}</td>
-                                <td style={tint(d.precipitation, 0, 100, 210)}>
-                                    {fmt(d.precipitation)}
-                                </td>
-                                <td>
-                                    {fmt(d.windSpeed, 1)} / {fmt(d.windGust, 1)}
-                                </td>
-                                <td>{toCardinal(d.windDirection)}</td>
-                                <td style={tint(d.uvIndex, 0, 11, 330)}>{fmt(d.uvIndex, 1)}</td>
-                                <td>{hhmm(d.sunrise)}</td>
-                                <td>{hhmm(d.sunset)}</td>
-                                <td>{formatDuration(d.daylightDuration)}</td>
-                                <td>{formatDuration(d.sunshineDuration)}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                {/* ---------- bottom row: 7-day table + raw hourly ---------- */}
+                <div className="wxp-bottom">
+                    <Card title={T.sections.week} className="wxp-card--table">
+                        <div className="wxp-tablewrap">
+                            <table className="wxp-table">
+                                <thead>
+                                    <tr>
+                                        <th>{T.week.date}</th>
+                                        <th>WMO</th>
+                                        <th>Hi/Lo °C</th>
+                                        <th>Feels °C</th>
+                                        <th>mm</th>
+                                        <th>h</th>
+                                        <th>Pop %</th>
+                                        <th>Wind/Gust m/s</th>
+                                        <th>Dir</th>
+                                        <th>UV</th>
+                                        <th>↑</th>
+                                        <th>↓</th>
+                                        <th>{T.week.daylight}</th>
+                                        <th>{T.week.sunshine}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {daily.map((d, i) => (
+                                        <tr key={d.date} className={i === 0 ? "is-today" : ""}>
+                                            <td>{dayName(d.date)}</td>
+                                            <td title={d.description}>{d.weatherCode}</td>
+                                            <td style={heatCell(d.high)}>
+                                                {fmt(d.high)} / {fmt(d.low)}
+                                            </td>
+                                            <td>
+                                                {fmt(d.feelsLikeHigh)} / {fmt(d.feelsLikeLow)}
+                                            </td>
+                                            <td style={tint(d.precipitationSum, 0, 30, 210)}>
+                                                {fmt(d.precipitationSum, 1)}
+                                            </td>
+                                            <td>{fmt(d.precipitationHours)}</td>
+                                            <td style={tint(d.precipitation, 0, 100, 210)}>
+                                                {fmt(d.precipitation)}
+                                            </td>
+                                            <td>
+                                                {fmt(d.windSpeed, 1)} / {fmt(d.windGust, 1)}
+                                            </td>
+                                            <td>{toCardinal(d.windDirection)}</td>
+                                            <td style={tint(d.uvIndex, 0, 11, 330)}>
+                                                {fmt(d.uvIndex, 1)}
+                                            </td>
+                                            <td>{hhmm(d.sunrise)}</td>
+                                            <td>{hhmm(d.sunset)}</td>
+                                            <td>{formatDuration(d.daylightDuration)}</td>
+                                            <td>{formatDuration(d.sunshineDuration)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
 
-            {/* ---------- raw hourly ---------- */}
-            <h3 className="wxp-section">{T.sections.raw}</h3>
-            <div className="wxp-tablewrap wxp-tablewrap--raw">
-                <table className="wxp-table">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>T</th>
-                            <th>Feels</th>
-                            <th>Td</th>
-                            <th>RH</th>
-                            <th>P hPa</th>
-                            <th>Cld</th>
-                            <th>Vis km</th>
-                            <th>Wind</th>
-                            <th>Gust</th>
-                            <th>Dir</th>
-                            <th>mm</th>
-                            <th>Pop</th>
-                            <th>UV</th>
-                            <th>CAPE</th>
-                            <th>Rad W/m²</th>
-                            <th>WMO</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {hourly.slice(nowIdx, nowIdx + 48).map((h, i) => (
-                            <tr key={h.time} className={i === 0 ? "is-today" : ""}>
-                                <td>{h.time.slice(5, 16).replace("T", " ")}</td>
-                                <td style={heatCell(h.temperature)}>{fmt(h.temperature)}</td>
-                                <td>{fmt(h.feelsLike)}</td>
-                                <td>{fmt(h.dewPoint, 1)}</td>
-                                <td>{fmt(h.humidity)}</td>
-                                <td>{fmt(h.pressureMsl, 1)}</td>
-                                <td>{fmt(h.cloudCover)}</td>
-                                <td>
-                                    {fmt(
-                                        Number.isFinite(h.visibility) ? h.visibility / 1000 : null,
-                                        1,
-                                    )}
-                                </td>
-                                <td>{fmt(h.windSpeed, 1)}</td>
-                                <td>{fmt(h.windGust, 1)}</td>
-                                <td>{toCardinal(h.windDirection)}</td>
-                                <td style={tint(h.precipitationSum, 0, 10, 210)}>
-                                    {fmt(h.precipitationSum, 1)}
-                                </td>
-                                <td style={tint(h.precipitation, 0, 100, 210)}>
-                                    {fmt(h.precipitation)}
-                                </td>
-                                <td style={tint(h.uvIndex, 0, 11, 330)}>{fmt(h.uvIndex, 1)}</td>
-                                <td style={tint(h.cape, 0, 2500, 0)}>{fmt(h.cape)}</td>
-                                <td>{fmt(h.shortwaveRadiation)}</td>
-                                <td>{h.weatherCode}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                    <Card title={T.sections.raw} className="wxp-card--table">
+                        <div className="wxp-tablewrap">
+                            <table className="wxp-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>T</th>
+                                        <th>Feels</th>
+                                        <th>Td</th>
+                                        <th>RH</th>
+                                        <th>P hPa</th>
+                                        <th>Cld</th>
+                                        <th>Vis km</th>
+                                        <th>Wind</th>
+                                        <th>Gust</th>
+                                        <th>Dir</th>
+                                        <th>mm</th>
+                                        <th>Pop</th>
+                                        <th>UV</th>
+                                        <th>CAPE</th>
+                                        <th>Rad W/m²</th>
+                                        <th>WMO</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {hourly.slice(nowIdx, nowIdx + 48).map((h, i) => (
+                                        <tr key={h.time} className={i === 0 ? "is-today" : ""}>
+                                            <td>{h.time.slice(5, 16).replace("T", " ")}</td>
+                                            <td style={heatCell(h.temperature)}>
+                                                {fmt(h.temperature)}
+                                            </td>
+                                            <td>{fmt(h.feelsLike)}</td>
+                                            <td>{fmt(h.dewPoint, 1)}</td>
+                                            <td>{fmt(h.humidity)}</td>
+                                            <td>{fmt(h.pressureMsl, 1)}</td>
+                                            <td>{fmt(h.cloudCover)}</td>
+                                            <td>
+                                                {fmt(
+                                                    Number.isFinite(h.visibility)
+                                                        ? h.visibility / 1000
+                                                        : null,
+                                                    1,
+                                                )}
+                                            </td>
+                                            <td>{fmt(h.windSpeed, 1)}</td>
+                                            <td>{fmt(h.windGust, 1)}</td>
+                                            <td>{toCardinal(h.windDirection)}</td>
+                                            <td style={tint(h.precipitationSum, 0, 10, 210)}>
+                                                {fmt(h.precipitationSum, 1)}
+                                            </td>
+                                            <td style={tint(h.precipitation, 0, 100, 210)}>
+                                                {fmt(h.precipitation)}
+                                            </td>
+                                            <td style={tint(h.uvIndex, 0, 11, 330)}>
+                                                {fmt(h.uvIndex, 1)}
+                                            </td>
+                                            <td style={tint(h.cape, 0, 2500, 0)}>{fmt(h.cape)}</td>
+                                            <td>{fmt(h.shortwaveRadiation)}</td>
+                                            <td>{h.weatherCode}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                </div>
             </div>
         </div>
     );

@@ -6,11 +6,11 @@
 
 .wxp {
     height: 100%;
-    overflow-y: auto;
-    padding: calc(1.25 * var(--u));
+    overflow-y: auto; /* only kicks in when the window is too small for the one-screen layout */
+    padding: calc(0.75 * var(--u)) calc(1 * var(--u));
     display: flex;
     flex-direction: column;
-    gap: calc(1 * var(--u));
+    gap: calc(0.625 * var(--u));
     color: var(--color-text);
     font-variant-numeric: tabular-nums;
 
@@ -944,4 +944,381 @@
 .wxp-sunarc__moon--down {
     stroke-dasharray: 2 2;
     opacity: 0.8;
+}
+
+/* ===================================================
+   One-screen layout — everything visible without page scrolling
+   left column : hero / wind / sun (+ moon)
+   right column: instrument tiles + six trend charts
+   bottom row  : 7-day table + hourly table (each scrolls inside its own card)
+   =================================================== */
+.wxp-dash {
+    flex: 1;
+    /* rows never shrink below their content: a too-short window scrolls instead of clipping */
+    min-height: auto;
+    display: grid;
+    grid-template-columns: minmax(calc(26 * var(--u)), 32fr) minmax(0, 68fr);
+    grid-template-rows: minmax(min-content, 1fr) calc(13.5 * var(--u));
+    gap: calc(0.625 * var(--u));
+}
+
+.wxp-side {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.625 * var(--u));
+}
+
+.wxp-main {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.625 * var(--u));
+}
+
+.wxp-bottom {
+    grid-column: 1 / -1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+    gap: calc(0.625 * var(--u));
+}
+
+/* ----- hero (compact) ----- */
+.wxp-hero {
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: calc(1 * var(--u));
+    padding: calc(0.75 * var(--u)) calc(1 * var(--u));
+}
+
+.wxp-hero__temp {
+    font-size: calc(3 * var(--u));
+}
+
+.wxp-hero__temp span {
+    font-size: calc(1.125 * var(--u));
+}
+
+.wxp-hero__loc {
+    font-size: calc(0.75 * var(--u));
+}
+
+.wxp-hero__desc {
+    margin-top: calc(0.125 * var(--u));
+    font-size: calc(0.8125 * var(--u));
+}
+
+.wxp-hero__meta {
+    grid-template-columns: auto;
+    gap: calc(0.1875 * var(--u)) 0;
+    font-size: calc(0.6875 * var(--u));
+}
+
+.wxp-hero__meta > div {
+    display: flex;
+    gap: calc(0.75 * var(--u));
+}
+
+.wxp-hero__meta dt {
+    min-width: calc(3.5 * var(--u));
+}
+
+/* ----- cards that share the column height ----- */
+.wxp-card {
+    gap: calc(0.5 * var(--u));
+    padding: calc(0.625 * var(--u)) calc(0.875 * var(--u));
+}
+
+.wxp-card--grow {
+    flex: none;
+}
+
+.wxp-card--fill {
+    flex: 1;
+    min-height: 0;
+}
+
+/* title stays on top, the content centres in the remaining space */
+.wxp-card--fill > :not(.wxp-card__title) {
+    margin-block: auto;
+}
+
+.wxp-card--table {
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ----- wind ----- */
+.wxp-windcard {
+    flex-wrap: nowrap;
+    gap: calc(1 * var(--u));
+}
+
+.wxp-compass {
+    width: calc(8 * var(--u));
+    height: calc(8 * var(--u));
+}
+
+.wxp-kv {
+    min-width: 0;
+    gap: calc(0.25 * var(--u));
+    font-size: calc(0.6875 * var(--u));
+}
+
+.wxp-kv > div {
+    padding-bottom: calc(0.125 * var(--u));
+}
+
+/* ----- sun + moon ----- */
+.wxp-side {
+    container-type: inline-size;
+}
+
+.wxp-celestial {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: calc(0.875 * var(--u));
+}
+
+.wxp-body {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: calc(1 * var(--u));
+    min-width: 0;
+}
+
+.wxp-body .wxp-sunarc {
+    width: calc(10 * var(--u));
+    flex: none;
+}
+
+.wxp-celestial:not(.has-moon) .wxp-sunarc {
+    width: calc(13 * var(--u));
+}
+
+.wxp-body .wxp-kv {
+    flex: 1;
+}
+
+.wxp-body--moon {
+    padding-top: calc(0.875 * var(--u));
+    border-top: var(--hairline) dashed var(--color-border);
+}
+
+/* wide column: sun and moon side by side, arc above its readouts */
+@container (min-width: 30rem) {
+    .wxp-celestial.has-moon {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .wxp-celestial.has-moon .wxp-body {
+        flex-direction: column;
+        align-items: stretch;
+        gap: calc(0.5 * var(--u));
+    }
+
+    .wxp-celestial.has-moon .wxp-body--moon {
+        padding-top: 0;
+        border-top: none;
+    }
+
+    .wxp-celestial.has-moon .wxp-sunarc {
+        width: 100%;
+        max-width: calc(11.5 * var(--u));
+        align-self: center;
+    }
+
+    .wxp-celestial.has-moon .wxp-kv {
+        flex: none;
+        width: 100%;
+    }
+}
+
+/* ----- instrument tiles (dense) ----- */
+.wxp-tiles {
+    flex: none;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: calc(0.5 * var(--u));
+}
+
+.wxp-tile {
+    gap: calc(0.125 * var(--u));
+    padding: calc(0.5 * var(--u)) calc(0.75 * var(--u));
+    min-width: 0;
+}
+
+.wxp-tile__value {
+    font-size: calc(1.25 * var(--u));
+}
+
+.wxp-tile__unit {
+    font-size: calc(0.6875 * var(--u));
+}
+
+.wxp-tile__label,
+.wxp-tile__sub {
+    font-size: calc(0.625 * var(--u));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wxp-spark {
+    height: calc(1.125 * var(--u));
+}
+
+/* ----- charts fill whatever height is left ----- */
+.wxp-charts {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: calc(0.5 * var(--u));
+}
+
+.wxp-charts .wxp-card {
+    min-height: 0;
+}
+
+.wxp-chart {
+    flex: 1;
+    min-height: 0;
+    gap: calc(0.25 * var(--u));
+}
+
+.wxp-chart__plot {
+    position: relative;
+    flex: 1;
+    min-height: calc(6 * var(--u));
+}
+
+.wxp-chart__svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* ----- chart hover tooltip ----- */
+.wxp-chart__band {
+    fill: var(--color-text);
+    opacity: 0.06;
+    pointer-events: none;
+}
+
+.wxp-chart__tip {
+    position: absolute;
+    z-index: 5;
+    min-width: calc(7.5 * var(--u));
+    padding: calc(0.375 * var(--u)) calc(0.625 * var(--u));
+    transform: translateX(calc(0.75 * var(--u)));
+    background: var(--color-surface-floating, var(--color-surface-elevated));
+    border: var(--hairline) solid var(--color-border-hover);
+    border-radius: calc(0.5 * var(--u));
+    box-shadow: 0 calc(0.25 * var(--u)) calc(1 * var(--u)) rgba(0, 0, 0, 0.35);
+    font-family: var(--wx-mono);
+    font-size: calc(0.6875 * var(--u));
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.wxp-chart__tip.is-left {
+    transform: translateX(calc(-100% - 0.75 * var(--u)));
+}
+
+.wxp-chart__tip-time {
+    margin-bottom: calc(0.25 * var(--u));
+    padding-bottom: calc(0.1875 * var(--u));
+    border-bottom: var(--hairline) solid var(--color-border);
+    color: var(--color-text-muted);
+}
+
+.wxp-chart__tip-row {
+    display: flex;
+    align-items: center;
+    gap: calc(0.375 * var(--u));
+    line-height: 1.5;
+}
+
+.wxp-chart__tip-row span {
+    flex: 1;
+    margin-right: calc(0.75 * var(--u));
+}
+
+.wxp-chart__tip-row b {
+    color: var(--color-text);
+    font-weight: 700;
+}
+
+.wxp-chart__tip-row em {
+    margin-left: calc(0.1875 * var(--u));
+}
+
+.wxp-chart__tip .wxp-chart__swatch {
+    margin-right: 0;
+}
+
+/* ----- tables (dense, scroll inside the card) ----- */
+.wxp-tablewrap,
+.wxp-tablewrap--raw {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow: auto;
+}
+
+.wxp-table {
+    font-size: calc(0.625 * var(--u));
+}
+
+.wxp-table th,
+.wxp-table td {
+    padding: calc(0.1875 * var(--u)) calc(0.4375 * var(--u));
+}
+
+/* ----- narrow windows: fall back to a normal scrolling page ----- */
+@media (max-width: 1100px) {
+    .wxp-dash {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        flex: none;
+    }
+
+    .wxp-side,
+    .wxp-main {
+        flex: none;
+    }
+
+    .wxp-card--fill {
+        flex: none;
+    }
+
+    .wxp-tiles {
+        grid-template-columns: repeat(auto-fill, minmax(calc(9 * var(--u)), 1fr));
+    }
+
+    .wxp-charts {
+        flex: none;
+        grid-template-columns: repeat(auto-fit, minmax(calc(22 * var(--u)), 1fr));
+        grid-template-rows: none;
+    }
+
+    .wxp-chart__plot {
+        flex: none;
+        height: calc(13 * var(--u));
+    }
+
+    .wxp-bottom {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .wxp-card--table {
+        max-height: calc(16 * var(--u));
+    }
 }
