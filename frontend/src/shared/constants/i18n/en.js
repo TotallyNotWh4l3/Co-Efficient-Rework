@@ -216,6 +216,7 @@ export default {
             age: "Moon age",
             days: "days",
             visible: "Above horizon",
+            nextFull: "Next full moon",
             names: {
                 new: "New moon",
                 waxingCrescent: "Waxing crescent",
@@ -269,6 +270,7 @@ export default {
             remove: "Remove",
             close: "Close",
             now: "now",
+            none: "No Alerts",
             from: "from",
             metrics: {
                 temperature: "Temperature",

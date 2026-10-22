@@ -9,7 +9,7 @@
 //       負にならない系列（nonNegative）は、全値が0のとき軸を 0〜1 にして線を最下部に置く。
 // ===================================================
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 const DEFAULT_W = 800;
 const DEFAULT_H = 220;
@@ -154,6 +154,40 @@ export default function TimeSeries({
     const count = fullTimes.length;
     useEffect(() => setZoom(null), [firstTime, count]);
 
+    // Range change (24h -> 48h ...): the data layer starts at the OLD scale and
+    // eases into the new one, so a longer range visibly shrinks the curves to
+    // make room and a shorter one expands them. `n` flips between two keyframe
+    // names so the animation restarts on every change without remounting.
+    // First ~2.6 s after mount: the series animations wait for the page's
+    // staggered card entrance (--enter-delay, see weather-page.css) so a chart
+    // draws as its card appears. Afterwards the class is dropped, so series
+    // that are toggled back on later don't inherit that delay.
+    const [intro, setIntro] = useState(true);
+    useEffect(() => {
+        const id = setTimeout(() => setIntro(false), 2600);
+        return () => clearTimeout(id);
+    }, []);
+
+    const [rangeAnim, setRangeAnim] = useState({ n: 0, ratio: 1 });
+    const prevCount = useRef(count);
+    useLayoutEffect(() => {
+        const before = prevCount.current;
+        prevCount.current = count;
+        if (before > 0 && count > 0 && before !== count) {
+            setRangeAnim((a) => ({ n: a.n + 1, ratio: count / before }));
+        }
+    }, [count]);
+    const animName = rangeAnim.n === 0 ? undefined : rangeAnim.n % 2 ? "a" : "b";
+    const rangeStyle = animName
+        ? {
+              "--wxp-range-ratio": rangeAnim.ratio,
+              animationName: `wxp-range-${animName}`,
+              transformBox: "view-box",
+              transformOrigin: `${PAD.l}px 0px`,
+          }
+        : undefined;
+    const fadeStyle = animName ? { animationName: `wxp-range-fade-${animName}` } : undefined;
+
     const lo = zoom?.[0] ?? 0;
     const hi = zoom?.[1] ?? fullTimes.length - 1;
     const times = fullTimes.slice(lo, hi + 1);
@@ -252,7 +286,7 @@ export default function TimeSeries({
     const areaSeries = lineSeries.filter((s) => s.area);
 
     return (
-        <div className="wxp-chart">
+        <div className={`wxp-chart${intro ? " wxp-chart--intro" : ""}`}>
             <div className="wxp-chart__plot" ref={plotRef}>
                 <svg
                     ref={svgRef}
@@ -286,6 +320,9 @@ export default function TimeSeries({
                                 />
                             </linearGradient>
                         ))}
+                        <clipPath id={`wxp-${uid}-plot`}>
+                            <rect x={PAD.l} y={0} width={INNER_W} height={H} />
+                        </clipPath>
                         {series.filter(clipFor).map((s) => (
                             <clipPath key={s.key} id={clipId(s)}>
                                 <rect
@@ -338,130 +375,153 @@ export default function TimeSeries({
                         </text>
                     ))}
 
-                    {/* x labels + midnight separators */}
-                    {times.map((t, i) => {
-                        const hour = Number(t.slice(11, 13));
-                        const midnight = hour === 0;
-                        const showLabel = hour % stride === 0;
-                        return (
-                            <g key={t}>
-                                {midnight && i > 0 && (
-                                    <line
-                                        className="wxp-chart__day"
-                                        x1={xAt(i) - step / 2}
-                                        x2={xAt(i) - step / 2}
-                                        y1={PAD.t}
-                                        y2={PAD.t + INNER_H}
-                                    />
-                                )}
-                                {showLabel && (
-                                    <text
-                                        className="wxp-chart__tick"
-                                        x={xAt(i)}
-                                        y={H - 7}
-                                        textAnchor="middle"
-                                    >
-                                        {midnight
-                                            ? `${t.slice(5, 7)}/${t.slice(8, 10)}`
-                                            : String(hour).padStart(2, "0")}
-                                    </text>
-                                )}
-                            </g>
-                        );
-                    })}
-
-                    {/* bars first so lines sit on top */}
-                    {series
-                        .filter((s) => s.kind === "bar")
-                        .map((s) => {
-                            const scale = scaleOf(s);
-                            if (!scale) return null;
-                            const y = yFor(scale);
-                            const base = y(Math.max(0, scale.lo));
+                    {/* x labels + midnight separators (fade in after a range change) */}
+                    <g className="wxp-chart__fade" style={fadeStyle}>
+                        {times.map((t, i) => {
+                            const hour = Number(t.slice(11, 13));
+                            const midnight = hour === 0;
+                            const showLabel = hour % stride === 0;
                             return (
-                                <g key={s.key} clipPath={clipFor(s)}>
-                                    {s.values.map((v, i) =>
-                                        Number.isFinite(v) && v > 0 ? (
-                                            <rect
-                                                key={`${s.key}${i}`}
-                                                className="wxp-chart__bar"
-                                                x={xAt(i) - step * 0.35}
-                                                width={step * 0.7}
-                                                y={y(v)}
-                                                height={Math.max(0, base - y(v))}
-                                                style={{
-                                                    fill: s.color,
-                                                    animationDelay: `${Math.round((i / n) * 600)}ms`,
-                                                }}
-                                                opacity="0.55"
-                                            />
-                                        ) : null,
+                                <g key={t}>
+                                    {midnight && i > 0 && (
+                                        <line
+                                            className="wxp-chart__day"
+                                            x1={xAt(i) - step / 2}
+                                            x2={xAt(i) - step / 2}
+                                            y1={PAD.t}
+                                            y2={PAD.t + INNER_H}
+                                        />
+                                    )}
+                                    {showLabel && (
+                                        <text
+                                            className="wxp-chart__tick"
+                                            x={xAt(i)}
+                                            y={H - 7}
+                                            textAnchor="middle"
+                                        >
+                                            {midnight
+                                                ? `${t.slice(5, 7)}/${t.slice(8, 10)}`
+                                                : String(hour).padStart(2, "0")}
+                                        </text>
                                     )}
                                 </g>
                             );
                         })}
+                    </g>
 
-                    {areaSeries.map((s) => {
-                        const scale = scaleOf(s);
-                        if (!scale) return null;
-                        return (
-                            <path
-                                key={`a${s.key}`}
-                                className="wxp-chart__area"
-                                clipPath={clipFor(s)}
-                                d={areaFor(s.values, xAt, yFor(scale), baseY)}
-                                fill={`url(#wxp-${uid}-${s.key})`}
-                            />
-                        );
-                    })}
+                    {/* data layer: scales from the previous range into the new one */}
+                    <g clipPath={`url(#wxp-${uid}-plot)`}>
+                        <g className="wxp-chart__range" style={rangeStyle}>
+                            {/* bars first so lines sit on top */}
+                            {series
+                                .filter((s) => s.kind === "bar")
+                                .map((s) => {
+                                    const scale = scaleOf(s);
+                                    if (!scale) return null;
+                                    const y = yFor(scale);
+                                    const base = y(Math.max(0, scale.lo));
+                                    return (
+                                        <g key={s.key} clipPath={clipFor(s)}>
+                                            {s.values.map((v, i) =>
+                                                Number.isFinite(v) && v > 0 ? (
+                                                    <rect
+                                                        key={`${s.key}${i}`}
+                                                        className="wxp-chart__bar"
+                                                        x={xAt(i) - step * 0.35}
+                                                        width={step * 0.7}
+                                                        y={y(v)}
+                                                        height={Math.max(0, base - y(v))}
+                                                        style={{
+                                                            fill: s.color,
+                                                            "--bar-delay": `${Math.round((i / n) * 600)}ms`,
+                                                        }}
+                                                        opacity={s.opacity ?? 0.55}
+                                                    />
+                                                ) : null,
+                                            )}
+                                        </g>
+                                    );
+                                })}
 
-                    {lineSeries.map((s) => {
-                        const scale = scaleOf(s);
-                        if (!scale) return null;
-                        return (
-                            <path
-                                key={s.key}
-                                className={`wxp-chart__line${s.dashed ? "" : " wxp-chart__line--draw"}`}
-                                d={pathFor(s.values, xAt, yFor(scale))}
-                                pathLength={s.dashed ? undefined : 1}
-                                clipPath={clipFor(s)}
-                                style={{ stroke: s.color, color: s.color }}
-                                strokeDasharray={s.dashed ? "4 3" : undefined}
-                            />
-                        );
-                    })}
+                            {areaSeries.map((s) => {
+                                const scale = scaleOf(s);
+                                if (!scale) return null;
+                                return (
+                                    <path
+                                        key={`a${s.key}`}
+                                        className="wxp-chart__area"
+                                        clipPath={clipFor(s)}
+                                        d={areaFor(s.values, xAt, yFor(scale), baseY)}
+                                        fill={`url(#wxp-${uid}-${s.key})`}
+                                    />
+                                );
+                            })}
+
+                            {lineSeries.map((s) => {
+                                const scale = scaleOf(s);
+                                if (!scale) return null;
+                                return (
+                                    <path
+                                        key={s.key}
+                                        className={`wxp-chart__line${s.dashed ? "" : " wxp-chart__line--draw"}`}
+                                        d={pathFor(s.values, xAt, yFor(scale))}
+                                        pathLength={s.dashed ? undefined : 1}
+                                        clipPath={clipFor(s)}
+                                        style={{ stroke: s.color, color: s.color }}
+                                        strokeDasharray={s.dashed ? "4 3" : undefined}
+                                    />
+                                );
+                            })}
+
+                            {nowIndex >= 0 && nowIndex < n && (
+                                <line
+                                    className="wxp-chart__now"
+                                    x1={xAt(nowIndex)}
+                                    x2={xAt(nowIndex)}
+                                    y1={PAD.t}
+                                    y2={PAD.t + INNER_H}
+                                />
+                            )}
+                        </g>
+                    </g>
 
                     {/* high / low labels */}
-                    {lineSeries
-                        .filter((s) => s.extrema && !s.leaving)
-                        .map((s) => {
-                            const scale = scaleOf(s);
-                            const finite = s.values
-                                .map((v, i) => [v, i])
-                                .filter(([v]) => Number.isFinite(v));
-                            if (!scale || finite.length < 2) return null;
-                            const y = yFor(scale);
-                            const hi = finite.reduce((a, b) => (b[0] > a[0] ? b : a));
-                            const lo = finite.reduce((a, b) => (b[0] < a[0] ? b : a));
-                            if (hi[0] === lo[0]) return null;
-                            const anchor = (x) =>
-                                x < PAD.l + 24 ? "start" : x > W - PAD.r - 24 ? "end" : "middle";
-                            return [
-                                [hi, Math.max(PAD.t + 8, y(hi[0]) - 7), "▲"],
-                                [lo, Math.min(baseY - 3, y(lo[0]) + 15), "▼"],
-                            ].map(([[v, i], ty, mark]) => (
-                                <text
-                                    key={`${s.key}${mark}`}
-                                    className="wxp-chart__extreme"
-                                    x={xAt(i)}
-                                    y={ty}
-                                    textAnchor={anchor(xAt(i))}
-                                    style={{ fill: s.color }}
-                                >
-                                    {mark} {v.toFixed(s.digits ?? 0)}
-                                </text>
-                            ));
-                        })}
+                    <g className="wxp-chart__fade" style={fadeStyle}>
+                        {lineSeries
+                            .filter((s) => s.extrema && !s.leaving)
+                            .map((s) => {
+                                const scale = scaleOf(s);
+                                const finite = s.values
+                                    .map((v, i) => [v, i])
+                                    .filter(([v]) => Number.isFinite(v));
+                                if (!scale || finite.length < 2) return null;
+                                const y = yFor(scale);
+                                const hi = finite.reduce((a, b) => (b[0] > a[0] ? b : a));
+                                const lo = finite.reduce((a, b) => (b[0] < a[0] ? b : a));
+                                if (hi[0] === lo[0]) return null;
+                                const anchor = (x) =>
+                                    x < PAD.l + 24
+                                        ? "start"
+                                        : x > W - PAD.r - 24
+                                          ? "end"
+                                          : "middle";
+                                return [
+                                    [hi, Math.max(PAD.t + 8, y(hi[0]) - 7), "▲"],
+                                    [lo, Math.min(baseY - 3, y(lo[0]) + 15), "▼"],
+                                ].map(([[v, i], ty, mark]) => (
+                                    <text
+                                        key={`${s.key}${mark}`}
+                                        className="wxp-chart__extreme"
+                                        x={xAt(i)}
+                                        y={ty}
+                                        textAnchor={anchor(xAt(i))}
+                                        style={{ fill: s.color }}
+                                    >
+                                        {mark} {v.toFixed(s.digits ?? 0)}
+                                    </text>
+                                ));
+                            })}
+                    </g>
 
                     {/* value dots at the read-out position */}
                     {n > 0 &&
@@ -482,22 +542,14 @@ export default function TimeSeries({
                         })}
 
                     {nowIndex >= 0 && nowIndex < n && (
-                        <g>
-                            <line
-                                className="wxp-chart__now"
-                                x1={xAt(nowIndex)}
-                                x2={xAt(nowIndex)}
-                                y1={PAD.t}
-                                y2={PAD.t + INNER_H}
-                            />
-                            <text
-                                className="wxp-chart__now-label"
-                                x={xAt(nowIndex) + 4}
-                                y={PAD.t + 9}
-                            >
-                                {nowLabel}
-                            </text>
-                        </g>
+                        <text
+                            className="wxp-chart__now-label wxp-chart__fade"
+                            style={fadeStyle}
+                            x={xAt(nowIndex) + 4}
+                            y={PAD.t + 9}
+                        >
+                            {nowLabel}
+                        </text>
                     )}
 
                     {hover !== null && (

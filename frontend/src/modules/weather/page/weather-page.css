@@ -1084,6 +1084,7 @@
 }
 
 .wxp-body {
+    --arc-w: calc(10 * var(--u));
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -1091,17 +1092,30 @@
     min-width: 0;
 }
 
+/* sun and moon arcs share one width so the two rows line up */
 .wxp-body .wxp-sunarc {
-    width: calc(10 * var(--u));
+    width: var(--arc-w);
     flex: none;
-}
-
-.wxp-celestial:not(.has-moon) .wxp-sunarc {
-    width: calc(13 * var(--u));
 }
 
 .wxp-body .wxp-kv {
     flex: 1;
+    min-width: 0;
+    justify-content: center;
+}
+
+.wxp-body .wxp-kv dt,
+.wxp-body .wxp-kv dd {
+    white-space: nowrap;
+}
+
+.wxp-body .wxp-kv dd {
+    font-variant-numeric: tabular-nums;
+}
+
+.wxp-body .wxp-kv dt {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .wxp-body--moon {
@@ -1126,9 +1140,12 @@
         border-top: none;
     }
 
-    .wxp-celestial.has-moon .wxp-sunarc {
-        width: 100%;
-        max-width: calc(11.5 * var(--u));
+    .wxp-celestial.has-moon .wxp-body {
+        --arc-w: min(100%, calc(11.5 * var(--u)));
+    }
+
+    .wxp-celestial.has-moon .wxp-body > .wxp-sunarc,
+    .wxp-celestial.has-moon .wxp-body > .wxp-moonvis {
         align-self: center;
     }
 
@@ -1376,8 +1393,13 @@
 /* ----- alert banner ----- */
 .wxp-alerts {
     display: flex;
+    flex: 1;
     flex-wrap: wrap;
-    gap: calc(0.5 * var(--u));
+    gap: calc(0.375 * var(--u));
+    min-width: 0;
+    /* many alerts scroll inside the row instead of growing the page */
+    max-height: calc(4.5 * var(--u));
+    overflow-y: auto;
 }
 
 .wxp-alerts span {
@@ -1587,16 +1609,27 @@
 
 /* ----- moon shape (today's phase) ----- */
 .wxp-moonvis {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: calc(0.5 * var(--u));
+    position: relative;
     flex: none;
+    width: var(--arc-w, calc(10 * var(--u)));
 }
 
+.wxp-body .wxp-moonvis .wxp-sunarc {
+    display: block;
+    width: 100%;
+}
+
+/* today's phase, centred in the dome of the arc (arc viewBox 200 x 118,
+   dome centre at about 50% / 52%). `translate` (not `transform`) so the
+   southern-hemisphere flip on the element keeps working. */
 .wxp-moonphase {
-    width: calc(4.5 * var(--u));
-    height: calc(4.5 * var(--u));
+    position: absolute;
+    left: 50%;
+    top: 52%;
+    translate: -50% -50%;
+    width: 26%;
+    aspect-ratio: 1;
+    pointer-events: none;
 }
 
 .wxp-moonphase__dark {
@@ -1608,12 +1641,6 @@
 .wxp-moonphase__lit {
     fill: #e2e8f0;
     filter: drop-shadow(0 0 3px #a5b4fc);
-}
-
-@container (min-width: 30rem) {
-    .wxp-celestial.has-moon .wxp-moonvis {
-        align-self: center;
-    }
 }
 
 /* ----- series reveal / retract / bar grow ----- */
@@ -1633,7 +1660,7 @@
 .wxp-chart__bar {
     transform-box: fill-box;
     transform-origin: center bottom;
-    animation: wxp-bar-grow 0.7s cubic-bezier(0.3, 0.7, 0.2, 1) both;
+    animation: wxp-bar-grow 0.7s cubic-bezier(0.3, 0.7, 0.2, 1) var(--bar-delay, 0ms) both;
 }
 
 @keyframes wxp-wipe-in {
@@ -1652,4 +1679,313 @@
     from {
         transform: scaleY(0);
     }
+}
+
+/* ----- range change (24h / 48h / 72h / 7d): expand / shrink the data layer ----- */
+/* The data layer starts at the previous range's scale (--wxp-range-ratio =
+   newPoints / oldPoints) and eases to 1: a longer range shrinks the curves
+   to make room, a shorter one expands them. Two identical keyframe sets are
+   swapped by TimeSeries so the animation restarts on every change. */
+.wxp-chart__range {
+    animation-duration: 0.6s;
+    animation-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
+    animation-fill-mode: both;
+}
+
+.wxp-chart__fade {
+    animation-duration: 0.5s;
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+}
+
+@keyframes wxp-range-a {
+    from {
+        transform: scaleX(var(--wxp-range-ratio, 1));
+    }
+    to {
+        transform: scaleX(1);
+    }
+}
+
+@keyframes wxp-range-b {
+    from {
+        transform: scaleX(var(--wxp-range-ratio, 1));
+    }
+    to {
+        transform: scaleX(1);
+    }
+}
+
+@keyframes wxp-range-fade-a {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes wxp-range-fade-b {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ----- left column: alerts row, then Next 24 h (left) + Wind (right) ----- */
+.wxp-alertrow {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: calc(0.625 * var(--u));
+    padding: calc(0.5 * var(--u)) calc(0.75 * var(--u));
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.75 * var(--u));
+    font-size: calc(0.75 * var(--u));
+}
+
+.wxp-alertrow__icon {
+    flex: none;
+    color: var(--color-text-muted);
+}
+
+.wxp-alertrow__none {
+    color: var(--color-text-muted);
+}
+
+.wxp-duo {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: calc(0.625 * var(--u));
+}
+
+/* narrow column: Next 24 h and Wind stack again */
+@container (max-width: 24rem) {
+    .wxp-duo {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* half-width cards: compass above its readouts, compact */
+.wxp-duo .wxp-windcard {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: calc(0.5 * var(--u));
+}
+
+.wxp-duo .wxp-compass {
+    width: calc(8.5 * var(--u));
+    height: calc(8.5 * var(--u));
+    align-self: center;
+}
+
+.wxp-duo .wxp-kv {
+    min-width: 0;
+    flex: none;
+}
+
+.wxp-duo .wxp-kv dt,
+.wxp-duo .wxp-kv dd {
+    white-space: nowrap;
+}
+
+.wxp-duo .wxp-kv dt {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* the shorter Next 24 h card spreads its rows to match the Wind card's height */
+.wxp-card--outlook {
+    display: flex;
+    flex-direction: column;
+}
+
+.wxp-card--outlook .wxp-kv {
+    flex: 1;
+    justify-content: space-between;
+}
+
+/* ===================================================
+   Page-open entrance: the page fades in, then header, hero, alert row, cards,
+   tiles, charts and tables rise into place one after another. CSS only: it
+   plays when an element is first mounted (opening the page / data arriving),
+   not on every data refresh. prefers-reduced-motion is covered by the global
+   rule above.
+   =================================================== */
+@keyframes wxp-enter {
+    from {
+        opacity: 0;
+        transform: translateY(0.875rem) scale(0.97);
+    }
+}
+
+@keyframes wxp-page-in {
+    from {
+        opacity: 0;
+    }
+}
+
+.wxp {
+    animation: wxp-page-in 0.4s ease-out;
+}
+
+.wxp-header,
+.wxp-hero,
+.wxp-alertrow,
+.wxp-side > .wxp-card,
+.wxp-duo > .wxp-card,
+.wxp-tiles > .wxp-tile,
+.wxp-charts > .wxp-card,
+.wxp-bottom > .wxp-card {
+    animation: wxp-enter 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) var(--enter-delay, 0ms) backwards;
+}
+
+/* tiles keep their alert pulse: enter first, pulse forever */
+.wxp-tiles > .wxp-tile.wxp-tile--alert {
+    animation:
+        wxp-enter 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) var(--enter-delay, 0ms) backwards,
+        wxp-alert-pulse 1.8s ease-in-out infinite;
+}
+
+.wxp-header {
+    --enter-delay: 0ms;
+}
+.wxp-hero {
+    --enter-delay: 80ms;
+}
+.wxp-alertrow {
+    --enter-delay: 150ms;
+}
+.wxp-duo > .wxp-card:nth-child(1) {
+    --enter-delay: 210ms;
+}
+.wxp-duo > .wxp-card:nth-child(2) {
+    --enter-delay: 260ms;
+}
+.wxp-side > .wxp-card {
+    --enter-delay: 320ms;
+}
+.wxp-bottom > .wxp-card:nth-child(1) {
+    --enter-delay: 700ms;
+}
+.wxp-bottom > .wxp-card:nth-child(2) {
+    --enter-delay: 760ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(1) {
+    --enter-delay: 120ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(2) {
+    --enter-delay: 155ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(3) {
+    --enter-delay: 190ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(4) {
+    --enter-delay: 225ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(5) {
+    --enter-delay: 260ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(6) {
+    --enter-delay: 295ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(7) {
+    --enter-delay: 330ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(8) {
+    --enter-delay: 365ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(9) {
+    --enter-delay: 400ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(10) {
+    --enter-delay: 435ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(11) {
+    --enter-delay: 470ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(12) {
+    --enter-delay: 505ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(13) {
+    --enter-delay: 540ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(14) {
+    --enter-delay: 575ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(15) {
+    --enter-delay: 610ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(16) {
+    --enter-delay: 645ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(17) {
+    --enter-delay: 680ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(18) {
+    --enter-delay: 715ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(19) {
+    --enter-delay: 750ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(20) {
+    --enter-delay: 785ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(21) {
+    --enter-delay: 820ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(22) {
+    --enter-delay: 855ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(23) {
+    --enter-delay: 890ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(24) {
+    --enter-delay: 925ms;
+}
+.wxp-tiles > .wxp-tile:nth-child(n + 25) {
+    --enter-delay: 960ms;
+}
+.wxp-charts > .wxp-card:nth-child(1) {
+    --enter-delay: 420ms;
+}
+.wxp-charts > .wxp-card:nth-child(2) {
+    --enter-delay: 490ms;
+}
+.wxp-charts > .wxp-card:nth-child(3) {
+    --enter-delay: 560ms;
+}
+.wxp-charts > .wxp-card:nth-child(4) {
+    --enter-delay: 630ms;
+}
+.wxp-charts > .wxp-card:nth-child(5) {
+    --enter-delay: 700ms;
+}
+.wxp-charts > .wxp-card:nth-child(6) {
+    --enter-delay: 770ms;
+}
+
+/* ----- chart series follow the card's staggered entrance ----- */
+/* --enter-delay is set on each chart card (nth-child rules above); TimeSeries
+   only carries .wxp-chart--intro for its first moments after mounting. */
+.wxp-charts > .wxp-card .wxp-chart--intro .wxp-chart__line--draw,
+.wxp-charts > .wxp-card .wxp-chart--intro .wxp-chart__clip--in {
+    animation-delay: calc(var(--enter-delay, 0ms) + 250ms);
+}
+
+.wxp-charts > .wxp-card .wxp-chart--intro .wxp-chart__area {
+    animation-delay: calc(var(--enter-delay, 0ms) + 500ms);
+}
+
+.wxp-charts > .wxp-card .wxp-chart--intro .wxp-chart__bar {
+    animation-delay: calc(var(--enter-delay, 0ms) + 250ms + var(--bar-delay, 0ms));
+}
+
+.wxp-charts > .wxp-card .wxp-chart--intro .wxp-chart__extreme {
+    animation: wxp-fade 0.6s calc(var(--enter-delay, 0ms) + 1000ms) ease-out both;
 }

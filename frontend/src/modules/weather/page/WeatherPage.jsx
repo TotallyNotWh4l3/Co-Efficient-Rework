@@ -114,6 +114,7 @@ const glow = (hue, f) =>
 const tint = (v, lo, hi, hue) => (Number.isFinite(v) ? glow(hue, frac(v, lo, hi)) : undefined);
 // " (+1d)" when an event falls on another date than the reference one.
 const dayShift = (iso, ref) => {
+    if (!iso || !ref) return "";
     const d = Math.round((Date.parse(iso.slice(0, 10)) - Date.parse(ref.slice(0, 10))) / 86400000);
     return d === 0 ? "" : ` (${d > 0 ? "+" : ""}${d}d)`;
 };
@@ -371,17 +372,25 @@ export default function WeatherPage() {
                   .slice(11, 16)
             : "--:--";
 
-    // The moon joins the sun card whenever it is above the horizon (day or
-    // night). Needs the moonrise/moonset fields; older cached payloads simply
-    // show the sun alone.
-    const moonSpan = moonWindow(daily, cur.time);
-    const moon = moonSpan?.up ? moonSpan : null;
+    // The moon is always part of the sun card. While it is below the horizon the
+    // arc shows its next rise -> set; without moonrise/moonset data (older
+    // cached payloads) the arc stays empty but the phase is still drawn.
+    const moon = moonWindow(daily, cur.time) ?? {
+        up: false,
+        riseKnown: false,
+        rise: null,
+        set: null,
+    };
     const moonPos =
-        moon && Number.isFinite(lat) && Number.isFinite(lon)
+        moon.up && Number.isFinite(lat) && Number.isFinite(lon)
             ? moonPosition(new Date(), lat, lon)
             : null;
     const illum = moonIllumination(today.moonPhase);
     const moonKey = moonPhaseKey(today.moonPhase);
+    // Days until the next full moon (phase 0.5), wrapping around the cycle.
+    const daysToFull = Number.isFinite(today.moonPhase)
+        ? ((((0.5 - today.moonPhase) % 1) + 1) % 1) * SYNODIC_DAYS
+        : null;
 
     // Twilight / golden hour (needs the location's UTC offset, like the data age).
     const cross = (alt) =>
@@ -419,6 +428,24 @@ export default function WeatherPage() {
             return Number.isFinite(v) ? v : null;
         });
     const chartNow = nowIdx - start;
+
+    // Fixed chart axes: UV always 0-10, precipitation always 0-5 mm. They only
+    // grow when the plotted window actually exceeds that.
+    const maxOf = (key, u) =>
+        win.reduce(
+            (m, h) => (Number.isFinite(h[key]) ? Math.max(m, u ? u.f(h[key]) : h[key]) : m),
+            0,
+        );
+    const uvDomain = [0, Math.max(10, Math.ceil(maxOf("uvIndex")))];
+    const precipBase = U.precip.f(5);
+    const precipStep = precipBase / 5;
+    const precipDomain = [
+        0,
+        Math.max(
+            precipBase,
+            Math.ceil(maxOf("precipitationSum", U.precip) / precipStep) * precipStep,
+        ),
+    ];
 
     // ---------- alerts ----------
     const alerts = evaluateAlerts(rules, hourly, nowIdx);
@@ -510,7 +537,12 @@ export default function WeatherPage() {
             cur.cloudCover,
             "%",
             T.hints.cloud,
-            [sr("cc", T.tiles.cloud, C.cloud, col("cloudCover"), "%", 0, { area: true })],
+            [
+                sr("cc", T.tiles.cloud, C.cloud, col("cloudCover"), "%", 0, {
+                    kind: "bar",
+                    opacity: 0.3,
+                }),
+            ],
             { domain: [0, 100] },
         ),
         visibility: D(T.tiles.visibility, conv(U.dist, visKm), U.dist.u, T.hints.visibility, [
@@ -545,15 +577,22 @@ export default function WeatherPage() {
                     nonNegative: true,
                 }),
             ],
-            { rightDomain: [0, 100] },
+            { domain: precipDomain, rightDomain: [0, 100] },
         ),
-        uv: D(T.tiles.uv, nowHour.uvIndex, "", T.hints.uv, [
-            sr("uv", "UV", C.uv, col("uvIndex"), "", 1, {
-                area: true,
-                extrema: true,
-                nonNegative: true,
-            }),
-        ]),
+        uv: D(
+            T.tiles.uv,
+            nowHour.uvIndex,
+            "",
+            T.hints.uv,
+            [
+                sr("uv", "UV", C.uv, col("uvIndex"), "", 1, {
+                    area: true,
+                    extrema: true,
+                    nonNegative: true,
+                }),
+            ],
+            { domain: uvDomain },
+        ),
         wbgt: D(T.tiles.wbgt, tc(wbgt), tu, T.hints.wbgt, [
             sr(
                 "wbgt",
@@ -614,16 +653,6 @@ export default function WeatherPage() {
     return (
         <div className="wxp">
             {renderHeader(alerts.length)}
-
-            {alerts.length > 0 && (
-                <div className="wxp-alerts" role="alert">
-                    {alerts.map((a) => (
-                        <span key={a.rule.id} className={a.nowHit ? "is-now" : ""}>
-                            <Bell size={12} /> {alertText(a)}
-                        </span>
-                    ))}
-                </div>
-            )}
 
             {expanded && details[expanded] && (
                 <TileDetail
@@ -704,119 +733,141 @@ export default function WeatherPage() {
                         </dl>
                     </section>
 
-                    {/* wind */}
-                    <Card title={T.wind.title} className="wxp-card--grow">
-                        <div className="wxp-windcard">
-                            <Compass
-                                degrees={cur.windDirection}
-                                speed={cur.windSpeed}
-                                gust={cur.windGust}
-                                unit={U.wind.u}
-                                shown={conv(U.wind, cur.windSpeed)}
-                            />
+                    {/* alerts (always present so the layout never jumps) */}
+                    <section
+                        className="wxp-alertrow"
+                        role={alerts.length > 0 ? "alert" : undefined}
+                    >
+                        <Bell size={13} className="wxp-alertrow__icon" />
+                        {alerts.length > 0 ? (
+                            <div className="wxp-alerts">
+                                {alerts.map((a) => (
+                                    <span key={a.rule.id} className={a.nowHit ? "is-now" : ""}>
+                                        {alertText(a)}
+                                    </span>
+                                ))}
+                            </div>
+                        ) : (
+                            <span className="wxp-alertrow__none">{T.alerts.none}</span>
+                        )}
+                    </section>
+
+                    {/* next 24 h (left) + wind (right) */}
+                    <div className="wxp-duo">
+                        {/* next 24 h outlook */}
+                        <Card title={T.outlook.title} className="wxp-card--grow wxp-card--outlook">
                             <dl className="wxp-kv">
                                 <div>
-                                    <dt>{T.wind.from}</dt>
+                                    <dt>
+                                        {wetNow
+                                            ? T.outlook.rainStops
+                                            : rainChange
+                                              ? T.outlook.rainStarts
+                                              : T.outlook.dry}
+                                    </dt>
                                     <dd>
-                                        {toCardinal(cur.windDirection)} {fmt(cur.windDirection)}°
+                                        {rainChange
+                                            ? clock(rainChange)
+                                            : wetNow
+                                              ? ">24 h"
+                                              : T.outlook.dryValue}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt>{T.wind.gust}</dt>
+                                    <dt>{T.outlook.gust}</dt>
                                     <dd>
-                                        {fmt(conv(U.wind, cur.windGust), 1)} {U.wind.u}
+                                        {gustPeak
+                                            ? `${fmt(conv(U.wind, gustPeak.windGust), 1)} ${U.wind.u} · ${clock(gustPeak)}`
+                                            : "--"}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt>{T.wind.gustFactor}</dt>
-                                    <dd>{gustFactor === null ? "--" : `×${fmt(gustFactor, 2)}`}</dd>
-                                </div>
-                                <div>
-                                    <dt>{T.wind.beaufort}</dt>
+                                    <dt>{T.outlook.uv}</dt>
                                     <dd>
-                                        {force === null
-                                            ? "--"
-                                            : `${force} · ${T.wind.names[force]}`}
+                                        {uvPeak && uvPeak.uvIndex > 0
+                                            ? `${fmt(uvPeak.uvIndex, 1)} · ${clock(uvPeak)}`
+                                            : "--"}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt>{T.wind.dailyMax}</dt>
+                                    <dt>{T.outlook.high}</dt>
                                     <dd>
-                                        {fmt(conv(U.wind, today.windSpeed), 1)} /{" "}
-                                        {fmt(conv(U.wind, today.windGust), 1)} {U.wind.u}
+                                        {tHigh
+                                            ? `${fmt(tc(tHigh.temperature))}${U.temp.u} · ${clock(tHigh)}`
+                                            : "--"}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt>{T.wind.dominant}</dt>
+                                    <dt>{T.outlook.low}</dt>
                                     <dd>
-                                        {toCardinal(today.windDirection)} {fmt(today.windDirection)}
-                                        °
+                                        {tLow
+                                            ? `${fmt(tc(tLow.temperature))}${U.temp.u} · ${clock(tLow)}`
+                                            : "--"}
                                     </dd>
                                 </div>
                             </dl>
-                        </div>
-                    </Card>
+                        </Card>
 
-                    {/* next 24 h outlook */}
-                    <Card title={T.outlook.title} className="wxp-card--grow">
-                        <dl className="wxp-kv">
-                            <div>
-                                <dt>
-                                    {wetNow
-                                        ? T.outlook.rainStops
-                                        : rainChange
-                                          ? T.outlook.rainStarts
-                                          : T.outlook.dry}
-                                </dt>
-                                <dd>
-                                    {rainChange
-                                        ? clock(rainChange)
-                                        : wetNow
-                                          ? ">24 h"
-                                          : T.outlook.dryValue}
-                                </dd>
+                        {/* wind */}
+                        <Card title={T.wind.title} className="wxp-card--grow wxp-card--wind">
+                            <div className="wxp-windcard">
+                                <Compass
+                                    degrees={cur.windDirection}
+                                    speed={cur.windSpeed}
+                                    gust={cur.windGust}
+                                    unit={U.wind.u}
+                                    shown={conv(U.wind, cur.windSpeed)}
+                                />
+                                <dl className="wxp-kv">
+                                    <div>
+                                        <dt>{T.wind.from}</dt>
+                                        <dd>
+                                            {toCardinal(cur.windDirection)} {fmt(cur.windDirection)}
+                                            °
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.wind.gust}</dt>
+                                        <dd>
+                                            {fmt(conv(U.wind, cur.windGust), 1)} {U.wind.u}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.wind.gustFactor}</dt>
+                                        <dd>
+                                            {gustFactor === null ? "--" : `×${fmt(gustFactor, 2)}`}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.wind.beaufort}</dt>
+                                        <dd>
+                                            {force === null
+                                                ? "--"
+                                                : `${force} · ${T.wind.names[force]}`}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.wind.dailyMax}</dt>
+                                        <dd>
+                                            {fmt(conv(U.wind, today.windSpeed), 1)} /{" "}
+                                            {fmt(conv(U.wind, today.windGust), 1)} {U.wind.u}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.wind.dominant}</dt>
+                                        <dd>
+                                            {toCardinal(today.windDirection)}{" "}
+                                            {fmt(today.windDirection)}°
+                                        </dd>
+                                    </div>
+                                </dl>
                             </div>
-                            <div>
-                                <dt>{T.outlook.gust}</dt>
-                                <dd>
-                                    {gustPeak
-                                        ? `${fmt(conv(U.wind, gustPeak.windGust), 1)} ${U.wind.u} · ${clock(gustPeak)}`
-                                        : "--"}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt>{T.outlook.uv}</dt>
-                                <dd>
-                                    {uvPeak && uvPeak.uvIndex > 0
-                                        ? `${fmt(uvPeak.uvIndex, 1)} · ${clock(uvPeak)}`
-                                        : "--"}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt>{T.outlook.high}</dt>
-                                <dd>
-                                    {tHigh
-                                        ? `${fmt(tc(tHigh.temperature))}${U.temp.u} · ${clock(tHigh)}`
-                                        : "--"}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt>{T.outlook.low}</dt>
-                                <dd>
-                                    {tLow
-                                        ? `${fmt(tc(tLow.temperature))}${U.temp.u} · ${clock(tLow)}`
-                                        : "--"}
-                                </dd>
-                            </div>
-                        </dl>
-                    </Card>
+                        </Card>
+                    </div>
 
                     {/* sun (+ moon while it is above the horizon) */}
-                    <Card
-                        title={moon ? `${T.sun.title} / ${T.moon.title}` : T.sun.title}
-                        className="wxp-card--fill"
-                    >
-                        <div className={`wxp-celestial${moon ? " has-moon" : ""}`}>
+                    <Card title={`${T.sun.title} / ${T.moon.title}`} className="wxp-card--fill">
+                        <div className="wxp-celestial has-moon">
                             <div className="wxp-body">
                                 <SunArc
                                     sunrise={today.sunrise}
@@ -885,78 +936,81 @@ export default function WeatherPage() {
                                 </dl>
                             </div>
 
-                            {moon && (
-                                <div className="wxp-body wxp-body--moon">
-                                    <div className="wxp-moonvis">
-                                        <SunArc
-                                            body="moon"
-                                            sunrise={moon.rise}
-                                            sunset={moon.set}
-                                            now={cur.time}
-                                            phase={today.moonPhase}
-                                            riseLabel={moon.riseKnown ? undefined : "--:--"}
-                                        />
-                                        <MoonPhase phase={today.moonPhase} flip={lat < 0} />
-                                    </div>
-                                    <dl className="wxp-kv">
-                                        <div>
-                                            <dt>
-                                                {T.moon.moonrise} / {T.moon.moonset}
-                                            </dt>
-                                            <dd>
-                                                {moon.riseKnown
-                                                    ? `${hhmm(moon.rise)}${dayShift(moon.rise, cur.time)}`
-                                                    : "--:--"}{" "}
-                                                / {hhmm(moon.set)}
-                                                {dayShift(moon.set, cur.time)}
-                                            </dd>
-                                        </div>
-                                        <div>
-                                            <dt>{T.moon.phase}</dt>
-                                            <dd>{moonKey ? T.moon.names[moonKey] : "--"}</dd>
-                                        </div>
-                                        <div>
-                                            <dt>{T.moon.illumination}</dt>
-                                            <dd>
-                                                {illum === null ? "--" : `${fmt(illum * 100)}%`}
-                                            </dd>
-                                        </div>
-                                        <div>
-                                            <dt>{T.moon.age}</dt>
-                                            <dd>
-                                                {Number.isFinite(today.moonPhase)
-                                                    ? `${fmt(today.moonPhase * SYNODIC_DAYS, 1)} ${T.moon.days}`
-                                                    : "--"}
-                                            </dd>
-                                        </div>
-                                        <div>
-                                            <dt>{T.sun.altitude}</dt>
-                                            <dd>
-                                                {moonPos ? `${fmt(moonPos.altitude, 1)}°` : "--"}
-                                            </dd>
-                                        </div>
-                                        <div>
-                                            <dt>{T.sun.azimuth}</dt>
-                                            <dd>
-                                                {moonPos
-                                                    ? `${fmt(moonPos.azimuth, 1)}° ${toCardinal(moonPos.azimuth)}`
-                                                    : "--"}
-                                            </dd>
-                                        </div>
-                                        <div>
-                                            <dt>{T.moon.visible}</dt>
-                                            <dd>
-                                                {moon.riseKnown
-                                                    ? formatDuration(
-                                                          (localMs(moon.set) - localMs(moon.rise)) /
-                                                              1000,
-                                                      )
-                                                    : "--"}
-                                            </dd>
-                                        </div>
-                                    </dl>
+                            <div className="wxp-body wxp-body--moon">
+                                <div className="wxp-moonvis">
+                                    <SunArc
+                                        body="moon"
+                                        sunrise={moon.rise}
+                                        sunset={moon.set}
+                                        now={cur.time}
+                                        phase={today.moonPhase}
+                                        riseLabel={moon.riseKnown ? undefined : "--:--"}
+                                    />
+                                    {/* today's phase, centred under the arc's dome */}
+                                    <MoonPhase phase={today.moonPhase} flip={lat < 0} />
                                 </div>
-                            )}
+                                <dl className="wxp-kv">
+                                    <div>
+                                        <dt>
+                                            {T.moon.moonrise} / {T.moon.moonset}
+                                        </dt>
+                                        <dd>
+                                            {moon.riseKnown
+                                                ? `${hhmm(moon.rise)}${dayShift(moon.rise, cur.time)}`
+                                                : "--:--"}{" "}
+                                            / {hhmm(moon.set)}
+                                            {dayShift(moon.set, cur.time)}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.moon.phase}</dt>
+                                        <dd>{moonKey ? T.moon.names[moonKey] : "--"}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.moon.illumination}</dt>
+                                        <dd>{illum === null ? "--" : `${fmt(illum * 100)}%`}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.moon.age}</dt>
+                                        <dd>
+                                            {Number.isFinite(today.moonPhase)
+                                                ? `${fmt(today.moonPhase * SYNODIC_DAYS, 1)} ${T.moon.days}`
+                                                : "--"}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.sun.altitude}</dt>
+                                        <dd>{moonPos ? `${fmt(moonPos.altitude, 1)}°` : "--"}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.sun.azimuth}</dt>
+                                        <dd>
+                                            {moonPos
+                                                ? `${fmt(moonPos.azimuth, 1)}° ${toCardinal(moonPos.azimuth)}`
+                                                : "--"}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.moon.visible}</dt>
+                                        <dd>
+                                            {moon.riseKnown
+                                                ? formatDuration(
+                                                      (localMs(moon.set) - localMs(moon.rise)) /
+                                                          1000,
+                                                  )
+                                                : "--"}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>{T.moon.nextFull}</dt>
+                                        <dd>
+                                            {daysToFull === null
+                                                ? "--"
+                                                : `${fmt(daysToFull, 1)} ${T.moon.days}`}
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </div>
                         </div>
                     </Card>
                 </aside>
@@ -1210,7 +1264,8 @@ export default function WeatherPage() {
                                         color: C.cloud,
                                         values: col("cloudCover"),
                                         unit: "%",
-                                        dashed: true,
+                                        kind: "bar",
+                                        opacity: 0.25,
                                     },
                                 ]}
                             />
@@ -1271,6 +1326,7 @@ export default function WeatherPage() {
                                 nowIndex={chartNow}
                                 nowLabel={T.now}
                                 labels={T.detail.chart}
+                                leftDomain={precipDomain}
                                 rightDomain={[0, 100]}
                                 series={[
                                     {
@@ -1302,6 +1358,7 @@ export default function WeatherPage() {
                                 nowIndex={chartNow}
                                 nowLabel={T.now}
                                 labels={T.detail.chart}
+                                leftDomain={uvDomain}
                                 series={[
                                     {
                                         key: "uv",
