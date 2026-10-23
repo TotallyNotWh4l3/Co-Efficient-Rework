@@ -7,14 +7,31 @@
 //       凡例クリックで系列の表示/非表示、ドラッグ範囲選択でズーム（ダブルクリックで解除）。
 //       親要素のサイズに合わせてSVGを描画する（スクロール不要のレイアウト用）。
 //       負にならない系列（nonNegative）は、全値が0のとき軸を 0〜1 にして線を最下部に置く。
+//       2026/10/23: ・左右の余白を目盛り文字の幅に合わせて縮小（グラフが潰れないように）
+//                   ・系列の表示/非表示を切り替えても軸の最大/最小を変えない
+//                   ・範囲変更（7日→48時間など）やドラッグズームで、表示範囲外の
+//                     データを消さずに全データを描画したままビューポートを滑らかに
+//                     アニメーションさせる（X範囲・Y軸の両方をイージング）
 // ===================================================
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 const DEFAULT_W = 800;
 const DEFAULT_H = 220;
-const PAD = { l: 46, r: 46, t: 12, b: 24 };
+const PAD_T = 12;
+const PAD_B = 24;
+const PAD_MIN = 8; // side margin when that axis has no labels
+const TICK_CHAR_W = 6.2; // width of one 10px monospace tick-label glyph
 const RETRACT_MS = 420;
+const VIEW_MS = 600; // viewport (range / zoom) transition
+const easeOut = (p) => 1 - (1 - p) ** 3;
+const lerp = (a, b, e) => a + (b - a) * e;
+
+// Margin an axis needs for its tick labels (+ the 6px gap to the plot).
+const labelPad = (scale) =>
+    scale
+        ? Math.ceil(Math.max(...scale.ticks.map((t) => String(t).length), 1) * TICK_CHAR_W) + 8
+        : PAD_MIN;
 
 function niceScale(min, max, count = 4) {
     let lo = min;
@@ -110,12 +127,17 @@ function pickStride(n, innerW) {
  *   area?:boolean (gradient fill under the line), extrema?:boolean (label high/low),
  *   nonNegative?:boolean (value can't go below 0 → flat-zero data uses a 0..1 axis)}>} series
  * @param {number} nowIndex — index of "now" within `times` (or -1)
+ * @param {number} [viewCount] — how many of the leading points are in view
+ *   (default: all). `times`/`series` may hold MORE points than that: the rest
+ *   stays mounted just outside the plot, so changing `viewCount` pans/zooms the
+ *   viewport smoothly instead of the extra data vanishing.
  * @param {[number, number]} [leftDomain] / [rightDomain] — fixed axis ranges
  */
 export default function TimeSeries({
-    times: fullTimes,
+    times,
     series: allSeries,
     nowIndex: fullNow = -1,
+    viewCount,
     nowLabel = "NOW",
     leftDomain,
     rightDomain,
@@ -127,8 +149,8 @@ export default function TimeSeries({
     const [hover, setHover] = useState(null);
     const [off, setOff] = useState(() => new Set());
     const [leaving, setLeaving] = useState(() => new Set()); // hidden, still retracting
-    const [zoom, setZoom] = useState(null); // [first, last] index into fullTimes
-    const [drag, setDrag] = useState(null); // { a, b } indices in the current view
+    const [zoom, setZoom] = useState(null); // [first, last] absolute indices into `times`
+    const [drag, setDrag] = useState(null); // { a, b } absolute indices
     const [size, setSize] = useState({ w: DEFAULT_W, h: DEFAULT_H });
 
     // Draw at the real pixel size of the container so text stays crisp and the
@@ -150,14 +172,10 @@ export default function TimeSeries({
     }, []);
 
     // A new window (range button / location change) invalidates the zoom.
-    const firstTime = fullTimes[0];
-    const count = fullTimes.length;
-    useEffect(() => setZoom(null), [firstTime, count]);
+    const firstTime = times[0];
+    const count = times.length;
+    useEffect(() => setZoom(null), [firstTime, count, viewCount]);
 
-    // Range change (24h -> 48h ...): the data layer starts at the OLD scale and
-    // eases into the new one, so a longer range visibly shrinks the curves to
-    // make room and a shorter one expands them. `n` flips between two keyframe
-    // names so the animation restarts on every change without remounting.
     // First ~2.6 s after mount: the series animations wait for the page's
     // staggered card entrance (--enter-delay, see weather-page.css) so a chart
     // draws as its card appears. Afterwards the class is dropped, so series
@@ -168,50 +186,105 @@ export default function TimeSeries({
         return () => clearTimeout(id);
     }, []);
 
-    const [rangeAnim, setRangeAnim] = useState({ n: 0, ratio: 1 });
-    const prevCount = useRef(count);
-    useLayoutEffect(() => {
-        const before = prevCount.current;
-        prevCount.current = count;
-        if (before > 0 && count > 0 && before !== count) {
-            setRangeAnim((a) => ({ n: a.n + 1, ratio: count / before }));
-        }
-    }, [count]);
-    const animName = rangeAnim.n === 0 ? undefined : rangeAnim.n % 2 ? "a" : "b";
-    const rangeStyle = animName
-        ? {
-              "--wxp-range-ratio": rangeAnim.ratio,
-              animationName: `wxp-range-${animName}`,
-              transformBox: "view-box",
-              transformOrigin: `${PAD.l}px 0px`,
-          }
-        : undefined;
-    const fadeStyle = animName ? { animationName: `wxp-range-fade-${animName}` } : undefined;
+    // ---------- viewport ----------
+    // The chart always holds every point it was given; what is *visible* is a
+    // viewport [v0, v1] (absolute indices) plus the Y ranges. Range buttons and
+    // drag-zoom only change the viewport TARGET; the shown viewport eases
+    // towards it, so the data that falls out of range slides out of the plot
+    // (it is clipped by the plot edge) instead of disappearing at once.
+    const tv0 = zoom ? zoom[0] : 0;
+    const tv1 = zoom ? zoom[1] : Math.max(0, Math.min(viewCount ?? count, count) - 1);
 
-    const lo = zoom?.[0] ?? 0;
-    const hi = zoom?.[1] ?? fullTimes.length - 1;
-    const times = fullTimes.slice(lo, hi + 1);
-    const nowIndex = fullNow - lo;
+    // Axis ranges come from ALL series (shown or not) over the visible window,
+    // so toggling a series in the legend never rescales the axes.
+    const axisInput = (axis) =>
+        allSeries
+            .filter((s) => (s.axis ?? "left") === axis)
+            .map((s) => ({ ...s, values: s.values.slice(tv0, tv1 + 1) }));
+    const tLeft = buildScale(axisInput("left"), leftDomain);
+    const tRight = allSeries.some((s) => s.axis === "right")
+        ? buildScale(axisInput("right"), rightDomain)
+        : null;
+
+    const target = {
+        v0: tv0,
+        v1: tv1,
+        ll: tLeft?.lo ?? 0,
+        lh: tLeft?.hi ?? 1,
+        rl: tRight?.lo ?? 0,
+        rh: tRight?.hi ?? 1,
+    };
+    const targetKey = Object.values(target).join("|");
+    const [view, setView] = useState(target);
+    const viewRef = useRef(target); // latest shown values (survives interrupted tweens)
+    useEffect(() => {
+        const from = viewRef.current;
+        const to = target;
+        if (Object.keys(to).every((k) => from[k] === to[k])) return undefined;
+        const t0 = performance.now();
+        let raf = 0;
+        const tick = (now) => {
+            const p = Math.min(1, (now - t0) / VIEW_MS);
+            const e = easeOut(p);
+            const cur = {};
+            for (const k of Object.keys(to)) cur[k] = p >= 1 ? to[k] : lerp(from[k], to[k], e);
+            viewRef.current = cur;
+            setView(cur);
+            if (p < 1) raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+        // `target` is fully described by targetKey
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [targetKey]);
+
+    // Labels / extrema re-fade whenever the TARGET viewport changes. Two
+    // identical keyframe sets are swapped so the animation restarts each time.
+    const [fadeN, setFadeN] = useState(0);
+    const prevView = useRef(`${tv0}|${tv1}`);
+    useLayoutEffect(() => {
+        const key = `${tv0}|${tv1}`;
+        if (prevView.current !== key) {
+            prevView.current = key;
+            setFadeN((n) => n + 1);
+        }
+    }, [tv0, tv1]);
+    const fadeStyle =
+        fadeN === 0 ? undefined : { animationName: `wxp-range-fade-${fadeN % 2 ? "a" : "b"}` };
+
     // A just-hidden series stays in `series` (flagged `leaving`) until its
-    // retract animation is done, so the axis doesn't jump while it plays.
+    // retract animation is done, so it can play the wipe-out.
     const series = allSeries
         .filter((s) => !off.has(s.key) || leaving.has(s.key))
-        .map((s) => ({ ...s, values: s.values.slice(lo, hi + 1), leaving: off.has(s.key) }));
+        .map((s) => ({ ...s, leaving: off.has(s.key) }));
     const live = series.filter((s) => !s.leaving);
+
+    // Scales as currently drawn: eased range, ticks from the target scale.
+    const shown = (t, lo, hi) =>
+        t
+            ? {
+                  ...t,
+                  lo,
+                  hi,
+                  ticks: t.ticks.filter(
+                      (v) => v >= lo - (hi - lo) * 1e-6 && v <= hi + (hi - lo) * 1e-6,
+                  ),
+              }
+            : null;
+    const leftScale = shown(tLeft, view.ll, view.lh);
+    const rightScale = shown(tRight, view.rl, view.rh);
+
+    // Side margins hug the tick labels instead of a fixed 46px each.
+    const PAD = { l: labelPad(tLeft), r: labelPad(tRight), t: PAD_T, b: PAD_B };
 
     const W = size.w;
     const H = size.h;
     const INNER_W = Math.max(10, W - PAD.l - PAD.r);
     const INNER_H = Math.max(10, H - PAD.t - PAD.b);
 
-    const n = times.length;
-    const step = INNER_W / Math.max(n, 1);
-    const xAt = (i) => PAD.l + (i + 0.5) * step;
-
-    const left = series.filter((s) => (s.axis ?? "left") === "left");
-    const right = series.filter((s) => s.axis === "right");
-    const leftScale = buildScale(left, leftDomain);
-    const rightScale = right.length ? buildScale(right, rightDomain) : null;
+    const span = view.v1 - view.v0 + 1;
+    const step = INNER_W / Math.max(span, 1);
+    const xAt = (i) => PAD.l + (i - view.v0 + 0.5) * step;
 
     const yFor = (scale) => (v) =>
         PAD.t + INNER_H - ((v - scale.lo) / (scale.hi - scale.lo || 1)) * INNER_H;
@@ -221,18 +294,18 @@ export default function TimeSeries({
     function indexAt(e) {
         const rect = svgRef.current.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * W;
-        return Math.min(n - 1, Math.max(0, Math.floor((x - PAD.l) / step)));
+        return Math.min(tv1, Math.max(tv0, Math.floor((x - PAD.l) / step + view.v0)));
     }
 
     function handleMove(e) {
-        if (n === 0) return;
+        if (count === 0) return;
         const i = indexAt(e);
         setHover(i);
         if (drag) setDrag({ ...drag, b: i });
     }
 
     function handleDown(e) {
-        if (n === 0 || e.button !== 0) return;
+        if (count === 0 || e.button !== 0) return;
         e.currentTarget.setPointerCapture(e.pointerId);
         const i = indexAt(e);
         setDrag({ a: i, b: i });
@@ -240,7 +313,7 @@ export default function TimeSeries({
 
     function handleUp() {
         if (drag && Math.abs(drag.b - drag.a) >= 3) {
-            setZoom([lo + Math.min(drag.a, drag.b), lo + Math.max(drag.a, drag.b)]);
+            setZoom([Math.min(drag.a, drag.b), Math.max(drag.a, drag.b)]);
         }
         setDrag(null);
     }
@@ -278,12 +351,19 @@ export default function TimeSeries({
     const clipFor = (s) =>
         s.leaving || (s.dashed && s.kind !== "bar") ? `url(#${clipId(s)})` : undefined;
 
-    const readIdx = hover ?? (nowIndex >= 0 ? nowIndex : 0);
-    const stride = pickStride(n, INNER_W);
+    const nowVisible = fullNow >= tv0 && fullNow <= tv1;
+    const readIdx = hover ?? (nowVisible ? fullNow : tv0);
+    const stride = pickStride(tv1 - tv0 + 1, INNER_W);
     const refScale = leftScale ?? rightScale;
     const baseY = PAD.t + INNER_H;
     const lineSeries = series.filter((s) => s.kind !== "bar");
     const areaSeries = lineSeries.filter((s) => s.area);
+
+    // Points worth drawing a label for: the ones near the (moving) viewport.
+    const firstIdx = Math.max(0, Math.floor(view.v0) - 1);
+    const lastIdx = Math.min(count - 1, Math.ceil(view.v1) + 1);
+    const labelIdx = [];
+    for (let i = firstIdx; i <= lastIdx; i++) labelIdx.push(i);
 
     return (
         <div className={`wxp-chart${intro ? " wxp-chart--intro" : ""}`}>
@@ -375,43 +455,48 @@ export default function TimeSeries({
                         </text>
                     ))}
 
-                    {/* x labels + midnight separators (fade in after a range change) */}
-                    <g className="wxp-chart__fade" style={fadeStyle}>
-                        {times.map((t, i) => {
-                            const hour = Number(t.slice(11, 13));
-                            const midnight = hour === 0;
-                            const showLabel = hour % stride === 0;
-                            return (
-                                <g key={t}>
-                                    {midnight && i > 0 && (
-                                        <line
-                                            className="wxp-chart__day"
-                                            x1={xAt(i) - step / 2}
-                                            x2={xAt(i) - step / 2}
-                                            y1={PAD.t}
-                                            y2={PAD.t + INNER_H}
-                                        />
-                                    )}
-                                    {showLabel && (
-                                        <text
-                                            className="wxp-chart__tick"
-                                            x={xAt(i)}
-                                            y={H - 7}
-                                            textAnchor="middle"
-                                        >
-                                            {midnight
-                                                ? `${t.slice(5, 7)}/${t.slice(8, 10)}`
-                                                : String(hour).padStart(2, "0")}
-                                        </text>
-                                    )}
-                                </g>
-                            );
-                        })}
+                    {/* x labels + midnight separators (fade in after a range change);
+                        clipped to the plot so labels slide out with the data */}
+                    <g clipPath={`url(#wxp-${uid}-plot)`}>
+                        <g className="wxp-chart__fade" style={fadeStyle}>
+                            {labelIdx.map((i) => {
+                                const t = times[i];
+                                const hour = Number(t.slice(11, 13));
+                                const midnight = hour === 0;
+                                const showLabel = hour % stride === 0;
+                                const edge = xAt(i) - step / 2;
+                                return (
+                                    <g key={t}>
+                                        {midnight && i > 0 && edge > PAD.l + 1 && (
+                                            <line
+                                                className="wxp-chart__day"
+                                                x1={edge}
+                                                x2={edge}
+                                                y1={PAD.t}
+                                                y2={PAD.t + INNER_H}
+                                            />
+                                        )}
+                                        {showLabel && (
+                                            <text
+                                                className="wxp-chart__tick"
+                                                x={xAt(i)}
+                                                y={H - 7}
+                                                textAnchor="middle"
+                                            >
+                                                {midnight
+                                                    ? `${t.slice(5, 7)}/${t.slice(8, 10)}`
+                                                    : String(hour).padStart(2, "0")}
+                                            </text>
+                                        )}
+                                    </g>
+                                );
+                            })}
+                        </g>
                     </g>
 
-                    {/* data layer: scales from the previous range into the new one */}
+                    {/* data layer: every point stays mounted; the viewport eases over it */}
                     <g clipPath={`url(#wxp-${uid}-plot)`}>
-                        <g className="wxp-chart__range" style={rangeStyle}>
+                        <g>
                             {/* bars first so lines sit on top */}
                             {series
                                 .filter((s) => s.kind === "bar")
@@ -433,7 +518,7 @@ export default function TimeSeries({
                                                         height={Math.max(0, base - y(v))}
                                                         style={{
                                                             fill: s.color,
-                                                            "--bar-delay": `${Math.round((i / n) * 600)}ms`,
+                                                            "--bar-delay": `${Math.round(Math.min(1, Math.max(0, i - tv0) / Math.max(1, tv1 - tv0 + 1)) * 600)}ms`,
                                                         }}
                                                         opacity={s.opacity ?? 0.55}
                                                     />
@@ -473,11 +558,11 @@ export default function TimeSeries({
                                 );
                             })}
 
-                            {nowIndex >= 0 && nowIndex < n && (
+                            {fullNow >= 0 && fullNow < count && (
                                 <line
                                     className="wxp-chart__now"
-                                    x1={xAt(nowIndex)}
-                                    x2={xAt(nowIndex)}
+                                    x1={xAt(fullNow)}
+                                    x2={xAt(fullNow)}
                                     y1={PAD.t}
                                     y2={PAD.t + INNER_H}
                                 />
@@ -491,9 +576,10 @@ export default function TimeSeries({
                             .filter((s) => s.extrema && !s.leaving)
                             .map((s) => {
                                 const scale = scaleOf(s);
-                                const finite = s.values
-                                    .map((v, i) => [v, i])
-                                    .filter(([v]) => Number.isFinite(v));
+                                const finite = [];
+                                for (let i = tv0; i <= tv1; i++) {
+                                    if (Number.isFinite(s.values[i])) finite.push([s.values[i], i]);
+                                }
                                 if (!scale || finite.length < 2) return null;
                                 const y = yFor(scale);
                                 const hi = finite.reduce((a, b) => (b[0] > a[0] ? b : a));
@@ -524,32 +610,37 @@ export default function TimeSeries({
                     </g>
 
                     {/* value dots at the read-out position */}
-                    {n > 0 &&
-                        lineSeries.map((s) => {
-                            const scale = scaleOf(s);
-                            const v = s.values[readIdx];
-                            if (s.leaving || !scale || !Number.isFinite(v)) return null;
-                            return (
-                                <circle
-                                    key={`d${s.key}`}
-                                    className="wxp-chart__dot"
-                                    cx={xAt(readIdx)}
-                                    cy={yFor(scale)(v)}
-                                    r="3.5"
-                                    style={{ fill: s.color }}
-                                />
-                            );
-                        })}
+                    {count > 0 && (
+                        <g clipPath={`url(#wxp-${uid}-plot)`}>
+                            {lineSeries.map((s) => {
+                                const scale = scaleOf(s);
+                                const v = s.values[readIdx];
+                                if (s.leaving || !scale || !Number.isFinite(v)) return null;
+                                return (
+                                    <circle
+                                        key={`d${s.key}`}
+                                        className="wxp-chart__dot"
+                                        cx={xAt(readIdx)}
+                                        cy={yFor(scale)(v)}
+                                        r="3.5"
+                                        style={{ fill: s.color }}
+                                    />
+                                );
+                            })}
+                        </g>
+                    )}
 
-                    {nowIndex >= 0 && nowIndex < n && (
-                        <text
-                            className="wxp-chart__now-label wxp-chart__fade"
-                            style={fadeStyle}
-                            x={xAt(nowIndex) + 4}
-                            y={PAD.t + 9}
-                        >
-                            {nowLabel}
-                        </text>
+                    {fullNow >= 0 && fullNow < count && (
+                        <g clipPath={`url(#wxp-${uid}-plot)`}>
+                            <text
+                                className="wxp-chart__now-label wxp-chart__fade"
+                                style={fadeStyle}
+                                x={xAt(fullNow) + 4}
+                                y={PAD.t + 9}
+                            >
+                                {nowLabel}
+                            </text>
+                        </g>
                     )}
 
                     {hover !== null && (
@@ -583,7 +674,7 @@ export default function TimeSeries({
                     )}
                 </svg>
 
-                {hover !== null && n > 0 && (
+                {hover !== null && count > 0 && (
                     <div
                         className={`wxp-chart__tip${xAt(hover) > W * 0.58 ? " is-left" : ""}`}
                         style={{ left: xAt(hover), top: PAD.t + 4 }}

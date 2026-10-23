@@ -8,7 +8,16 @@
 // ===================================================
 
 import { useEffect, useState } from "react";
-import { RefreshCw, MapPin, ArrowUp, ArrowDown, ArrowRight, Bell } from "lucide-react";
+import {
+    RefreshCw,
+    MapPin,
+    ArrowUp,
+    ArrowDown,
+    ArrowRight,
+    Bell,
+    ChevronUp,
+    ChevronDown,
+} from "lucide-react";
 
 import useWeather from "../useWeather";
 import { useLocation } from "../../locations/useLocation";
@@ -62,6 +71,11 @@ const RANGES = [
     { id: "h72", hours: 72 },
     { id: "d7", hours: 168 },
 ];
+
+// The charts always receive this many hours; the range buttons only change how
+// much of it is in view (TimeSeries `viewCount`), so switching ranges pans/zooms
+// smoothly instead of the data outside the new range disappearing.
+const MAX_HOURS = Math.max(...RANGES.map((r) => r.hours));
 
 // How many hours of already-elapsed context to show before "now".
 const LOOKBACK_HOURS = 3;
@@ -199,6 +213,8 @@ export default function WeatherPage() {
     const [rules, setRules] = usePersistentState("wxp-alert-rules", DEFAULT_RULES);
     const [expanded, setExpanded] = useState(null);
     const [alertOpen, setAlertOpen] = useState(false);
+    // The header can be folded away to give the one-screen layout more height.
+    const [headerOpen, setHeaderOpen] = usePersistentState("wxp-header-open", true);
     const U = makeUnits(unitPrefs);
 
     // Resolve a starting location once the list is known. Until then the
@@ -211,88 +227,109 @@ export default function WeatherPage() {
     const { weather, loading, error, refresh } = useWeather(locationId ?? undefined);
 
     const renderHeader = (alertCount = 0) => (
-        <header className="wxp-header">
-            <div className="wxp-header__title">
-                <h2>{T.title}</h2>
-                <span>{T.source}</span>
-            </div>
+        <>
+            <button
+                type="button"
+                className="wxp-headtoggle"
+                onClick={() => setHeaderOpen(!headerOpen)}
+                title={headerOpen ? T.collapseHeader : T.expandHeader}
+                aria-label={headerOpen ? T.collapseHeader : T.expandHeader}
+                aria-expanded={headerOpen}
+            >
+                {headerOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </button>
+            <div className={`wxp-headwrap${headerOpen ? "" : " is-collapsed"}`} inert={!headerOpen}>
+                <div className="wxp-headwrap__inner">
+                    <header className="wxp-header">
+                        <div className="wxp-header__title">
+                            <h2>{T.title}</h2>
+                            <span>{T.source}</span>
+                        </div>
 
-            <div className="wxp-header__controls">
-                <label className="wxp-select">
-                    <MapPin size={14} />
-                    <select
-                        value={locationId ?? weather?.location?.id ?? ""}
-                        onChange={(e) => setLocationId(e.target.value)}
-                        aria-label={T.location}
-                    >
-                        {locationOptions.map((o) => (
-                            <option key={o.id} value={o.id}>
-                                {o.label}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                        <div className="wxp-header__controls">
+                            <label className="wxp-select">
+                                <MapPin size={14} />
+                                <select
+                                    value={locationId ?? weather?.location?.id ?? ""}
+                                    onChange={(e) => setLocationId(e.target.value)}
+                                    aria-label={T.location}
+                                >
+                                    {locationOptions.map((o) => (
+                                        <option key={o.id} value={o.id}>
+                                            {o.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
 
-                <div className="wxp-segmented" role="group">
-                    {RANGES.map((r) => (
-                        <button
-                            key={r.id}
-                            className={rangeId === r.id ? "is-active" : ""}
-                            onClick={() => setRangeId(r.id)}
-                        >
-                            {T.ranges[r.id]}
-                        </button>
-                    ))}
+                            <div className="wxp-segmented" role="group">
+                                {RANGES.map((r) => (
+                                    <button
+                                        key={r.id}
+                                        className={rangeId === r.id ? "is-active" : ""}
+                                        onClick={() => setRangeId(r.id)}
+                                    >
+                                        {T.ranges[r.id]}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="wxp-segmented" role="group" aria-label={T.units.title}>
+                                {["metric", "imperial"].map((sys) => (
+                                    <button
+                                        key={sys}
+                                        className={unitPrefs.system === sys ? "is-active" : ""}
+                                        onClick={() =>
+                                            setUnitPrefs({
+                                                system: sys,
+                                                wind: sys === "metric" ? "ms" : "mph",
+                                            })
+                                        }
+                                    >
+                                        {T.units[sys]}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <label className="wxp-select">
+                                <select
+                                    value={unitPrefs.wind}
+                                    onChange={(e) =>
+                                        setUnitPrefs({ ...unitPrefs, wind: e.target.value })
+                                    }
+                                    aria-label={T.units.wind}
+                                >
+                                    {WIND_UNITS.map((w) => (
+                                        <option key={w} value={w}>
+                                            {T.units.windNames[w]}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+
+                            <button
+                                className="wxp-icon-btn wxp-bell"
+                                onClick={() => setAlertOpen(true)}
+                                title={T.alerts.title}
+                                aria-label={T.alerts.title}
+                            >
+                                <Bell size={14} />
+                                {alertCount > 0 && <b className="wxp-bell__badge">{alertCount}</b>}
+                            </button>
+
+                            <button
+                                className="wxp-icon-btn"
+                                onClick={refresh}
+                                title={T.refresh}
+                                aria-label={T.refresh}
+                            >
+                                <RefreshCw size={14} />
+                            </button>
+                        </div>
+                    </header>
                 </div>
-
-                <div className="wxp-segmented" role="group" aria-label={T.units.title}>
-                    {["metric", "imperial"].map((sys) => (
-                        <button
-                            key={sys}
-                            className={unitPrefs.system === sys ? "is-active" : ""}
-                            onClick={() =>
-                                setUnitPrefs({ system: sys, wind: sys === "metric" ? "ms" : "mph" })
-                            }
-                        >
-                            {T.units[sys]}
-                        </button>
-                    ))}
-                </div>
-
-                <label className="wxp-select">
-                    <select
-                        value={unitPrefs.wind}
-                        onChange={(e) => setUnitPrefs({ ...unitPrefs, wind: e.target.value })}
-                        aria-label={T.units.wind}
-                    >
-                        {WIND_UNITS.map((w) => (
-                            <option key={w} value={w}>
-                                {T.units.windNames[w]}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-
-                <button
-                    className="wxp-icon-btn wxp-bell"
-                    onClick={() => setAlertOpen(true)}
-                    title={T.alerts.title}
-                    aria-label={T.alerts.title}
-                >
-                    <Bell size={14} />
-                    {alertCount > 0 && <b className="wxp-bell__badge">{alertCount}</b>}
-                </button>
-
-                <button
-                    className="wxp-icon-btn"
-                    onClick={refresh}
-                    title={T.refresh}
-                    aria-label={T.refresh}
-                >
-                    <RefreshCw size={14} />
-                </button>
             </div>
-        </header>
+        </>
     );
 
     if (!weather || !weather.current) {
@@ -428,6 +465,14 @@ export default function WeatherPage() {
             return Number.isFinite(v) ? v : null;
         });
     const chartNow = nowIdx - start;
+
+    // What the six trend charts get: the whole window, of which `viewCount`
+    // points are in view.
+    const fullWin = hourly.slice(start, start + MAX_HOURS);
+    const timesFull = fullWin.map((h) => h.time);
+    const colFull = (key, u) =>
+        fullWin.map((h) => (Number.isFinite(h[key]) ? (u ? u.f(h[key]) : h[key]) : null));
+    const viewCount = Math.min(hours, fullWin.length);
 
     // Fixed chart axes: UV always 0-10, precipitation always 0-5 mm. They only
     // grow when the plotted window actually exceeds that.
@@ -1209,7 +1254,8 @@ export default function WeatherPage() {
                     <div className="wxp-charts">
                         <Card title={T.charts.temperature}>
                             <TimeSeries
-                                times={times}
+                                times={timesFull}
+                                viewCount={viewCount}
                                 nowIndex={chartNow}
                                 nowLabel={T.now}
                                 labels={T.detail.chart}
@@ -1220,14 +1266,14 @@ export default function WeatherPage() {
                                         extrema: true,
                                         label: "T",
                                         color: C.temp,
-                                        values: col("temperature", U.temp),
+                                        values: colFull("temperature", U.temp),
                                         unit: U.temp.u,
                                     },
                                     {
                                         key: "f",
                                         label: "Feels",
                                         color: C.feels,
-                                        values: col("feelsLike", U.temp),
+                                        values: colFull("feelsLike", U.temp),
                                         unit: U.temp.u,
                                         dashed: true,
                                     },
@@ -1235,7 +1281,7 @@ export default function WeatherPage() {
                                         key: "d",
                                         label: "Td",
                                         color: C.dew,
-                                        values: col("dewPoint", U.temp),
+                                        values: colFull("dewPoint", U.temp),
                                         unit: U.temp.u,
                                         digits: 1,
                                     },
@@ -1244,7 +1290,8 @@ export default function WeatherPage() {
                         </Card>
                         <Card title={T.charts.humidity}>
                             <TimeSeries
-                                times={times}
+                                times={timesFull}
+                                viewCount={viewCount}
                                 nowIndex={chartNow}
                                 nowLabel={T.now}
                                 labels={T.detail.chart}
@@ -1255,14 +1302,14 @@ export default function WeatherPage() {
                                         area: true,
                                         label: "RH",
                                         color: C.rh,
-                                        values: col("humidity"),
+                                        values: colFull("humidity"),
                                         unit: "%",
                                     },
                                     {
                                         key: "cc",
                                         label: "Cloud",
                                         color: C.cloud,
-                                        values: col("cloudCover"),
+                                        values: colFull("cloudCover"),
                                         unit: "%",
                                         kind: "bar",
                                         opacity: 0.25,
@@ -1272,7 +1319,8 @@ export default function WeatherPage() {
                         </Card>
                         <Card title={T.charts.pressure}>
                             <TimeSeries
-                                times={times}
+                                times={timesFull}
+                                viewCount={viewCount}
                                 nowIndex={chartNow}
                                 nowLabel={T.now}
                                 labels={T.detail.chart}
@@ -1283,7 +1331,7 @@ export default function WeatherPage() {
                                         extrema: true,
                                         label: "MSL",
                                         color: C.pressure,
-                                        values: col("pressureMsl", U.pressure),
+                                        values: colFull("pressureMsl", U.pressure),
                                         unit: U.pressure.u,
                                         digits: U.pressure.digits,
                                     },
@@ -1292,7 +1340,8 @@ export default function WeatherPage() {
                         </Card>
                         <Card title={T.charts.wind}>
                             <TimeSeries
-                                times={times}
+                                times={timesFull}
+                                viewCount={viewCount}
                                 nowIndex={chartNow}
                                 nowLabel={T.now}
                                 labels={T.detail.chart}
@@ -1303,7 +1352,7 @@ export default function WeatherPage() {
                                         label: "Wind",
                                         nonNegative: true,
                                         color: C.wind,
-                                        values: col("windSpeed", U.wind),
+                                        values: colFull("windSpeed", U.wind),
                                         unit: U.wind.u,
                                         digits: 1,
                                     },
@@ -1312,7 +1361,7 @@ export default function WeatherPage() {
                                         label: "Gust",
                                         nonNegative: true,
                                         color: C.gust,
-                                        values: col("windGust", U.wind),
+                                        values: colFull("windGust", U.wind),
                                         unit: U.wind.u,
                                         digits: 1,
                                         dashed: true,
@@ -1322,7 +1371,8 @@ export default function WeatherPage() {
                         </Card>
                         <Card title={T.charts.precip}>
                             <TimeSeries
-                                times={times}
+                                times={timesFull}
+                                viewCount={viewCount}
                                 nowIndex={chartNow}
                                 nowLabel={T.now}
                                 labels={T.detail.chart}
@@ -1335,7 +1385,7 @@ export default function WeatherPage() {
                                         nonNegative: true,
                                         color: C.precip,
                                         kind: "bar",
-                                        values: col("precipitationSum", U.precip),
+                                        values: colFull("precipitationSum", U.precip),
                                         unit: U.precip.u,
                                         digits: U.precip.digits,
                                     },
@@ -1345,7 +1395,7 @@ export default function WeatherPage() {
                                         nonNegative: true,
                                         color: C.prob,
                                         axis: "right",
-                                        values: col("precipitation"),
+                                        values: colFull("precipitation"),
                                         unit: "%",
                                         dashed: true,
                                     },
@@ -1354,7 +1404,8 @@ export default function WeatherPage() {
                         </Card>
                         <Card title={T.charts.instability}>
                             <TimeSeries
-                                times={times}
+                                times={timesFull}
+                                viewCount={viewCount}
                                 nowIndex={chartNow}
                                 nowLabel={T.now}
                                 labels={T.detail.chart}
@@ -1366,7 +1417,7 @@ export default function WeatherPage() {
                                         label: "UV",
                                         nonNegative: true,
                                         color: C.uv,
-                                        values: col("uvIndex"),
+                                        values: colFull("uvIndex"),
                                         digits: 1,
                                     },
                                     {
@@ -1375,7 +1426,7 @@ export default function WeatherPage() {
                                         nonNegative: true,
                                         color: C.cape,
                                         axis: "right",
-                                        values: col("cape"),
+                                        values: colFull("cape"),
                                         unit: "J/kg",
                                     },
                                 ]}

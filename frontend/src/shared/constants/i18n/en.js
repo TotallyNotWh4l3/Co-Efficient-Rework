@@ -86,6 +86,8 @@ export default {
         source: "Source: Open-Meteo",
         location: "Location",
         refresh: "Refresh",
+        collapseHeader: "Hide header",
+        expandHeader: "Show header",
         loading: "Loading weather...",
         error: "Could not load weather",
         noData: "No weather data received",

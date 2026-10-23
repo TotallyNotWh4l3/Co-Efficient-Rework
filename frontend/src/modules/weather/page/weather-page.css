@@ -5,9 +5,10 @@
    =================================================== */
 
 .wxp {
+    position: relative; /* anchors the header toggle */
     height: 100%;
     overflow-y: auto; /* only kicks in when the window is too small for the one-screen layout */
-    padding: calc(0.75 * var(--u)) calc(1 * var(--u));
+    padding: calc(0.875 * var(--u)) calc(1 * var(--u)) calc(0.75 * var(--u));
     display: flex;
     flex-direction: column;
     gap: calc(0.625 * var(--u));
@@ -954,19 +955,40 @@
    =================================================== */
 .wxp-dash {
     flex: 1;
-    /* rows never shrink below their content: a too-short window scrolls instead of clipping */
+    /* The first row takes whatever height is left. It is sized by the right
+       column (instruments + charts, which have a readable minimum) — NOT by the
+       left column, which scrolls inside itself when the window is short (see
+       .wxp-side). Only a really tiny window makes the whole page scroll. */
     min-height: auto;
     display: grid;
     grid-template-columns: minmax(calc(26 * var(--u)), 32fr) minmax(0, 68fr);
-    grid-template-rows: minmax(min-content, 1fr) calc(13.5 * var(--u));
+    grid-template-rows: minmax(0, 1fr) calc(13.5 * var(--u));
     gap: calc(0.625 * var(--u));
 }
 
 .wxp-side {
     min-height: 0;
+    /* size containment: the column's content height must not push the grid row
+       taller (that is what made the whole page scroll); it fills the row and
+       scrolls inside itself instead. */
+    contain: size;
+    overflow-y: hidden;
+    scrollbar-width: thin;
     display: flex;
     flex-direction: column;
     gap: calc(0.625 * var(--u));
+    /* hidden while the cards fly in (their transforms would flash a scrollbar),
+       then scrollable. `overflow` flips discretely half-way through. */
+    animation: wxp-unclip 1s linear 1s forwards;
+}
+
+@keyframes wxp-unclip {
+    from {
+        overflow-y: hidden;
+    }
+    to {
+        overflow-y: auto;
+    }
 }
 
 .wxp-main {
@@ -1124,7 +1146,7 @@
 }
 
 /* wide column: sun and moon side by side, arc above its readouts */
-@container (min-width: 30rem) {
+@container (min-width: 26rem) {
     .wxp-celestial.has-moon {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1310,6 +1332,13 @@
     .wxp-side,
     .wxp-main {
         flex: none;
+    }
+
+    /* the stacked page just grows: no size containment / inner scrolling */
+    .wxp-side {
+        contain: none;
+        overflow: visible;
+        animation: none;
     }
 
     .wxp-card--fill {
@@ -1681,39 +1710,15 @@
     }
 }
 
-/* ----- range change (24h / 48h / 72h / 7d): expand / shrink the data layer ----- */
-/* The data layer starts at the previous range's scale (--wxp-range-ratio =
-   newPoints / oldPoints) and eases to 1: a longer range shrinks the curves
-   to make room, a shorter one expands them. Two identical keyframe sets are
-   swapped by TimeSeries so the animation restarts on every change. */
-.wxp-chart__range {
-    animation-duration: 0.6s;
-    animation-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
-    animation-fill-mode: both;
-}
-
+/* ----- range change (24h / 48h / 72h / 7d) -----
+   The data layer is no longer scaled by CSS: TimeSeries eases a viewport over
+   all of the data (see TimeSeries.jsx). Only the axis labels / extrema fade in
+   again afterwards; two identical keyframe sets are swapped by TimeSeries so
+   the animation restarts on every change. */
 .wxp-chart__fade {
     animation-duration: 0.5s;
     animation-timing-function: ease-out;
     animation-fill-mode: both;
-}
-
-@keyframes wxp-range-a {
-    from {
-        transform: scaleX(var(--wxp-range-ratio, 1));
-    }
-    to {
-        transform: scaleX(1);
-    }
-}
-
-@keyframes wxp-range-b {
-    from {
-        transform: scaleX(var(--wxp-range-ratio, 1));
-    }
-    to {
-        transform: scaleX(1);
-    }
 }
 
 @keyframes wxp-range-fade-a {
@@ -1988,4 +1993,114 @@
 
 .wxp-charts > .wxp-card .wxp-chart--intro .wxp-chart__extreme {
     animation: wxp-fade 0.6s calc(var(--enter-delay, 0ms) + 1000ms) ease-out both;
+}
+
+/* ===================================================
+   Collapsible header
+   =================================================== */
+.wxp-headwrap {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition:
+        grid-template-rows 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+        margin-bottom 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.2s ease-out;
+}
+
+/* the page's row gap goes with it, so a folded header takes no space at all */
+.wxp-headwrap.is-collapsed {
+    grid-template-rows: 0fr;
+    margin-bottom: calc(-0.625 * var(--u));
+    opacity: 0;
+}
+
+/* padding + negative margin: room for the bell badge that pokes out of the
+   header without the clip changing the header's layout size */
+.wxp-headwrap__inner {
+    min-height: 0;
+    overflow: hidden;
+    padding: calc(0.5 * var(--u));
+    margin: calc(-0.5 * var(--u));
+}
+
+/* small tab in the top margin; stays put while the header is folded */
+.wxp-headtoggle {
+    position: absolute;
+    z-index: 20;
+    top: 0;
+    left: 50%;
+    translate: -50% 0;
+    width: calc(2.5 * var(--u));
+    height: calc(0.875 * var(--u));
+    display: grid;
+    place-items: center;
+    padding: 0;
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 calc(0.5 * var(--u)) calc(0.5 * var(--u));
+    color: var(--color-text-muted);
+    cursor: pointer;
+    opacity: 0.7;
+    transition:
+        opacity 0.15s,
+        color 0.15s;
+}
+
+.wxp-headtoggle:hover,
+.wxp-headtoggle:focus-visible {
+    opacity: 1;
+    color: var(--color-text);
+}
+
+/* ===================================================
+   Short windows: tighter spacing so the left column fits without scrolling
+   (wide enough windows only — narrow ones use the normal scrolling page)
+   =================================================== */
+@media (min-width: 1101px) and (max-height: 1200px) {
+    .wxp-card {
+        padding: calc(0.5 * var(--u)) calc(0.75 * var(--u));
+        gap: calc(0.375 * var(--u));
+    }
+
+    .wxp-hero {
+        padding: calc(0.5 * var(--u)) calc(0.875 * var(--u));
+        gap: calc(0.5 * var(--u));
+    }
+
+    .wxp-hero__temp {
+        font-size: calc(2.25 * var(--u));
+    }
+
+    .wxp-hero__meta {
+        gap: 0;
+    }
+
+    .wxp-alertrow {
+        padding: calc(0.375 * var(--u)) calc(0.75 * var(--u));
+    }
+
+    .wxp-tile {
+        padding: calc(0.5 * var(--u)) calc(0.75 * var(--u));
+        gap: calc(0.125 * var(--u));
+    }
+
+    .wxp-duo .wxp-compass {
+        width: calc(6 * var(--u));
+        height: calc(6 * var(--u));
+    }
+
+    .wxp-kv {
+        gap: calc(0.0625 * var(--u));
+    }
+
+    .wxp-kv > div {
+        padding-bottom: 0;
+    }
+
+    @container (min-width: 26rem) {
+        .wxp-celestial.has-moon .wxp-body {
+            --arc-w: min(100%, calc(8 * var(--u)));
+        }
+    }
 }
