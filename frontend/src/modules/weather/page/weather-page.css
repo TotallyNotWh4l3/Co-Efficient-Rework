@@ -663,7 +663,7 @@
     inset: 0;
     border-radius: inherit;
     background: inherit;
-    animation: wxp-ping 1.8s ease-out infinite;
+    animation: wxp-ping 1.8s ease-in-out infinite;
 }
 
 .wxp-pulse.is-stale {
@@ -684,14 +684,14 @@
     stroke-width: 1.5px;
     stroke-linejoin: round;
     stroke-linecap: round;
-    animation: wxp-fade 0.9s ease-out both;
+    animation: wxp-fade 0.9s ease-in-out both;
 }
 
 .wxp-spark__area {
     fill: currentColor;
     stroke: none;
     opacity: 0.14;
-    animation: wxp-fade 0.9s ease-out both;
+    animation: wxp-fade 0.9s ease-in-out both;
 }
 
 .wxp-spark__now {
@@ -817,11 +817,11 @@
 .wxp-sunarc__done {
     stroke-dasharray: 1;
     filter: drop-shadow(0 0 3px var(--arc));
-    animation: wxp-draw 1.2s ease-out both;
+    animation: wxp-draw 1.2s ease-in-out both;
 }
 
 .wxp-sunarc__fill {
-    animation: wxp-fade 1.2s ease-out both;
+    animation: wxp-fade 1.2s ease-in-out both;
 }
 
 .wxp-sunarc__sun {
@@ -832,7 +832,7 @@
     fill: var(--arc);
     transform-box: fill-box;
     transform-origin: center;
-    animation: wxp-ping 2.4s ease-out infinite;
+    animation: wxp-ping 2.4s ease-in-out infinite;
 }
 
 /* ----- charts ----- */
@@ -842,7 +842,7 @@
 }
 
 .wxp-chart__area {
-    animation: wxp-fade 0.9s 0.25s ease-out both;
+    animation: wxp-fade 0.9s 0.25s ease-in-out both;
 }
 
 .wxp-chart__dot {
@@ -955,14 +955,19 @@
    =================================================== */
 .wxp-dash {
     flex: 1;
-    /* The first row takes whatever height is left. It is sized by the right
-       column (instruments + charts, which have a readable minimum) — NOT by the
-       left column, which scrolls inside itself when the window is short (see
-       .wxp-side). Only a really tiny window makes the whole page scroll. */
-    min-height: auto;
+    /* The dash takes exactly the height left under the header, so the page
+       fits the window. Nothing inside it may force it taller: the first row
+       takes what the bottom row leaves, the bottom row (tables) shrinks with
+       the window (13.5u at most), the charts shrink down to a small plot, and
+       the left column scrolls inside itself (see .wxp-side). The floor below
+       is the only thing that makes the whole page scroll, in a really tiny
+       window. */
+    min-height: calc(34 * var(--u));
     display: grid;
     grid-template-columns: minmax(calc(26 * var(--u)), 32fr) minmax(0, 68fr);
-    grid-template-rows: minmax(0, 1fr) calc(13.5 * var(--u));
+    grid-template-rows:
+        minmax(0, 1fr)
+        clamp(calc(7 * var(--u)), 26%, calc(13.5 * var(--u)));
     gap: calc(0.625 * var(--u));
 }
 
@@ -1232,7 +1237,9 @@
 .wxp-chart__plot {
     position: relative;
     flex: 1;
-    min-height: calc(6 * var(--u));
+    /* small floor: the plot shrinks with the window instead of pushing the
+       page taller (the chart re-measures itself with a ResizeObserver) */
+    min-height: calc(3 * var(--u));
 }
 
 .wxp-chart__svg {
@@ -1717,7 +1724,7 @@
    the animation restarts on every change. */
 .wxp-chart__fade {
     animation-duration: 0.5s;
-    animation-timing-function: ease-out;
+    animation-timing-function: ease-in-out;
     animation-fill-mode: both;
 }
 
@@ -1836,7 +1843,7 @@
 }
 
 .wxp {
-    animation: wxp-page-in 0.4s ease-out;
+    animation: wxp-page-in 0.4s ease-in-out;
 }
 
 .wxp-header,
@@ -1992,65 +1999,20 @@
 }
 
 .wxp-charts > .wxp-card .wxp-chart--intro .wxp-chart__extreme {
-    animation: wxp-fade 0.6s calc(var(--enter-delay, 0ms) + 1000ms) ease-out both;
+    animation: wxp-fade 0.6s calc(var(--enter-delay, 0ms) + 1000ms) ease-in-out both;
 }
 
 /* ===================================================
-   Collapsible header
+   Collapsible header — the shared module CollapsibleHeader (hover toggle)
    =================================================== */
-.wxp-headwrap {
-    display: grid;
-    grid-template-rows: 1fr;
-    transition:
-        grid-template-rows 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
-        margin-bottom 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
-        opacity 0.2s ease-out;
-}
-
-/* the page's row gap goes with it, so a folded header takes no space at all */
-.wxp-headwrap.is-collapsed {
-    grid-template-rows: 0fr;
+/* the slim strip sits in the page's top padding; the page's row gap goes with
+   the folded header, so it takes no space at all */
+.wxp .chdr--collapsed {
     margin-bottom: calc(-0.625 * var(--u));
-    opacity: 0;
 }
 
-/* padding + negative margin: room for the bell badge that pokes out of the
-   header without the clip changing the header's layout size */
-.wxp-headwrap__inner {
-    min-height: 0;
-    overflow: hidden;
-    padding: calc(0.5 * var(--u));
-    margin: calc(-0.5 * var(--u));
-}
-
-/* small tab in the top margin; stays put while the header is folded */
-.wxp-headtoggle {
-    position: absolute;
-    z-index: 20;
-    top: 0;
-    left: 50%;
-    translate: -50% 0;
-    width: calc(2.5 * var(--u));
-    height: calc(0.875 * var(--u));
-    display: grid;
-    place-items: center;
-    padding: 0;
-    background: var(--color-surface);
-    border: var(--hairline) solid var(--color-border);
-    border-top: none;
-    border-radius: 0 0 calc(0.5 * var(--u)) calc(0.5 * var(--u));
-    color: var(--color-text-muted);
-    cursor: pointer;
-    opacity: 0.7;
-    transition:
-        opacity 0.15s,
-        color 0.15s;
-}
-
-.wxp-headtoggle:hover,
-.wxp-headtoggle:focus-visible {
-    opacity: 1;
-    color: var(--color-text);
+.wxp .chdr--collapsed .chdr__toggle {
+    top: calc(-0.75 * var(--u));
 }
 
 /* ===================================================

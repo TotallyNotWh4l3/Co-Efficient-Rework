@@ -725,7 +725,8 @@ export default function TimeSeries({
                         {labels.resetZoom ?? "Reset zoom"}
                     </button>
                 ) : (
-                    <span className="wxp-chart__zoomhint">{labels.zoomHint ?? ""}</span>
+                        <span className="wxp-chart__zoomhint"> </span>
+                        // {labels.zoomHint ?? ""}
                 )}
             </div>
 

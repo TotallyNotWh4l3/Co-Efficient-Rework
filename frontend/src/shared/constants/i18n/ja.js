@@ -85,8 +85,6 @@ export default {
         source: "天気データ：Open-Meteo",
         location: "場所",
         refresh: "更新",
-        collapseHeader: "ヘッダーを隠す",
-        expandHeader: "ヘッダーを表示",
         loading: "天気を読み込み中...",
         error: "天気を取得できませんでした。",
         noData: "天気データを受信できませんでした。",

@@ -8,22 +8,14 @@
 // ===================================================
 
 import { useEffect, useState } from "react";
-import {
-    RefreshCw,
-    MapPin,
-    ArrowUp,
-    ArrowDown,
-    ArrowRight,
-    Bell,
-    ChevronUp,
-    ChevronDown,
-} from "lucide-react";
+import { RefreshCw, MapPin, ArrowUp, ArrowDown, ArrowRight, Bell } from "lucide-react";
 
 import useWeather from "../useWeather";
 import { useLocation } from "../../locations/useLocation";
 import { useSettings } from "../../settings/useSettings";
 import { useLanguage } from "../../settings/useLanguage";
 
+import CollapsibleHeader from "../../../common/ModuleHost/CollapsibleHeader";
 import TimeSeries from "../components/TimeSeries";
 import Compass from "../components/Compass";
 import SunArc from "../components/SunArc";
@@ -76,6 +68,9 @@ const RANGES = [
 // much of it is in view (TimeSeries `viewCount`), so switching ranges pans/zooms
 // smoothly instead of the data outside the new range disappearing.
 const MAX_HOURS = Math.max(...RANGES.map((r) => r.hours));
+
+// Windows shorter than this start with the page header folded away.
+const SHORT_WINDOW_PX = 820;
 
 // How many hours of already-elapsed context to show before "now".
 const LOOKBACK_HOURS = 3;
@@ -214,7 +209,11 @@ export default function WeatherPage() {
     const [expanded, setExpanded] = useState(null);
     const [alertOpen, setAlertOpen] = useState(false);
     // The header can be folded away to give the one-screen layout more height.
-    const [headerOpen, setHeaderOpen] = usePersistentState("wxp-header-open", true);
+    // Short windows start with it folded; after that the user's choice is kept.
+    const [headerOpen, setHeaderOpen] = usePersistentState(
+        "wxp-header-open-v2",
+        window.innerHeight >= SHORT_WINDOW_PX,
+    );
     const U = makeUnits(unitPrefs);
 
     // Resolve a starting location once the list is known. Until then the
@@ -227,109 +226,93 @@ export default function WeatherPage() {
     const { weather, loading, error, refresh } = useWeather(locationId ?? undefined);
 
     const renderHeader = (alertCount = 0) => (
-        <>
-            <button
-                type="button"
-                className="wxp-headtoggle"
-                onClick={() => setHeaderOpen(!headerOpen)}
-                title={headerOpen ? T.collapseHeader : T.expandHeader}
-                aria-label={headerOpen ? T.collapseHeader : T.expandHeader}
-                aria-expanded={headerOpen}
-            >
-                {headerOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            </button>
-            <div className={`wxp-headwrap${headerOpen ? "" : " is-collapsed"}`} inert={!headerOpen}>
-                <div className="wxp-headwrap__inner">
-                    <header className="wxp-header">
-                        <div className="wxp-header__title">
-                            <h2>{T.title}</h2>
-                            <span>{T.source}</span>
-                        </div>
-
-                        <div className="wxp-header__controls">
-                            <label className="wxp-select">
-                                <MapPin size={14} />
-                                <select
-                                    value={locationId ?? weather?.location?.id ?? ""}
-                                    onChange={(e) => setLocationId(e.target.value)}
-                                    aria-label={T.location}
-                                >
-                                    {locationOptions.map((o) => (
-                                        <option key={o.id} value={o.id}>
-                                            {o.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-
-                            <div className="wxp-segmented" role="group">
-                                {RANGES.map((r) => (
-                                    <button
-                                        key={r.id}
-                                        className={rangeId === r.id ? "is-active" : ""}
-                                        onClick={() => setRangeId(r.id)}
-                                    >
-                                        {T.ranges[r.id]}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <div className="wxp-segmented" role="group" aria-label={T.units.title}>
-                                {["metric", "imperial"].map((sys) => (
-                                    <button
-                                        key={sys}
-                                        className={unitPrefs.system === sys ? "is-active" : ""}
-                                        onClick={() =>
-                                            setUnitPrefs({
-                                                system: sys,
-                                                wind: sys === "metric" ? "ms" : "mph",
-                                            })
-                                        }
-                                    >
-                                        {T.units[sys]}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <label className="wxp-select">
-                                <select
-                                    value={unitPrefs.wind}
-                                    onChange={(e) =>
-                                        setUnitPrefs({ ...unitPrefs, wind: e.target.value })
-                                    }
-                                    aria-label={T.units.wind}
-                                >
-                                    {WIND_UNITS.map((w) => (
-                                        <option key={w} value={w}>
-                                            {T.units.windNames[w]}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-
-                            <button
-                                className="wxp-icon-btn wxp-bell"
-                                onClick={() => setAlertOpen(true)}
-                                title={T.alerts.title}
-                                aria-label={T.alerts.title}
-                            >
-                                <Bell size={14} />
-                                {alertCount > 0 && <b className="wxp-bell__badge">{alertCount}</b>}
-                            </button>
-
-                            <button
-                                className="wxp-icon-btn"
-                                onClick={refresh}
-                                title={T.refresh}
-                                aria-label={T.refresh}
-                            >
-                                <RefreshCw size={14} />
-                            </button>
-                        </div>
-                    </header>
+        <CollapsibleHeader collapsed={!headerOpen} onToggle={() => setHeaderOpen(!headerOpen)}>
+            <header className="wxp-header">
+                <div className="wxp-header__title">
+                    <h2>{T.title}</h2>
+                    <span>{T.source}</span>
                 </div>
-            </div>
-        </>
+
+                <div className="wxp-header__controls">
+                    <label className="wxp-select">
+                        <MapPin size={14} />
+                        <select
+                            value={locationId ?? weather?.location?.id ?? ""}
+                            onChange={(e) => setLocationId(e.target.value)}
+                            aria-label={T.location}
+                        >
+                            {locationOptions.map((o) => (
+                                <option key={o.id} value={o.id}>
+                                    {o.label}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+
+                    <div className="wxp-segmented" role="group">
+                        {RANGES.map((r) => (
+                            <button
+                                key={r.id}
+                                className={rangeId === r.id ? "is-active" : ""}
+                                onClick={() => setRangeId(r.id)}
+                            >
+                                {T.ranges[r.id]}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="wxp-segmented" role="group" aria-label={T.units.title}>
+                        {["metric", "imperial"].map((sys) => (
+                            <button
+                                key={sys}
+                                className={unitPrefs.system === sys ? "is-active" : ""}
+                                onClick={() =>
+                                    setUnitPrefs({
+                                        system: sys,
+                                        wind: sys === "metric" ? "ms" : "mph",
+                                    })
+                                }
+                            >
+                                {T.units[sys]}
+                            </button>
+                        ))}
+                    </div>
+
+                    <label className="wxp-select">
+                        <select
+                            value={unitPrefs.wind}
+                            onChange={(e) => setUnitPrefs({ ...unitPrefs, wind: e.target.value })}
+                            aria-label={T.units.wind}
+                        >
+                            {WIND_UNITS.map((w) => (
+                                <option key={w} value={w}>
+                                    {T.units.windNames[w]}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+
+                    <button
+                        className="wxp-icon-btn wxp-bell"
+                        onClick={() => setAlertOpen(true)}
+                        title={T.alerts.title}
+                        aria-label={T.alerts.title}
+                    >
+                        <Bell size={14} />
+                        {alertCount > 0 && <b className="wxp-bell__badge">{alertCount}</b>}
+                    </button>
+
+                    <button
+                        className="wxp-icon-btn"
+                        onClick={refresh}
+                        title={T.refresh}
+                        aria-label={T.refresh}
+                    >
+                        <RefreshCw size={14} />
+                    </button>
+                </div>
+            </header>
+        </CollapsibleHeader>
     );
 
     if (!weather || !weather.current) {
