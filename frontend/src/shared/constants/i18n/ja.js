@@ -206,6 +206,7 @@ export default {
             ],
         },
 
+        celestial: { more: "詳細", less: "閉じる" },
         sun: {
             title: "太陽",
             sunrise: "日の出",

@@ -193,6 +193,7 @@ export default {
                 "Hurricane",
             ],
         },
+        celestial: { more: "More", less: "Less" },
         sun: {
             title: "Sun",
             sunrise: "Sunrise",

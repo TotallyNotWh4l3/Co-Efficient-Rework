@@ -276,7 +276,14 @@
     cursor: help;
 }
 
-.wxp-tile:hover {
+/* a card that opens a detail modal like a tile does */
+.wxp-card--tap {
+    cursor: help;
+}
+
+.wxp-tile:hover,
+.wxp-card--tap:hover,
+.wxp-card--tap:focus-visible {
     border-color: color-mix(in srgb, var(--accent, var(--color-accent)) 55%, transparent);
     box-shadow: 0 0 calc(1 * var(--u))
         color-mix(in srgb, var(--accent, var(--color-accent)) 18%, transparent);
@@ -1530,6 +1537,19 @@
 
 .wxp-modal__chart .wxp-chart {
     height: 100%;
+}
+
+/* ----- sun + moon details modal: compact, not full-width ----- */
+.wxp-celestialpanel {
+    width: min(calc(26 * var(--u)), 100%);
+    max-height: min(80vh, 100%);
+}
+
+.wxp-celestialpanel__sub {
+    margin: 0;
+    font-size: calc(0.75 * var(--u));
+    font-weight: 600;
+    color: var(--color-text-secondary);
 }
 
 /* ----- alert rules list ----- */

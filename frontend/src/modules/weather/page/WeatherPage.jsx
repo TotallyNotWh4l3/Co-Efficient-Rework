@@ -8,7 +8,7 @@
 // ===================================================
 
 import { useEffect, useState } from "react";
-import { RefreshCw, MapPin, ArrowUp, ArrowDown, ArrowRight, Bell } from "lucide-react";
+import { RefreshCw, MapPin, ArrowUp, ArrowDown, ArrowRight, Bell, X } from "lucide-react";
 
 import useWeather from "../useWeather";
 import { useLocation } from "../../locations/useLocation";
@@ -176,9 +176,20 @@ function Tile({
     );
 }
 
-function Card({ title, children, className = "" }) {
+function Card({ title, children, className = "", onOpen }) {
+    // With onOpen the whole card behaves like an instrument tile: click or
+    // Enter/Space opens its detail modal.
+    const tap = onOpen
+        ? {
+              role: "button",
+              tabIndex: 0,
+              "aria-haspopup": "dialog",
+              onClick: onOpen,
+              onKeyDown: (e) => (e.key === "Enter" || e.key === " ") && onOpen(),
+          }
+        : null;
     return (
-        <section className={`wxp-card ${className}`}>
+        <section className={`wxp-card ${className}${onOpen ? " wxp-card--tap" : ""}`} {...tap}>
             <h3 className="wxp-card__title">{title}</h3>
             {children}
         </section>
@@ -208,6 +219,13 @@ export default function WeatherPage() {
     const [rules, setRules] = usePersistentState("wxp-alert-rules", DEFAULT_RULES);
     const [expanded, setExpanded] = useState(null);
     const [alertOpen, setAlertOpen] = useState(false);
+    const [celestialOpen, setCelestialOpen] = useState(false);
+    useEffect(() => {
+        if (!celestialOpen) return undefined;
+        const onKey = (e) => e.key === "Escape" && setCelestialOpen(false);
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [celestialOpen]);
     // The header can be folded away to give the one-screen layout more height.
     // Short windows start with it folded; after that the user's choice is kept.
     const [headerOpen, setHeaderOpen] = usePersistentState(
@@ -689,6 +707,134 @@ export default function WeatherPage() {
                     onClose={() => setExpanded(null)}
                 />
             )}
+            {celestialOpen && (
+                <div
+                    className="wxp-modal"
+                    onClick={() => setCelestialOpen(false)}
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    <div
+                        className="wxp-modal__box wxp-celestialpanel"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <header className="wxp-modal__head">
+                            <h3>{`${T.sun.title} / ${T.moon.title}`}</h3>
+                            <button
+                                className="wxp-icon-btn"
+                                onClick={() => setCelestialOpen(false)}
+                                aria-label={T.detail.close}
+                            >
+                                <X size={14} />
+                            </button>
+                        </header>
+                        <div className="wxp-modal__now">
+                            {formatDuration(daylightSec)}
+                            <span>{T.sun.daylight}</span>
+                        </div>
+                        <p className="wxp-modal__hint">
+                            {[
+                                moonKey ? T.moon.names[moonKey] : null,
+                                illum === null ? null : `${fmt(illum * 100)}%`,
+                            ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                        </p>
+                        <h4 className="wxp-celestialpanel__sub">{T.sun.title}</h4>
+                        <dl className="wxp-kv">
+                            <div>
+                                <dt>
+                                    {T.sun.sunrise} / {T.sun.sunset}
+                                </dt>
+                                <dd>
+                                    {hhmm(today.sunrise)} / {hhmm(today.sunset)}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>{T.sun.solarNoon}</dt>
+                                <dd>{solarNoon}</dd>
+                            </div>
+                            <div>
+                                <dt>{T.sun.sunshine}</dt>
+                                <dd>{formatDuration(today.sunshineDuration)}</dd>
+                            </div>
+                            <div>
+                                <dt>{T.sun.azimuth}</dt>
+                                <dd>
+                                    {sun
+                                        ? `${fmt(sun.azimuth, 1)}° ${toCardinal(sun.azimuth)}`
+                                        : "--"}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>{T.sun.civil}</dt>
+                                <dd>
+                                    {hm(civil.rising)} / {hm(civil.falling)}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>{T.sun.golden}</dt>
+                                <dd>
+                                    {hm(golden.rising)} / {hm(golden.falling)}
+                                </dd>
+                            </div>
+                        </dl>
+                        <h4 className="wxp-celestialpanel__sub">{T.moon.title}</h4>
+                        <dl className="wxp-kv">
+                            <div>
+                                <dt>
+                                    {T.moon.moonrise} / {T.moon.moonset}
+                                </dt>
+                                <dd>
+                                    {moon.riseKnown
+                                        ? `${hhmm(moon.rise)}${dayShift(moon.rise, cur.time)}`
+                                        : "--:--"}{" "}
+                                    / {hhmm(moon.set)}
+                                    {dayShift(moon.set, cur.time)}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>{T.moon.age}</dt>
+                                <dd>
+                                    {Number.isFinite(today.moonPhase)
+                                        ? `${fmt(today.moonPhase * SYNODIC_DAYS, 1)} ${T.moon.days}`
+                                        : "--"}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>{T.sun.altitude}</dt>
+                                <dd>{moonPos ? `${fmt(moonPos.altitude, 1)}°` : "--"}</dd>
+                            </div>
+                            <div>
+                                <dt>{T.sun.azimuth}</dt>
+                                <dd>
+                                    {moonPos
+                                        ? `${fmt(moonPos.azimuth, 1)}° ${toCardinal(moonPos.azimuth)}`
+                                        : "--"}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>{T.moon.visible}</dt>
+                                <dd>
+                                    {moon.riseKnown
+                                        ? formatDuration(
+                                              (localMs(moon.set) - localMs(moon.rise)) / 1000,
+                                          )
+                                        : "--"}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>{T.moon.nextFull}</dt>
+                                <dd>
+                                    {daysToFull === null
+                                        ? "--"
+                                        : `${fmt(daysToFull, 1)} ${T.moon.days}`}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            )}
             {alertOpen && (
                 <AlertPanel
                     rules={rules}
@@ -894,7 +1040,11 @@ export default function WeatherPage() {
                     </div>
 
                     {/* sun (+ moon while it is above the horizon) */}
-                    <Card title={`${T.sun.title} / ${T.moon.title}`} className="wxp-card--fill">
+                    <Card
+                        title={`${T.sun.title} / ${T.moon.title}`}
+                        className="wxp-card--grow"
+                        onOpen={() => setCelestialOpen(true)}
+                    >
                         <div className="wxp-celestial has-moon">
                             <div className="wxp-body">
                                 <SunArc
@@ -903,18 +1053,6 @@ export default function WeatherPage() {
                                     now={cur.time}
                                 />
                                 <dl className="wxp-kv">
-                                    <div>
-                                        <dt>
-                                            {T.sun.sunrise} / {T.sun.sunset}
-                                        </dt>
-                                        <dd>
-                                            {hhmm(today.sunrise)} / {hhmm(today.sunset)}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt>{T.sun.solarNoon}</dt>
-                                        <dd>{solarNoon}</dd>
-                                    </div>
                                     <div>
                                         <dt>{T.sun.daylight}</dt>
                                         <dd>
@@ -927,10 +1065,6 @@ export default function WeatherPage() {
                                         </dd>
                                     </div>
                                     <div>
-                                        <dt>{T.sun.sunshine}</dt>
-                                        <dd>{formatDuration(today.sunshineDuration)}</dd>
-                                    </div>
-                                    <div>
                                         <dt>{T.sun.altitude}</dt>
                                         <dd>
                                             {sun ? `${fmt(sun.altitude, 1)}°` : "--"}{" "}
@@ -939,26 +1073,6 @@ export default function WeatherPage() {
                                                     ? `${T.sun.max} ${fmt(noonAltitude(lat, sun.declination), 1)}°`
                                                     : ""}
                                             </em>
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt>{T.sun.azimuth}</dt>
-                                        <dd>
-                                            {sun
-                                                ? `${fmt(sun.azimuth, 1)}° ${toCardinal(sun.azimuth)}`
-                                                : "--"}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt>{T.sun.civil}</dt>
-                                        <dd>
-                                            {hm(civil.rising)} / {hm(civil.falling)}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt>{T.sun.golden}</dt>
-                                        <dd>
-                                            {hm(golden.rising)} / {hm(golden.falling)}
                                         </dd>
                                     </div>
                                 </dl>
@@ -979,63 +1093,12 @@ export default function WeatherPage() {
                                 </div>
                                 <dl className="wxp-kv">
                                     <div>
-                                        <dt>
-                                            {T.moon.moonrise} / {T.moon.moonset}
-                                        </dt>
-                                        <dd>
-                                            {moon.riseKnown
-                                                ? `${hhmm(moon.rise)}${dayShift(moon.rise, cur.time)}`
-                                                : "--:--"}{" "}
-                                            / {hhmm(moon.set)}
-                                            {dayShift(moon.set, cur.time)}
-                                        </dd>
-                                    </div>
-                                    <div>
                                         <dt>{T.moon.phase}</dt>
                                         <dd>{moonKey ? T.moon.names[moonKey] : "--"}</dd>
                                     </div>
                                     <div>
                                         <dt>{T.moon.illumination}</dt>
                                         <dd>{illum === null ? "--" : `${fmt(illum * 100)}%`}</dd>
-                                    </div>
-                                    <div>
-                                        <dt>{T.moon.age}</dt>
-                                        <dd>
-                                            {Number.isFinite(today.moonPhase)
-                                                ? `${fmt(today.moonPhase * SYNODIC_DAYS, 1)} ${T.moon.days}`
-                                                : "--"}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt>{T.sun.altitude}</dt>
-                                        <dd>{moonPos ? `${fmt(moonPos.altitude, 1)}°` : "--"}</dd>
-                                    </div>
-                                    <div>
-                                        <dt>{T.sun.azimuth}</dt>
-                                        <dd>
-                                            {moonPos
-                                                ? `${fmt(moonPos.azimuth, 1)}° ${toCardinal(moonPos.azimuth)}`
-                                                : "--"}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt>{T.moon.visible}</dt>
-                                        <dd>
-                                            {moon.riseKnown
-                                                ? formatDuration(
-                                                      (localMs(moon.set) - localMs(moon.rise)) /
-                                                          1000,
-                                                  )
-                                                : "--"}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt>{T.moon.nextFull}</dt>
-                                        <dd>
-                                            {daysToFull === null
-                                                ? "--"
-                                                : `${fmt(daysToFull, 1)} ${T.moon.days}`}
-                                        </dd>
                                     </div>
                                 </dl>
                             </div>
