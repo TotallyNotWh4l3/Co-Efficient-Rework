@@ -512,6 +512,90 @@
     font-size: calc(0.6875 * var(--u));
 }
 
+/* tile colour: the picker and its reset button */
+.wxp-mpanel__colorwrap {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(0.5 * var(--u));
+}
+
+.wxp-mpanel__color {
+    width: calc(3 * var(--u));
+    height: calc(1.75 * var(--u));
+    padding: 0;
+    background: none;
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.375 * var(--u));
+    cursor: pointer;
+}
+
+/* graph style section (page-wide panel and per-module override) */
+.wxp-mpanel__sect {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.5 * var(--u));
+    padding-top: calc(0.75 * var(--u));
+    border-top: var(--hairline) solid var(--color-border);
+}
+
+.wxp-mpanel__sect h5 {
+    font-family: var(--wx-mono);
+    font-size: calc(0.75 * var(--u));
+    font-weight: 700;
+}
+
+.wxp-mpanel__sliders {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.5 * var(--u));
+}
+
+/* label | slider | value | "Global" tag or reset button */
+.wxp-mpanel__slider {
+    display: grid;
+    grid-template-columns:
+        calc(5.5 * var(--u)) minmax(0, 1fr) calc(2.75 * var(--u))
+        calc(3.25 * var(--u));
+    align-items: center;
+    gap: calc(0.5 * var(--u));
+}
+
+/* the page-wide panel has nothing to reset per line */
+.wxp-mpanel__slider--global {
+    grid-template-columns: calc(5.5 * var(--u)) minmax(0, 1fr) calc(2.75 * var(--u));
+}
+
+.wxp-mpanel__slider > span:first-child {
+    overflow: hidden;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.wxp-mpanel__slider input[type="range"] {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    accent-color: var(--color-accent);
+}
+
+.wxp-mpanel__slider b {
+    font-family: var(--wx-mono);
+    font-weight: 600;
+    text-align: right;
+}
+
+.wxp-mpanel__slider .wxp-icon-btn {
+    justify-self: center;
+}
+
+.wxp-mpanel__tag {
+    font-size: calc(0.625 * var(--u));
+    font-style: normal;
+    color: var(--color-text-disabled);
+    text-align: center;
+}
+
 .wxp-select select option:disabled {
     color: var(--color-text-disabled);
 }

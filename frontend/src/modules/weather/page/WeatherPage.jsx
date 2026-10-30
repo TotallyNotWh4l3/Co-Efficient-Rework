@@ -7,8 +7,8 @@
 //       データは既存の useWeather / GET /weather をそのまま利用する。
 // ===================================================
 
-import { useCallback, useEffect, useState } from "react";
-import { RefreshCw, MapPin, Bell, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { RefreshCw, MapPin, Bell, SlidersHorizontal, X } from "lucide-react";
 
 import useWeather from "../useWeather";
 import { useLocation } from "../../locations/useLocation";
@@ -33,6 +33,9 @@ import useMediaQuery from "../layout/useMediaQuery";
 import WeatherGrid from "../layout/WeatherGrid";
 import WeatherEditControls from "../layout/WeatherEditControls";
 import ModuleSettingsPanel from "../layout/ModuleSettingsPanel";
+import GraphSettingsPanel, { GRAPH_TRIGGER_ATTR } from "../layout/GraphSettingsPanel";
+import { resolveGraph, sanitizeGraph } from "../utils/graphStyle";
+import { TILE_SUB_DEFAULT, TILE_SUB_NONE } from "../metrics/metricDefs";
 import { makeUnits, conv, WIND_UNITS, DEFAULT_UNITS } from "../utils/units";
 import { ALERT_METRICS, DEFAULT_RULES, evaluateAlerts } from "../utils/alerts";
 import {
@@ -144,6 +147,19 @@ export default function WeatherPage() {
         setEditing(!editing);
         setPanel(null);
     };
+    // Graph line style (width / smoothness / area fill) for every chart on the page,
+    // saved per user in settings.preferences.weatherGraph. A tile or card can override
+    // single values in its own settings (config.graph); see resolveGraph.
+    const storedGraph = settings?.preferences?.weatherGraph;
+    const graphGlobal = useMemo(() => sanitizeGraph(storedGraph), [storedGraph]);
+    const setGraphGlobal = useCallback(
+        (value) => updatePreference("weatherGraph", value),
+        [updatePreference],
+    );
+    const [graphPanel, setGraphPanel] = useState(null); // DOMRect of the header button
+    const closeGraphPanel = useCallback(() => setGraphPanel(null), []);
+
+    // { id, graph } — the tile whose detail chart is open, and its resolved line style
     const [expanded, setExpanded] = useState(null);
     const [alertOpen, setAlertOpen] = useState(false);
     const [celestialOpen, setCelestialOpen] = useState(false);
@@ -258,6 +274,21 @@ export default function WeatherPage() {
                         aria-label={T.refresh}
                     >
                         <RefreshCw size={14} />
+                    </button>
+
+                    <button
+                        {...{ [GRAPH_TRIGGER_ATTR]: "" }}
+                        className="wxp-icon-btn"
+                        onClick={(e) =>
+                            setGraphPanel(
+                                graphPanel ? null : e.currentTarget.getBoundingClientRect(),
+                            )
+                        }
+                        aria-expanded={Boolean(graphPanel)}
+                        title={T.graph.open}
+                        aria-label={T.graph.open}
+                    >
+                        <SlidersHorizontal size={14} />
                     </button>
 
                     {withEdit && (
@@ -457,6 +488,9 @@ export default function WeatherPage() {
                     nowIndex={chartNow}
                     area
                     dot={false}
+                    lineWidth={graphGlobal.lineWidth}
+                    smoothness={graphGlobal.smoothness}
+                    fillOpacity={graphGlobal.fillOpacity}
                 />
                 <div className="wxp-hero__main">
                     <div className="wxp-hero__loc">{locName}</div>
@@ -802,16 +836,34 @@ export default function WeatherPage() {
 
     const renderModule = (item) => {
         switch (item.type) {
-            case "tile":
+            case "tile": {
+                const graph = resolveGraph(graphGlobal, item.config.graph);
+                const sub = item.config.sub ?? TILE_SUB_DEFAULT;
                 return (
                     <TileModule
                         metric={metrics[item.config.metric]}
                         display={item.config.display}
-                        onOpen={setExpanded}
+                        sub={sub}
+                        subMetric={
+                            sub === TILE_SUB_DEFAULT || sub === TILE_SUB_NONE
+                                ? null
+                                : (metrics[sub] ?? null)
+                        }
+                        color={item.config.color}
+                        graph={graph}
+                        onOpen={(id) => setExpanded({ id, graph })}
                     />
                 );
+            }
             case "card":
-                return <CardModule config={item.config} metrics={metrics} chart={chart} />;
+                return (
+                    <CardModule
+                        config={item.config}
+                        metrics={metrics}
+                        chart={chart}
+                        graph={resolveGraph(graphGlobal, item.config.graph)}
+                    />
+                );
             default:
                 return fixed[item.type] ?? null;
         }
@@ -835,10 +887,11 @@ export default function WeatherPage() {
         <div className="wxp">
             {renderHeader(alerts.length, true)}
 
-            {expanded && metrics[expanded] && (
+            {expanded && metrics[expanded.id] && (
                 <TileDetail
-                    detail={metrics[expanded].detail}
+                    detail={metrics[expanded.id].detail}
                     T={T.detail}
+                    graph={expanded.graph}
                     onClose={() => setExpanded(null)}
                 />
             )}
@@ -993,8 +1046,19 @@ export default function WeatherPage() {
                     item={panelItem}
                     anchor={panel.anchor}
                     T={T}
+                    graphGlobal={graphGlobal}
                     onChange={(config) => configure(panelItem.id, config)}
                     onClose={() => setPanel(null)}
+                />
+            )}
+
+            {graphPanel && (
+                <GraphSettingsPanel
+                    anchor={graphPanel}
+                    T={T}
+                    value={graphGlobal}
+                    onChange={setGraphGlobal}
+                    onClose={closeGraphPanel}
                 />
             )}
         </div>

@@ -7,10 +7,13 @@
 //       ・それ以外のモジュール: まだ設定項目なし（プレースホルダー表示）
 //       変更はその場でページに反映される（保存ボタンなし）。ページを見ながら調整できるよう、
 //       ページ全体を覆わず、モジュールの隣に置く。
+//       2026/10/30: ・tile : サブ表示の指標（既定 / なし / 別の指標）とグラフの色（リセット可）
+//                   ・tile / card : グラフ線スタイル（太さ・なめらかさ・塗り）を、ページ全体の
+//                     設定とは別に上書きできる（上書きした項目だけ個別にリセット可）
 // ===================================================
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, RotateCcw, X } from "lucide-react";
 
 import {
     CARD_STYLES,
@@ -18,11 +21,61 @@ import {
     METRIC_DEFS,
     METRIC_IDS,
     TILE_DISPLAYS,
+    TILE_SUB_DEFAULT,
+    TILE_SUB_NONE,
     cardAxesFit,
 } from "../metrics/metricDefs";
+import { isHexColor, resolveGraph } from "../utils/graphStyle";
+import GraphFields from "./GraphFields";
 
 const MARGIN = 8;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+// <input type="color"> needs a "#rrggbb" value; a metric whose default colour is a
+// theme variable (not a hex) starts the picker on this neutral grey instead.
+const PICKER_FALLBACK = "#94a3b8";
+
+const without = (obj, key) => Object.fromEntries(Object.entries(obj).filter(([k]) => k !== key));
+
+/**
+ * The line-style overrides of one module. Values it does not override follow the
+ * page-wide settings; each overridden one can be reset on its own, or all at once.
+ */
+function GraphSection({ config, graphGlobal, T, onChange }) {
+    const G = T.graph;
+    const overrides = config.graph ?? {};
+    const hasOverrides = Object.keys(overrides).length > 0;
+
+    const set = (key, value) => onChange({ ...config, graph: { ...overrides, [key]: value } });
+    const reset = (key) => {
+        const next = without(overrides, key);
+        const stillOverriding = Object.keys(next).length > 0;
+        onChange(stillOverriding ? { ...config, graph: next } : without(config, "graph"));
+    };
+
+    return (
+        <div className="wxp-mpanel__sect">
+            <h5>{G.title}</h5>
+            <p className="wxp-mpanel__hint">{G.moduleHint}</p>
+            <GraphFields
+                T={T}
+                value={resolveGraph(graphGlobal, overrides)}
+                overridden={overrides}
+                onChange={set}
+                onReset={reset}
+            />
+            <button
+                type="button"
+                className="wxp-retry wxp-mpanel__add"
+                disabled={!hasOverrides}
+                onClick={() => onChange(without(config, "graph"))}
+            >
+                <RotateCcw size={12} />
+                {G.useGlobal}
+            </button>
+        </div>
+    );
+}
 
 function Segmented({ value, options, label, onChange, isDisabled = () => false }) {
     return (
@@ -42,8 +95,10 @@ function Segmented({ value, options, label, onChange, isDisabled = () => false }
     );
 }
 
-function TileForm({ config, T, onChange }) {
+function TileForm({ config, T, graphGlobal, onChange }) {
     const S = T.edit.settings;
+    const def = METRIC_DEFS[config.metric];
+    const defaultColor = [def.accent, def.color].find(isHexColor) ?? PICKER_FALLBACK;
     return (
         <>
             <label className="wxp-mpanel__field">
@@ -71,11 +126,54 @@ function TileForm({ config, T, onChange }) {
                     onChange={(display) => onChange({ ...config, display })}
                 />
             </div>
+
+            <label className="wxp-mpanel__field">
+                <span>{S.sub}</span>
+                <span className="wxp-select">
+                    <select
+                        value={config.sub ?? TILE_SUB_DEFAULT}
+                        onChange={(e) => onChange({ ...config, sub: e.target.value })}
+                    >
+                        <option value={TILE_SUB_DEFAULT}>{S.subDefault}</option>
+                        <option value={TILE_SUB_NONE}>{S.subNone}</option>
+                        {METRIC_IDS.map((id) => (
+                            <option key={id} value={id}>
+                                {T.metrics[id]}
+                            </option>
+                        ))}
+                    </select>
+                </span>
+            </label>
+
+            <div className="wxp-mpanel__field">
+                <span>{S.color}</span>
+                <span className="wxp-mpanel__colorwrap">
+                    <input
+                        type="color"
+                        className="wxp-mpanel__color"
+                        value={config.color ?? defaultColor}
+                        aria-label={S.color}
+                        onChange={(e) => onChange({ ...config, color: e.target.value })}
+                    />
+                    <button
+                        type="button"
+                        className="wxp-icon-btn"
+                        title={S.colorReset}
+                        aria-label={S.colorReset}
+                        disabled={!config.color}
+                        onClick={() => onChange(without(config, "color"))}
+                    >
+                        <RotateCcw size={12} />
+                    </button>
+                </span>
+            </div>
+
+            <GraphSection config={config} graphGlobal={graphGlobal} T={T} onChange={onChange} />
         </>
     );
 }
 
-function CardForm({ config, T, onChange }) {
+function CardForm({ config, T, graphGlobal, onChange }) {
     const S = T.edit.settings;
     const rows = config.metrics;
     const [title, setTitle] = useState(config.title ?? "");
@@ -168,6 +266,8 @@ function CardForm({ config, T, onChange }) {
                 </button>
                 <p className="wxp-mpanel__hint">{S.axisHint}</p>
             </div>
+
+            <GraphSection config={config} graphGlobal={graphGlobal} T={T} onChange={onChange} />
         </>
     );
 }
@@ -176,10 +276,11 @@ function CardForm({ config, T, onChange }) {
  * @param {object} item — the module being configured
  * @param {DOMRect} anchor — its frame, where the panel is placed next to
  * @param {object} T — lang.weatherPage
+ * @param {object} graphGlobal — the page-wide graph style (what a module follows until it overrides)
  * @param {(config:object) => void} onChange
  * @param {() => void} onClose
  */
-export default function ModuleSettingsPanel({ item, anchor, T, onChange, onClose }) {
+export default function ModuleSettingsPanel({ item, anchor, T, graphGlobal, onChange, onClose }) {
     const ref = useRef(null);
     const [pos, setPos] = useState(null);
 
@@ -239,10 +340,23 @@ export default function ModuleSettingsPanel({ item, anchor, T, onChange, onClose
                 </button>
             </header>
 
-            {item.type === "tile" && <TileForm config={item.config} T={T} onChange={onChange} />}
+            {item.type === "tile" && (
+                <TileForm
+                    config={item.config}
+                    T={T}
+                    graphGlobal={graphGlobal}
+                    onChange={onChange}
+                />
+            )}
             {item.type === "card" && (
                 // keyed by module so switching modules resets the title field
-                <CardForm key={item.id} config={item.config} T={T} onChange={onChange} />
+                <CardForm
+                    key={item.id}
+                    config={item.config}
+                    T={T}
+                    graphGlobal={graphGlobal}
+                    onChange={onChange}
+                />
             )}
             {item.type !== "tile" && item.type !== "card" && (
                 <p className="wxp-mpanel__soon">{S.soon}</p>

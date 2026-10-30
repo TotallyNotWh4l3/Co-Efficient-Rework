@@ -15,9 +15,12 @@ import {
     METRIC_DEFS,
     METRIC_IDS,
     TILE_DISPLAYS,
+    TILE_SUB_DEFAULT,
+    TILE_SUB_NONE,
     cardAxesFit,
     isMetricId,
 } from "../metrics/metricDefs";
+import { isHexColor, sanitizeGraphOverride } from "../utils/graphStyle";
 
 export const LAYOUT_VERSION = 1;
 export const GRID = { columns: 18, rows: 18 };
@@ -131,7 +134,7 @@ export function defaultConfig(type, items = []) {
     if (type === "tile") {
         const used = new Set(items.filter((i) => i.type === "tile").map((i) => i.config.metric));
         const metric = METRIC_IDS.find((id) => !used.has(id)) ?? "temperature";
-        return { metric, display: METRIC_DEFS[metric].display };
+        return { metric, display: METRIC_DEFS[metric].display, sub: TILE_SUB_DEFAULT };
     }
     if (type === "card") {
         const used = new Set(
@@ -150,7 +153,17 @@ function sanitizeConfig(type, raw) {
     if (type === "tile") {
         const metric = isMetricId(c.metric) ? c.metric : "temperature";
         const display = TILE_DISPLAYS.includes(c.display) ? c.display : METRIC_DEFS[metric].display;
-        return { metric, display };
+        const sub = c.sub === TILE_SUB_NONE || isMetricId(c.sub) ? c.sub : TILE_SUB_DEFAULT;
+        // Optional overrides are only kept when set: `color` replaces the graph's
+        // default colour, `graph` holds the line-style keys this tile overrides.
+        const graph = sanitizeGraphOverride(c.graph);
+        return {
+            metric,
+            display,
+            sub,
+            ...(isHexColor(c.color) ? { color: c.color } : {}),
+            ...(graph ? { graph } : {}),
+        };
     }
     if (type === "card") {
         const rows = [];
@@ -166,7 +179,8 @@ function sanitizeConfig(type, raw) {
         if (rows.length === 0)
             rows.push({ id: "temperature", style: METRIC_DEFS.temperature.style });
         const title = typeof c.title === "string" ? c.title.trim().slice(0, 40) : "";
-        return { title: title || null, metrics: rows };
+        const graph = sanitizeGraphOverride(c.graph);
+        return { title: title || null, metrics: rows, ...(graph ? { graph } : {}) };
     }
     return {};
 }

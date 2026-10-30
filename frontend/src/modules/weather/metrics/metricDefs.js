@@ -7,6 +7,11 @@
 // ===================================================
 
 export const TILE_DISPLAYS = ["graph", "gauge"];
+
+// A tile's secondary line (the small text under its value): the metric's own
+// text, nothing, or the current value of any other metric (its id).
+export const TILE_SUB_DEFAULT = "default";
+export const TILE_SUB_NONE = "none";
 export const CARD_STYLES = ["line", "area", "bar", "gauge"];
 
 // A card draws on two Y axes at most (left / right), so its non-gauge metrics

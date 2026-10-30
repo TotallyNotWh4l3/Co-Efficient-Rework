@@ -332,7 +332,26 @@ export default {
                 styles: { line: "折れ線", area: "面", bar: "棒", gauge: "ゲージ" },
                 axisHint:
                     "チャートに表示できる単位は同時に2種類までです（左軸・右軸）。ゲージには制限がありません。",
+                sub: "小さい文字",
+                subDefault: "標準",
+                subNone: "なし",
+                color: "グラフの色",
+                colorReset: "標準の色に戻す",
             },
+        },
+        graph: {
+            title: "グラフのスタイル",
+            open: "グラフの設定",
+            lineWidth: "線の太さ",
+            smoothness: "なめらかさ",
+            fillOpacity: "塗りの濃さ",
+            pageHint:
+                "このページのすべてのグラフに適用されます。タイルとチャートカードは、編集モードで個別に変更できます。",
+            moduleHint: "ここで値を変えるまでは、ページ全体のスタイルに従います。",
+            inherited: "全体",
+            resetOne: "全体の値に戻す",
+            useGlobal: "全体の設定に戻す",
+            resetAll: "初期値に戻す",
         },
         units: {
             title: "単位",

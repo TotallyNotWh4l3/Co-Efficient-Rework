@@ -312,7 +312,26 @@ export default {
                 styles: { line: "Line", area: "Area", bar: "Bar", gauge: "Gauge" },
                 axisHint:
                     "Charts can show two units at once (left / right axis). Gauges have no limit.",
+                sub: "Small text",
+                subDefault: "Default",
+                subNone: "None",
+                color: "Graph color",
+                colorReset: "Reset to the default color",
             },
+        },
+        graph: {
+            title: "Graph style",
+            open: "Graph settings",
+            lineWidth: "Line width",
+            smoothness: "Smoothness",
+            fillOpacity: "Area fill",
+            pageHint:
+                "Applies to every graph on this page. Tiles and chart cards can override it in edit mode.",
+            moduleHint: "Follows the page-wide graph style until you change a value here.",
+            inherited: "Global",
+            resetOne: "Use the global value",
+            useGlobal: "Use global settings",
+            resetAll: "Reset to defaults",
         },
         units: {
             title: "Units",

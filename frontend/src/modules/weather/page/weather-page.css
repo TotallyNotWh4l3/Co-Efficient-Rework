@@ -687,7 +687,8 @@
 .wxp-spark__area {
     fill: currentColor;
     stroke: none;
-    opacity: 0.14;
+    /* --spark-fill is the user's "area fill" graph setting (1 = this default look) */
+    opacity: calc(0.14 * var(--spark-fill, 1));
     animation: wxp-fade 0.9s ease-in-out both;
 }
 
@@ -707,7 +708,8 @@
 .wxp-tile__spark {
     margin-top: auto;
     padding-top: calc(0.25 * var(--u));
-    color: var(--accent, var(--color-text-muted));
+    /* --graph-color is the tile's own colour override; unset = the metric's colour */
+    color: var(--graph-color, var(--accent, var(--color-text-muted)));
 }
 
 .wxp-hero__spark {
@@ -723,7 +725,7 @@
 }
 
 .wxp-hero__spark .wxp-spark__area {
-    opacity: 0.22;
+    opacity: calc(0.22 * var(--spark-fill, 1));
 }
 
 /* ----- tile LED + tick-mark gauge ----- */
@@ -767,10 +769,14 @@
     border-radius: inherit;
     background: linear-gradient(
         90deg,
-        color-mix(in srgb, var(--accent, var(--color-accent)) 45%, transparent),
-        var(--accent, var(--color-accent))
+        color-mix(
+            in srgb,
+            var(--graph-color, var(--accent, var(--color-accent))) 45%,
+            transparent
+        ),
+        var(--graph-color, var(--accent, var(--color-accent)))
     );
-    box-shadow: 0 0 calc(0.5 * var(--u)) var(--accent, var(--color-accent));
+    box-shadow: 0 0 calc(0.5 * var(--u)) var(--graph-color, var(--accent, var(--color-accent)));
     animation: wxp-fill 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 

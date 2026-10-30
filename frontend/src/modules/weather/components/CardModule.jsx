@@ -24,8 +24,9 @@ function sideDomain(rows) {
  * @param {{title:string|null, metrics:{id:string, style:string}[]}} config
  * @param {Record<string, object>} metrics — buildMetrics().metrics
  * @param {object} chart — buildMetrics().chart (times, viewCount, nowIndex, ...)
+ * @param {{lineWidth:number, smoothness:number, fillOpacity:number}} [graph] — line style
  */
-export default function CardModule({ config, metrics, chart }) {
+export default function CardModule({ config, metrics, chart, graph }) {
     const rows = config.metrics
         .map((r) => ({ m: metrics[r.id], style: r.style }))
         .filter((r) => r.m);
@@ -68,6 +69,7 @@ export default function CardModule({ config, metrics, chart }) {
                     leftDomain={sideDomain(plotted.filter((r) => !onRight(r)))}
                     rightDomain={sideDomain(plotted.filter(onRight))}
                     series={series}
+                    graph={graph}
                 />
             )}
             {gauges.length > 0 && (

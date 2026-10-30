@@ -13,8 +13,10 @@ import CountUp from "./CountUp";
 
 /**
  * @param {{title, value, unit, hint, series, times, nowIndex, domain?, digits?}} detail
+ * @param {{lineWidth:number, smoothness:number, fillOpacity:number}} [graph] — line style
+ *   of the tile that opened it
  */
-export default function TileDetail({ detail, T, onClose }) {
+export default function TileDetail({ detail, T, graph, onClose }) {
     useEffect(() => {
         const onKey = (e) => e.key === "Escape" && onClose();
         window.addEventListener("keydown", onKey);
@@ -70,6 +72,7 @@ export default function TileDetail({ detail, T, onClose }) {
                         rightDomain={detail.rightDomain}
                         series={detail.series}
                         labels={T.chart}
+                        graph={graph}
                     />
                 </div>
             </div>

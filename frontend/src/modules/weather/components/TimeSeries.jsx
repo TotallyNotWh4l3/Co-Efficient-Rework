@@ -12,9 +12,14 @@
 //                   ・範囲変更（7日→48時間など）やドラッグズームで、表示範囲外の
 //                     データを消さずに全データを描画したままビューポートを滑らかに
 //                     アニメーションさせる（X範囲・Y軸の両方をイージング）
+//       2026/10/30: 線の太さ・なめらかさ・塗りの濃さを `graph` prop で変えられるようにした
+//                   （パス生成は utils/smoothPath.js へ移動）。
 // ===================================================
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+
+import { GRAPH_DEFAULTS } from "../utils/graphStyle";
+import { areaPath, linePath } from "../utils/smoothPath";
 
 const DEFAULT_W = 800;
 const DEFAULT_H = 220;
@@ -79,41 +84,6 @@ function buildScale(seriesOnAxis, fixed) {
     return niceScale(min, max);
 }
 
-function pathFor(values, xAt, yAt) {
-    let d = "";
-    let pen = false;
-    values.forEach((v, i) => {
-        if (!Number.isFinite(v)) {
-            pen = false;
-            return;
-        }
-        d += `${pen ? "L" : "M"}${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`;
-        pen = true;
-    });
-    return d;
-}
-
-function areaFor(values, xAt, yAt, baseY) {
-    let d = "";
-    let run = [];
-    const flush = () => {
-        if (run.length > 1) {
-            d += `M${xAt(run[0]).toFixed(1)},${baseY}`;
-            run.forEach((i) => {
-                d += `L${xAt(i).toFixed(1)},${yAt(values[i]).toFixed(1)}`;
-            });
-            d += `L${xAt(run[run.length - 1]).toFixed(1)},${baseY}Z`;
-        }
-        run = [];
-    };
-    values.forEach((v, i) => {
-        if (Number.isFinite(v)) run.push(i);
-        else flush();
-    });
-    flush();
-    return d;
-}
-
 function pickStride(n, innerW) {
     const labels = Math.max(3, Math.floor(innerW / 44));
     const target = n / labels;
@@ -132,6 +102,8 @@ function pickStride(n, innerW) {
  *   stays mounted just outside the plot, so changing `viewCount` pans/zooms the
  *   viewport smoothly instead of the extra data vanishing.
  * @param {[number, number]} [leftDomain] / [rightDomain] — fixed axis ranges
+ * @param {{lineWidth:number, smoothness:number, fillOpacity:number}} [graph] — line
+ *   style (see utils/graphStyle.js); the default is the original look
  */
 export default function TimeSeries({
     times,
@@ -142,6 +114,7 @@ export default function TimeSeries({
     leftDomain,
     rightDomain,
     labels = {},
+    graph = GRAPH_DEFAULTS,
 }) {
     const uid = useId().replace(/:/g, "");
     const svgRef = useRef(null);
@@ -392,7 +365,10 @@ export default function TimeSeries({
                             >
                                 <stop
                                     offset="0%"
-                                    style={{ stopColor: s.color, stopOpacity: 0.34 }}
+                                    style={{
+                                        stopColor: s.color,
+                                        stopOpacity: Math.min(1, 0.34 * graph.fillOpacity),
+                                    }}
                                 />
                                 <stop
                                     offset="100%"
@@ -536,7 +512,13 @@ export default function TimeSeries({
                                         key={`a${s.key}`}
                                         className="wxp-chart__area"
                                         clipPath={clipFor(s)}
-                                        d={areaFor(s.values, xAt, yFor(scale), baseY)}
+                                        d={areaPath(
+                                            s.values,
+                                            xAt,
+                                            yFor(scale),
+                                            baseY,
+                                            graph.smoothness,
+                                        )}
                                         fill={`url(#wxp-${uid}-${s.key})`}
                                     />
                                 );
@@ -549,10 +531,14 @@ export default function TimeSeries({
                                     <path
                                         key={s.key}
                                         className={`wxp-chart__line${s.dashed ? "" : " wxp-chart__line--draw"}`}
-                                        d={pathFor(s.values, xAt, yFor(scale))}
+                                        d={linePath(s.values, xAt, yFor(scale), graph.smoothness)}
                                         pathLength={s.dashed ? undefined : 1}
                                         clipPath={clipFor(s)}
-                                        style={{ stroke: s.color, color: s.color }}
+                                        style={{
+                                            stroke: s.color,
+                                            color: s.color,
+                                            strokeWidth: graph.lineWidth,
+                                        }}
                                         strokeDasharray={s.dashed ? "4 3" : undefined}
                                     />
                                 );
