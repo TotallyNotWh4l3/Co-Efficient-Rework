@@ -40,7 +40,11 @@ export const ALERT_METRICS = {
 
 // Which instrument tile lights up for which metric.
 export const TILE_ALERT = {
+    temperature: ["temperature"],
     feelsLike: ["feelsLike"],
+    windSpeed: ["windSpeed"],
+    windGust: ["windGust"],
+    precipProb: ["precipProb"],
     humidity: ["humidity"],
     pressure: ["pressure"],
     visibility: ["visibility"],

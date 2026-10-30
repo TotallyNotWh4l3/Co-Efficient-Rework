@@ -1,0 +1,585 @@
+/* ===================================================
+   weather-layout.css — 天気ページのモジュールグリッドと編集モード
+   長さは他の CSS と同様 calc(n * var(--u))。ポータルで body 直下に出る
+   Radix のメニューだけ、user-button.css と同じ rem を使う。
+   =================================================== */
+
+/* ===== Workspace grid (like the dashboard's .dashboard__workspace) ===== */
+.wxp-workspace {
+    --wx-gap: calc(0.5 * var(--u));
+    --wx-row-min: calc(2.25 * var(--u));
+
+    position: relative;
+    flex: 1;
+    /* A row never gets squeezed below its floor: a window that is too short
+       scrolls the page instead of crushing the modules. */
+    min-height: calc(var(--wx-rows) * var(--wx-row-min) + (var(--wx-rows) - 1) * var(--wx-gap));
+    display: grid;
+    grid-template-columns: repeat(var(--wx-cols), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--wx-rows), minmax(0, 1fr));
+    gap: var(--wx-gap);
+}
+
+.wxp-cell {
+    grid-column: var(--col-start) / span var(--col-span);
+    grid-row: var(--row-start) / span var(--row-span);
+    min-width: 0;
+    min-height: 0;
+
+    /* A module's CSS can respond to the size of the cell it was given
+       (@container queries) instead of the window. The size comes from the grid
+       tracks, never from the content, so size containment is safe. */
+    container-type: size;
+    container-name: wxcell;
+}
+
+/* every module fills its cell; what does not fit scrolls inside the module */
+.wxp-cell > * {
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+.wxp-cell > .wxp-card {
+    overflow: auto;
+    scrollbar-width: thin;
+}
+
+.wxp-cell > .wxp-card--table,
+.wxp-cell > .wxp-card--chart {
+    overflow: hidden;
+}
+
+.wxp-alertrow {
+    overflow: hidden;
+}
+
+/* ===== Tiles that are shorter than the usual two rows ===== */
+.wxp-tile--empty {
+    border-style: dashed;
+}
+
+@container (max-height: 5.5rem) {
+    .wxp-tile__sub {
+        display: none;
+    }
+}
+
+/* one row: label and value side by side, nothing else */
+@container (max-height: 3.5rem) {
+    .wxp-tile {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: calc(0.5 * var(--u));
+        padding-block: 0;
+    }
+
+    .wxp-tile__label {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .wxp-tile__sub,
+    .wxp-tile__spark,
+    .wxp-tile .wxp-gauge {
+        display: none;
+    }
+}
+
+/* ===== Chart card: gauge rows (metrics set to "Gauge") ===== */
+.wxp-gaugelist {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.5 * var(--u));
+}
+
+/* a card whose metrics are all gauges: the rows share the whole card */
+.wxp-gaugelist--solo {
+    flex: 1;
+    min-height: 0;
+    justify-content: space-evenly;
+}
+
+.wxp-gaugerow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: calc(0.1875 * var(--u)) calc(0.5 * var(--u));
+}
+
+.wxp-gaugerow__label {
+    overflow: hidden;
+    font-size: calc(0.6875 * var(--u));
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.wxp-gaugerow__label::before {
+    content: "";
+    display: inline-block;
+    width: calc(0.4375 * var(--u));
+    height: calc(0.4375 * var(--u));
+    margin-right: calc(0.4375 * var(--u));
+    border-radius: 1px;
+    background: var(--accent, var(--color-text-disabled));
+    box-shadow: 0 0 calc(0.4375 * var(--u)) var(--accent, transparent);
+}
+
+.wxp-gaugerow__value {
+    font-family: var(--wx-mono);
+    font-size: calc(0.9375 * var(--u));
+    font-weight: 700;
+}
+
+.wxp-gaugerow__value em {
+    margin-left: calc(0.25 * var(--u));
+    font-size: calc(0.6875 * var(--u));
+    font-weight: 500;
+}
+
+.wxp-gaugerow .wxp-gauge {
+    grid-column: 1 / -1;
+    margin-top: 0;
+}
+
+/* ===================================================
+   Edit mode
+   =================================================== */
+
+/* the page underneath is a preview only: the frames take every pointer event */
+.wxp-workspace.is-editing .wxp-cell {
+    pointer-events: none;
+}
+
+.wxp-edit {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: grid;
+    grid-template-columns: repeat(var(--wx-cols), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--wx-rows), minmax(0, 1fr));
+    gap: var(--wx-gap);
+    pointer-events: none;
+}
+
+/* faint cell lines so the snapping is visible */
+.wxp-edit__grid {
+    grid-area: 1 / 1 / -1 / -1;
+    display: grid;
+    grid-template-columns: repeat(var(--wx-cols), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--wx-rows), minmax(0, 1fr));
+    gap: var(--wx-gap);
+}
+
+.wxp-edit__grid i {
+    border: var(--hairline) dashed color-mix(in srgb, var(--color-accent) 28%, transparent);
+    border-radius: calc(0.1875 * var(--u));
+    background: color-mix(in srgb, var(--color-accent) 3%, transparent);
+}
+
+/* ----- one module's frame ----- */
+.wxp-frame {
+    position: relative;
+    pointer-events: auto;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    container-type: inline-size;
+    outline: none;
+    border: calc(0.125 * var(--u)) dashed var(--color-accent);
+    border-radius: calc(0.75 * var(--u));
+    background: color-mix(in srgb, var(--color-bg) 62%, transparent);
+    transition:
+        background 0.12s ease,
+        box-shadow 0.12s ease;
+}
+
+.wxp-frame:hover {
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+
+.wxp-frame:focus-visible,
+.wxp-frame.is-active {
+    border-style: solid;
+    box-shadow:
+        0 0 0 calc(0.125 * var(--u)) var(--color-accent),
+        0 0 calc(1 * var(--u)) color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.wxp-frame.is-dragging {
+    z-index: 6;
+    cursor: grabbing;
+    opacity: 0.85;
+    background: color-mix(in srgb, var(--color-accent) 24%, transparent);
+    box-shadow: var(--shadow-lg);
+    transition: none;
+}
+
+.wxp-frame.is-resizing {
+    border-style: solid;
+    transition: none;
+}
+
+.wxp-frame__label {
+    position: absolute;
+    top: calc(0.25 * var(--u));
+    left: calc(0.25 * var(--u));
+    max-width: calc(100% - 4.5 * var(--u));
+    padding: calc(0.125 * var(--u)) calc(0.4375 * var(--u));
+    overflow: hidden;
+    background: var(--color-surface-floating);
+    border-radius: calc(0.375 * var(--u));
+    font-family: var(--wx-mono);
+    font-size: calc(0.625 * var(--u));
+    color: var(--color-text);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+.wxp-frame__label em {
+    margin-left: calc(0.375 * var(--u));
+    color: var(--color-text-muted);
+}
+
+/* a very narrow module only has room for its buttons */
+@container (max-width: 7rem) {
+    .wxp-frame__label {
+        display: none;
+    }
+}
+
+.wxp-frame__tools {
+    position: absolute;
+    top: calc(0.25 * var(--u));
+    right: calc(0.25 * var(--u));
+    display: flex;
+    gap: calc(0.25 * var(--u));
+}
+
+.wxp-frame__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(0.25 * var(--u));
+    height: calc(1.5 * var(--u));
+    min-width: calc(1.5 * var(--u));
+    padding: 0 calc(0.375 * var(--u));
+    background: var(--color-surface-floating);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.375 * var(--u));
+    color: var(--color-text-secondary);
+    font-size: calc(0.625 * var(--u));
+    cursor: pointer;
+}
+
+.wxp-frame__btn:hover {
+    color: var(--color-text);
+    border-color: var(--color-border-hover);
+}
+
+.wxp-frame__btn--danger:hover,
+.wxp-frame__btn--danger.is-armed {
+    color: var(--color-error);
+    border-color: var(--color-error);
+    background: var(--color-error-bg);
+}
+
+/* ----- resize handles: right edge, bottom edge, corner ----- */
+.wxp-frame__grip {
+    position: absolute;
+    z-index: 2;
+}
+
+.wxp-frame__grip--e {
+    top: calc(2.25 * var(--u));
+    right: calc(-0.25 * var(--u));
+    bottom: calc(1.25 * var(--u));
+    width: calc(0.75 * var(--u));
+    cursor: ew-resize;
+}
+
+.wxp-frame__grip--s {
+    left: calc(1.25 * var(--u));
+    right: calc(1.25 * var(--u));
+    bottom: calc(-0.25 * var(--u));
+    height: calc(0.75 * var(--u));
+    cursor: ns-resize;
+}
+
+.wxp-frame__grip--se {
+    right: calc(-0.125 * var(--u));
+    bottom: calc(-0.125 * var(--u));
+    width: calc(1.25 * var(--u));
+    height: calc(1.25 * var(--u));
+    cursor: nwse-resize;
+}
+
+.wxp-frame__grip--se::after {
+    content: "";
+    position: absolute;
+    right: calc(0.25 * var(--u));
+    bottom: calc(0.25 * var(--u));
+    width: calc(0.625 * var(--u));
+    height: calc(0.625 * var(--u));
+    border-right: calc(0.125 * var(--u)) solid var(--color-accent);
+    border-bottom: calc(0.125 * var(--u)) solid var(--color-accent);
+    border-radius: 0 0 calc(0.1875 * var(--u)) 0;
+}
+
+.wxp-frame__grip:hover {
+    background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+/* ----- where the dragged / resized module would land ----- */
+.wxp-ghost {
+    z-index: 5;
+    pointer-events: none;
+    border: calc(0.125 * var(--u)) solid;
+    border-radius: calc(0.75 * var(--u));
+}
+
+.wxp-ghost--ok {
+    border-color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 18%, transparent);
+}
+
+.wxp-ghost--swap {
+    border-color: var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning) 18%, transparent);
+}
+
+.wxp-ghost--bad {
+    border-color: var(--color-error);
+    background: color-mix(in srgb, var(--color-error) 18%, transparent);
+}
+
+/* ===== Header: edit controls ===== */
+.wxp-header__controls {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.wxp-btn-text {
+    margin-left: calc(0.375 * var(--u));
+    font-size: calc(0.75 * var(--u));
+    white-space: nowrap;
+}
+
+.wxp-editbtn.is-on {
+    background: color-mix(in srgb, var(--color-accent) 25%, var(--color-input-bg));
+    border-color: var(--color-accent);
+    color: var(--color-text);
+}
+
+.wxp-icon-btn:disabled,
+.wxp-segmented button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.wxp-icon-btn.is-armed {
+    color: var(--color-error);
+    border-color: var(--color-error);
+}
+
+.wxp-editnote {
+    font-size: calc(0.75 * var(--u));
+    color: var(--color-warning);
+}
+
+/* ===== Module settings panel (opens next to the module) ===== */
+.wxp-mpanel {
+    position: fixed;
+    z-index: var(--z-popover);
+    width: calc(22 * var(--u));
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100vh - 1rem);
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.75 * var(--u));
+    padding: calc(0.875 * var(--u)) calc(1 * var(--u));
+    background: var(--color-surface-floating);
+    border: var(--hairline) solid var(--color-border-hover);
+    border-radius: calc(0.75 * var(--u));
+    box-shadow: var(--shadow-lg);
+    color: var(--color-text);
+    font-size: calc(0.75 * var(--u));
+}
+
+.wxp-mpanel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(0.5 * var(--u));
+}
+
+.wxp-mpanel__head h4 {
+    font-family: var(--wx-mono);
+    font-size: calc(0.8125 * var(--u));
+    font-weight: 700;
+}
+
+.wxp-mpanel__head em {
+    margin-left: calc(0.5 * var(--u));
+    font-weight: 400;
+}
+
+.wxp-mpanel__field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(0.75 * var(--u));
+}
+
+.wxp-mpanel__field > span:first-child {
+    flex: none;
+    color: var(--color-text-muted);
+}
+
+.wxp-mpanel__field--col {
+    flex-direction: column;
+    align-items: stretch;
+    gap: calc(0.5 * var(--u));
+}
+
+.wxp-mpanel__field .wxp-select {
+    flex: 1;
+    min-width: 0;
+}
+
+.wxp-mpanel__field .wxp-select select {
+    width: 100%;
+    max-width: none;
+}
+
+.wxp-mpanel__input {
+    flex: 1;
+    min-width: 0;
+    height: calc(2 * var(--u));
+    padding: 0 calc(0.625 * var(--u));
+    background: var(--color-input-bg);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.5 * var(--u));
+    color: var(--color-text);
+    font-size: calc(0.8125 * var(--u));
+    outline: none;
+}
+
+.wxp-mpanel__input:focus {
+    border-color: var(--color-border-focus);
+}
+
+/* one metric of a card: picker + remove, then its style buttons */
+.wxp-mpanel__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: calc(0.375 * var(--u));
+    padding: calc(0.5 * var(--u));
+    border: var(--hairline) dashed var(--color-border);
+    border-radius: calc(0.5 * var(--u));
+}
+
+.wxp-mpanel__row .wxp-segmented {
+    grid-column: 1 / -1;
+}
+
+.wxp-mpanel__row .wxp-segmented button {
+    flex: 1;
+    padding: 0 calc(0.375 * var(--u));
+}
+
+.wxp-mpanel__field .wxp-segmented {
+    flex: none;
+}
+
+.wxp-mpanel__add {
+    gap: calc(0.375 * var(--u));
+}
+
+.wxp-mpanel__hint,
+.wxp-mpanel__soon {
+    color: var(--color-text-muted);
+    line-height: 1.5;
+}
+
+.wxp-mpanel__hint {
+    font-size: calc(0.6875 * var(--u));
+}
+
+.wxp-select select option:disabled {
+    color: var(--color-text-disabled);
+}
+
+/* ===== "Add module" menu (Radix portal: outside .wxp, so rem, like user-button.css) ===== */
+.wxp-menu {
+    min-width: 12rem;
+    padding: 0.25rem;
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-md);
+    z-index: var(--z-popover);
+}
+
+.wxp-menu__item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.625rem;
+    border-radius: 0.5rem;
+    color: var(--color-text);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    outline: none;
+}
+
+.wxp-menu__item[data-highlighted] {
+    background: var(--color-element-hover);
+}
+
+.wxp-menu__sep {
+    height: 1px;
+    margin: 0.25rem;
+    background: var(--color-border);
+}
+
+/* ===================================================
+   Narrow windows: the grid becomes a normal scrolling page.
+   Modules keep their reading order (--order) and their relative height; wide
+   ones take a full row, the others sit two to a row. Not editable here.
+   =================================================== */
+@media (max-width: 1100px) {
+    .wxp-workspace {
+        flex: none;
+        min-height: 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: none;
+        grid-auto-rows: auto;
+    }
+
+    .wxp-cell {
+        grid-column: auto;
+        grid-row: auto;
+        order: var(--order);
+        height: calc(var(--row-span) * 3 * var(--u));
+    }
+
+    .wxp-cell[data-wide] {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .wxp-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .wxp-cell {
+        grid-column: 1 / -1;
+    }
+}

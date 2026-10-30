@@ -132,6 +132,26 @@ export default {
             freezing: "0℃になる高さ",
         },
 
+        // モジュール選択・タイルのラベル・チャートカードのタイトルに使う指標名
+        metrics: {
+            temperature: "気温",
+            feelsLike: "体感温度",
+            dewPoint: "露点",
+            wetBulb: "湿球温度",
+            wbgt: "暑さ指数（推定）",
+            humidity: "湿度",
+            cloud: "雲の量",
+            precip: "雨の量",
+            precipProb: "雨の確率",
+            pressure: "気圧",
+            windSpeed: "風速",
+            windGust: "最大瞬間風速",
+            uv: "紫外線",
+            cape: "雷雨の発生しやすさ",
+            visibility: "見通し",
+            freezing: "0℃になる高さ",
+        },
+
         hints: {
             feelsLike: "気温・湿度・風をもとに計算した、体で感じる暑さや寒さです。",
             dewPoint:
@@ -147,6 +167,10 @@ export default {
             wbgt: "気温・湿度・日差し・風から推定した屋外の暑さ指数です。区分は環境省の基準に準拠しています。",
             cape: "雷雨が発生するためのエネルギーの目安です。値が大きいほど、大気の状態が不安定な可能性があります。",
             freezing: "気温が0℃になる高さの目安です。",
+            temperature: "現在の時間帯の気温です。下に今日の最高気温と最低気温を表示します。",
+            windSpeed: "地上10mの平均風速です。風向とビューフォート風力階級も表示します。",
+            windGust: "地上10mの最大瞬間風速です。突風率は「最大瞬間風速 ÷ 平均風速」です。",
+            precipProb: "現在の時間帯に雨が降る確率です。「最大」は今後24時間で最も高い値です。",
         },
 
         tendency: {
@@ -271,6 +295,45 @@ export default {
             low: "最低気温",
         },
 
+        edit: {
+            enter: "編集",
+            done: "完了",
+            add: "モジュールを追加",
+            reset: "配置を初期状態に戻す",
+            resetConfirm: "もう一度クリックで実行",
+            needWide: "配置を編集するにはウィンドウを広げてください",
+            noSpace: "空きがありません。先にモジュールを小さくするか、削除してください。",
+            modules: {
+                tile: "タイル",
+                card: "チャートカード",
+                hero: "現在の天気",
+                alerts: "アラート",
+                outlook: "今後24時間",
+                wind: "風",
+                sun: "太陽と月",
+                week: "7日間の一覧",
+                hourly: "時間ごとのデータ",
+            },
+            settings: {
+                title: "設定",
+                configure: "モジュールの設定",
+                close: "閉じる",
+                remove: "モジュールを削除",
+                removeConfirm: "削除する？",
+                soon: "このモジュールには、まだ設定項目がありません。今後追加予定です。",
+                metric: "指標",
+                display: "表示",
+                displays: { graph: "グラフ", gauge: "ゲージ" },
+                cardTitle: "タイトル",
+                cardTitleAuto: "自動（指標名から作成）",
+                metrics: "指標",
+                addMetric: "指標を追加",
+                removeMetric: "指標を削除",
+                styles: { line: "折れ線", area: "面", bar: "棒", gauge: "ゲージ" },
+                axisHint:
+                    "チャートに表示できる単位は同時に2種類までです（左軸・右軸）。ゲージには制限がありません。",
+            },
+        },
         units: {
             title: "単位",
             metric: "メートル法",

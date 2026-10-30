@@ -18,6 +18,10 @@ export function fmtSigned(value, digits = 0, fallback = "--") {
     return value > 0 ? `+${s}` : s;
 }
 
+// value -> 0..1 within [lo, hi] (null when unknown). Drives the tile gauges.
+export const frac = (v, lo, hi) =>
+    isNum(v) ? Math.min(1, Math.max(0, (v - lo) / (hi - lo))) : null;
+
 // "2026-10-21T05:41" (location-local, no zone) -> pseudo-UTC ms.
 // Only ever used for differences between two such strings.
 export const localMs = (s) => (s ? Date.parse(`${s}Z`) : NaN);

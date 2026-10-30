@@ -259,11 +259,6 @@
 }
 
 /* ===== Instrument tiles ===== */
-.wxp-tiles {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(calc(11 * var(--u)), 1fr));
-    gap: calc(0.75 * var(--u));
-}
 
 .wxp-tile {
     display: flex;
@@ -471,11 +466,6 @@
 }
 
 /* ===== Charts ===== */
-.wxp-charts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(calc(26 * var(--u)), 1fr));
-    gap: calc(0.75 * var(--u));
-}
 
 .wxp-chart {
     display: flex;
@@ -959,65 +949,9 @@
    left column : hero / wind / sun (+ moon)
    right column: instrument tiles + six trend charts
    bottom row  : 7-day table + hourly table (each scrolls inside its own card)
+   The arrangement itself is now the editable module grid (see
+   ../layout/weather-layout.css); this section styles what is inside the cells.
    =================================================== */
-.wxp-dash {
-    flex: 1;
-    /* The dash takes exactly the height left under the header, so the page
-       fits the window. Nothing inside it may force it taller: the first row
-       takes what the bottom row leaves, the bottom row (tables) shrinks with
-       the window (13.5u at most), the charts shrink down to a small plot, and
-       the left column scrolls inside itself (see .wxp-side). The floor below
-       is the only thing that makes the whole page scroll, in a really tiny
-       window. */
-    min-height: calc(34 * var(--u));
-    display: grid;
-    grid-template-columns: minmax(calc(26 * var(--u)), 32fr) minmax(0, 68fr);
-    grid-template-rows:
-        minmax(0, 1fr)
-        clamp(calc(7 * var(--u)), 26%, calc(13.5 * var(--u)));
-    gap: calc(0.625 * var(--u));
-}
-
-.wxp-side {
-    min-height: 0;
-    /* size containment: the column's content height must not push the grid row
-       taller (that is what made the whole page scroll); it fills the row and
-       scrolls inside itself instead. */
-    contain: size;
-    overflow-y: hidden;
-    scrollbar-width: thin;
-    display: flex;
-    flex-direction: column;
-    gap: calc(0.625 * var(--u));
-    /* hidden while the cards fly in (their transforms would flash a scrollbar),
-       then scrollable. `overflow` flips discretely half-way through. */
-    animation: wxp-unclip 1s linear 1s forwards;
-}
-
-@keyframes wxp-unclip {
-    from {
-        overflow-y: hidden;
-    }
-    to {
-        overflow-y: auto;
-    }
-}
-
-.wxp-main {
-    min-width: 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: calc(0.625 * var(--u));
-}
-
-.wxp-bottom {
-    grid-column: 1 / -1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
-    gap: calc(0.625 * var(--u));
-}
 
 /* ----- hero (compact) ----- */
 .wxp-hero {
@@ -1066,19 +1000,7 @@
     padding: calc(0.625 * var(--u)) calc(0.875 * var(--u));
 }
 
-.wxp-card--grow {
-    flex: none;
-}
-
-.wxp-card--fill {
-    flex: 1;
-    min-height: 0;
-}
-
 /* title stays on top, the content centres in the remaining space */
-.wxp-card--fill > :not(.wxp-card__title) {
-    margin-block: auto;
-}
 
 .wxp-card--table {
     min-height: 0;
@@ -1107,9 +1029,6 @@
 }
 
 /* ----- sun + moon ----- */
-.wxp-side {
-    container-type: inline-size;
-}
 
 .wxp-celestial {
     display: grid;
@@ -1190,11 +1109,6 @@
 }
 
 /* ----- instrument tiles (dense) ----- */
-.wxp-tiles {
-    flex: none;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: calc(0.5 * var(--u));
-}
 
 .wxp-tile {
     gap: calc(0.125 * var(--u));
@@ -1223,17 +1137,6 @@
 }
 
 /* ----- charts fill whatever height is left ----- */
-.wxp-charts {
-    flex: 1;
-    min-height: 0;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-rows: repeat(2, minmax(0, 1fr));
-    gap: calc(0.5 * var(--u));
-}
-
-.wxp-charts .wxp-card {
-    min-height: 0;
-}
 
 .wxp-chart {
     flex: 1;
@@ -1332,55 +1235,6 @@
 .wxp-table th,
 .wxp-table td {
     padding: calc(0.1875 * var(--u)) calc(0.4375 * var(--u));
-}
-
-/* ----- narrow windows: fall back to a normal scrolling page ----- */
-@media (max-width: 1100px) {
-    .wxp-dash {
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        flex: none;
-    }
-
-    .wxp-side,
-    .wxp-main {
-        flex: none;
-    }
-
-    /* the stacked page just grows: no size containment / inner scrolling */
-    .wxp-side {
-        contain: none;
-        overflow: visible;
-        animation: none;
-    }
-
-    .wxp-card--fill {
-        flex: none;
-    }
-
-    .wxp-tiles {
-        grid-template-columns: repeat(auto-fill, minmax(calc(9 * var(--u)), 1fr));
-    }
-
-    .wxp-charts {
-        flex: none;
-        grid-template-columns: repeat(auto-fit, minmax(calc(22 * var(--u)), 1fr));
-        grid-template-rows: none;
-    }
-
-    .wxp-chart__plot {
-        flex: none;
-        height: calc(13 * var(--u));
-    }
-
-    .wxp-bottom {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .wxp-card--table {
-        max-height: calc(16 * var(--u));
-    }
 }
 
 /* ===================================================
@@ -1788,45 +1642,33 @@
     color: var(--color-text-muted);
 }
 
-.wxp-duo {
-    flex: none;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: calc(0.625 * var(--u));
-}
-
 /* narrow column: Next 24 h and Wind stack again */
-@container (max-width: 24rem) {
-    .wxp-duo {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
 
 /* half-width cards: compass above its readouts, compact */
-.wxp-duo .wxp-windcard {
+.wxp-card--half .wxp-windcard {
     flex-direction: column;
     flex-wrap: nowrap;
     align-items: stretch;
     gap: calc(0.5 * var(--u));
 }
 
-.wxp-duo .wxp-compass {
+.wxp-card--half .wxp-compass {
     width: calc(8.5 * var(--u));
     height: calc(8.5 * var(--u));
     align-self: center;
 }
 
-.wxp-duo .wxp-kv {
+.wxp-card--half .wxp-kv {
     min-width: 0;
     flex: none;
 }
 
-.wxp-duo .wxp-kv dt,
-.wxp-duo .wxp-kv dd {
+.wxp-card--half .wxp-kv dt,
+.wxp-card--half .wxp-kv dd {
     white-space: nowrap;
 }
 
-.wxp-duo .wxp-kv dt {
+.wxp-card--half .wxp-kv dt {
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -1843,11 +1685,12 @@
 }
 
 /* ===================================================
-   Page-open entrance: the page fades in, then header, hero, alert row, cards,
-   tiles, charts and tables rise into place one after another. CSS only: it
-   plays when an element is first mounted (opening the page / data arriving),
-   not on every data refresh. prefers-reduced-motion is covered by the global
-   rule above.
+   Page-open entrance: the page fades in, then the header and every module
+   (grid cell) rise into place one after another, staggered by the --enter-delay
+   WeatherGrid sets per cell. CSS only: it plays when an element is first mounted
+   (opening the page / data arriving / a module being added), not on every data
+   refresh and not when a module is moved or resized. prefers-reduced-motion is
+   covered by the global rule above.
    =================================================== */
 @keyframes wxp-enter {
     from {
@@ -1867,158 +1710,31 @@
 }
 
 .wxp-header,
-.wxp-hero,
-.wxp-alertrow,
-.wxp-side > .wxp-card,
-.wxp-duo > .wxp-card,
-.wxp-tiles > .wxp-tile,
-.wxp-charts > .wxp-card,
-.wxp-bottom > .wxp-card {
+.wxp-cell {
     animation: wxp-enter 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) var(--enter-delay, 0ms) backwards;
-}
-
-/* tiles keep their alert pulse: enter first, pulse forever */
-.wxp-tiles > .wxp-tile.wxp-tile--alert {
-    animation:
-        wxp-enter 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) var(--enter-delay, 0ms) backwards,
-        wxp-alert-pulse 1.8s ease-in-out infinite;
 }
 
 .wxp-header {
     --enter-delay: 0ms;
 }
-.wxp-hero {
-    --enter-delay: 80ms;
-}
-.wxp-alertrow {
-    --enter-delay: 150ms;
-}
-.wxp-duo > .wxp-card:nth-child(1) {
-    --enter-delay: 210ms;
-}
-.wxp-duo > .wxp-card:nth-child(2) {
-    --enter-delay: 260ms;
-}
-.wxp-side > .wxp-card {
-    --enter-delay: 320ms;
-}
-.wxp-bottom > .wxp-card:nth-child(1) {
-    --enter-delay: 700ms;
-}
-.wxp-bottom > .wxp-card:nth-child(2) {
-    --enter-delay: 760ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(1) {
-    --enter-delay: 120ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(2) {
-    --enter-delay: 155ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(3) {
-    --enter-delay: 190ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(4) {
-    --enter-delay: 225ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(5) {
-    --enter-delay: 260ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(6) {
-    --enter-delay: 295ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(7) {
-    --enter-delay: 330ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(8) {
-    --enter-delay: 365ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(9) {
-    --enter-delay: 400ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(10) {
-    --enter-delay: 435ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(11) {
-    --enter-delay: 470ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(12) {
-    --enter-delay: 505ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(13) {
-    --enter-delay: 540ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(14) {
-    --enter-delay: 575ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(15) {
-    --enter-delay: 610ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(16) {
-    --enter-delay: 645ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(17) {
-    --enter-delay: 680ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(18) {
-    --enter-delay: 715ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(19) {
-    --enter-delay: 750ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(20) {
-    --enter-delay: 785ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(21) {
-    --enter-delay: 820ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(22) {
-    --enter-delay: 855ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(23) {
-    --enter-delay: 890ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(24) {
-    --enter-delay: 925ms;
-}
-.wxp-tiles > .wxp-tile:nth-child(n + 25) {
-    --enter-delay: 960ms;
-}
-.wxp-charts > .wxp-card:nth-child(1) {
-    --enter-delay: 420ms;
-}
-.wxp-charts > .wxp-card:nth-child(2) {
-    --enter-delay: 490ms;
-}
-.wxp-charts > .wxp-card:nth-child(3) {
-    --enter-delay: 560ms;
-}
-.wxp-charts > .wxp-card:nth-child(4) {
-    --enter-delay: 630ms;
-}
-.wxp-charts > .wxp-card:nth-child(5) {
-    --enter-delay: 700ms;
-}
-.wxp-charts > .wxp-card:nth-child(6) {
-    --enter-delay: 770ms;
-}
 
 /* ----- chart series follow the card's staggered entrance ----- */
-/* --enter-delay is set on each chart card (nth-child rules above); TimeSeries
+/* --enter-delay is set on each grid cell (WeatherGrid); TimeSeries
    only carries .wxp-chart--intro for its first moments after mounting. */
-.wxp-charts > .wxp-card .wxp-chart--intro .wxp-chart__line--draw,
-.wxp-charts > .wxp-card .wxp-chart--intro .wxp-chart__clip--in {
+.wxp-cell .wxp-chart--intro .wxp-chart__line--draw,
+.wxp-cell .wxp-chart--intro .wxp-chart__clip--in {
     animation-delay: calc(var(--enter-delay, 0ms) + 250ms);
 }
 
-.wxp-charts > .wxp-card .wxp-chart--intro .wxp-chart__area {
+.wxp-cell .wxp-chart--intro .wxp-chart__area {
     animation-delay: calc(var(--enter-delay, 0ms) + 500ms);
 }
 
-.wxp-charts > .wxp-card .wxp-chart--intro .wxp-chart__bar {
+.wxp-cell .wxp-chart--intro .wxp-chart__bar {
     animation-delay: calc(var(--enter-delay, 0ms) + 250ms + var(--bar-delay, 0ms));
 }
 
-.wxp-charts > .wxp-card .wxp-chart--intro .wxp-chart__extreme {
+.wxp-cell .wxp-chart--intro .wxp-chart__extreme {
     animation: wxp-fade 0.6s calc(var(--enter-delay, 0ms) + 1000ms) ease-in-out both;
 }
 
@@ -2067,7 +1783,7 @@
         gap: calc(0.125 * var(--u));
     }
 
-    .wxp-duo .wxp-compass {
+    .wxp-card--half .wxp-compass {
         width: calc(6 * var(--u));
         height: calc(6 * var(--u));
     }
