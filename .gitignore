@@ -37,3 +37,6 @@ lerna-debug.log*
 # Database
 *.db
 *.sqlite
+
+# Seeds
+backend\shared\db\seedUsers.config.js

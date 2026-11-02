@@ -36,11 +36,7 @@
 
 export default [
     // Placeholder — edit or replace this entry.
-    {
-        username: "admin",
-        password: "CHANGE_ME",
-        role: "admin",
-    },
+    { username: "admin", password: "admin", role: "admin" },
 
     // Add more users below, for example:
     // { username: "teacher01", password: "a-strong-password", role: "manager" },
