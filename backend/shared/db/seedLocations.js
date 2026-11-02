@@ -19,10 +19,10 @@ import isMain from "./isMain.js";
 const DEFAULT_LOCATIONS = DEFAULT_SETTINGS.locations ?? [];
 
 export async function seedLocations() {
-    const admin = await User.findByUsername("admin");
+    const admin = await User.findFirstByRole("admin");
 
     if (!admin) {
-        throw new Error("No 'admin' user found — seed the users first.");
+        throw new Error("No user with role 'admin' found — seed the users first.");
     }
 
     const existing = await Location.findAll();

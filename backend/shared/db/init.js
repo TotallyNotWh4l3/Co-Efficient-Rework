@@ -3,7 +3,8 @@
 // 作成日: 2026/08/27
 // 作成者: ゴンザガ　ウェイン
 // 概要: データベースの初期化処理。
-//       テーブル作成 → マイグレーション → 初期データ投入 を一括で実行する。
+//       設定チェック → テーブル作成 → マイグレーション → 初期データ投入 を一括で実行する。
+//       初期ユーザーは seedUsers.config.js で定義する。
 //       何度実行しても安全 (作成済み・適用済み・投入済みはスキップ)。
 //       使い方: npm run setup:db  (または node shared/db/init.js)
 // ===================================================
@@ -11,7 +12,7 @@
 // backend/database/init.js
 import { exec } from "./dbHelpers.js";
 import { runMigrations } from "./migration/migrate.js";
-import { seedUsers } from "./seed.js";
+import { loadSeedUsers, seedUsers } from "./seed.js";
 import { seedLocations } from "./seedLocations.js";
 import { seedThemes } from "./seedThemes.js";
 
@@ -42,7 +43,7 @@ const tables = [
 ];
 
 async function createTables() {
-    console.log("[Init] Step 1/4: creating tables");
+    console.log("[Init] Step 2/5: creating tables");
 
     for (const { name, sql } of tables) {
         try {
@@ -57,17 +58,24 @@ async function createTables() {
 }
 
 async function init() {
+    // Fail fast on a bad seedUsers.config.js (placeholder password, missing
+    // role, ...) BEFORE anything is created, so a config mistake never
+    // leaves a half-initialized database behind.
+    console.log("[Init] Step 1/5: checking seedUsers.config.js");
+    loadSeedUsers();
+
     await createTables();
 
-    console.log("[Init] Step 2/4: running migrations");
+    console.log("[Init] Step 3/5: running migrations");
     await runMigrations();
 
     // Seeds run after migrations so they write to the final schema.
-    // seedUsers must come first: locations and themes are owned by "admin".
-    console.log("[Init] Step 3/4: seeding users");
+    // seedUsers must come first: locations and themes are owned by the
+    // first user with role "admin".
+    console.log("[Init] Step 4/5: seeding users");
     await seedUsers();
 
-    console.log("[Init] Step 4/4: seeding locations and themes");
+    console.log("[Init] Step 5/5: seeding locations and themes");
     await seedLocations();
     await seedThemes();
 

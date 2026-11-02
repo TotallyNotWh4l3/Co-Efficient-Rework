@@ -20,19 +20,26 @@
 //    lets a cell stay empty on purpose.
 // ===================================================
 
-const sql = `
-ALTER TABLE dashboard_settings ADD COLUMN rows INTEGER NOT NULL DEFAULT 4;
-ALTER TABLE dashboard_modules RENAME COLUMN position TO cell_index;
-`;
+// Each step checks the current schema first. The two statements used to run
+// as one multi-statement block, so a failure after the first left the column
+// added but the migration unrecorded, and every re-run then died on
+// "duplicate column name". Checking first makes it safe to re-run.
+async function hasColumn(db, table, column) {
+    const result = await db.execute(`PRAGMA table_info(${table})`);
+    return result.rows.some((row) => row.name === column);
+}
 
-export default function addDashboardGridPlacement(db) {
-    return new Promise((resolve, reject) => {
-        db.exec(sql, (error) => {
-            if (error) {
-                reject(error);
-                return;
-            }
-            resolve();
-        });
-    });
+export default async function addDashboardGridPlacement(db) {
+    if (!(await hasColumn(db, "dashboard_settings", "rows"))) {
+        await db.execute(
+            "ALTER TABLE dashboard_settings ADD COLUMN rows INTEGER NOT NULL DEFAULT 4",
+        );
+    }
+
+    if (
+        (await hasColumn(db, "dashboard_modules", "position")) &&
+        !(await hasColumn(db, "dashboard_modules", "cell_index"))
+    ) {
+        await db.execute("ALTER TABLE dashboard_modules RENAME COLUMN position TO cell_index");
+    }
 }

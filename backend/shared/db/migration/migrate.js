@@ -86,7 +86,16 @@ export async function runMigrations() {
             continue;
         }
 
-        await migration.up(db);
+        try {
+            await migration.up(db);
+        } catch (error) {
+            // Not recorded as applied, so fixing the cause and re-running
+            // picks up from this migration.
+            throw new Error(`Migration ${migration.name} failed: ${error.message}`, {
+                cause: error,
+            });
+        }
+
         await markApplied(migration.name);
         console.log(`[Migrate] Applied: ${migration.name}`);
     }
@@ -98,7 +107,7 @@ if (isMain(import.meta.url)) {
     runMigrations()
         .then(() => process.exit(0))
         .catch((error) => {
-            console.error("[Migrate] Failed:", error);
+            console.error(`[Migrate] ${error.message}`);
             process.exit(1);
         });
 }
