@@ -5,7 +5,7 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
-        "setup:db": "node shared/db/init.js",
+        "setup": "node shared/db/init.js",
         "start": "node server.js",
         "dev": "nodemon server.js"
     },
