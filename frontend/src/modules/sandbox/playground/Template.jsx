@@ -8,7 +8,7 @@
 
 // Shown in the sandbox list. `library` groups entries together.
 export const meta = {
-    library: "no Library",
+    library: "Example Templete",
     name: "Template",
     description: "Template Sandbox Page",
 };
