@@ -9,6 +9,7 @@ import express from "express";
 import { rateLimit, ipKeyGenerator } from "express-rate-limit";
 import AuthController from "./authController.js";
 import authenticate from "../../shared/middleware/authMiddleware.js";
+import devAuthRoutes from "./devAuthRoutes.js";
 
 const router = express.Router();
 
@@ -26,5 +27,8 @@ const loginLimiter = rateLimit({
 
 router.post("/login", loginLimiter, AuthController.login);
 router.get("/me", authenticate, AuthController.me);
+
+// DEV ONLY — answers 404 for every request unless DEV_QUICK_LOGIN=true (see devAuthRoutes.js).
+router.use("/dev", devAuthRoutes);
 
 export default router;

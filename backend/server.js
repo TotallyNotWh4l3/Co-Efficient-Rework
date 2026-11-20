@@ -26,6 +26,7 @@ import scheduleRoutes from "./modules/schedule/scheduleRoutes.js";
 import geocodingRoutes from "./modules/geocoding/geocodingRoutes.js";
 import themeRoutes from "./modules/themes/themeRoutes.js";
 import userRoutes from "./modules/users/userRoutes.js";
+import { isDevQuickLoginEnabled } from "./modules/auth/devAuthRoutes.js";
 import transitRoutes from "./modules/transit/transitRoutes.js";
 
 import sseRoutes from "./sse/sseRoutes.js";
@@ -109,6 +110,15 @@ app.get(/^(?!\/api).*/, (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
+    if (isDevQuickLoginEnabled()) {
+        console.warn("==============================================================");
+        console.warn(" WARNING: DEV_QUICK_LOGIN is ON.");
+        console.warn(" Anyone who can reach this server can log in as ANY user");
+        console.warn(" (including admin) without a password. Dev machines only —");
+        console.warn(" set DEV_QUICK_LOGIN=false before using this on the school PC.");
+        console.warn("==============================================================");
+    }
+
     console.log(`Server running!`);
     console.log(`Local:   http://localhost:${PORT}`);
     console.log(`Network: http://YOUR_LOCAL_IP:${PORT}`);

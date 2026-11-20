@@ -14,6 +14,37 @@ import JWT from "../../shared/utils/jwt.js";
 
 import { DEFAULT_SETTINGS } from "../../../shared/constants/defaults/defaultSettings.js";
 
+// Shared by the normal password login and the dev quick-login (devAuthRoutes.js):
+// makes sure the account has a settings record, then returns the same
+// { token, user } payload the frontend expects from a login.
+export async function issueSession(user) {
+    // -------------------------------------------------
+    // Ensure the user always has a settings record
+    // -------------------------------------------------
+
+    const existingSettings = await UserSettings.findByUserId(user.id);
+
+    if (!existingSettings) {
+        console.log(`[Auth] Creating default settings for user ${user.username}`);
+        await UserSettings.upsert(user.id, DEFAULT_SETTINGS);
+    }
+
+    // NOTE: locations are no longer per-user (see Location.js / locationsController.js) —
+    // they're a single shared table everyone reads from, so there's nothing to
+    // backfill into a user's own settings anymore.
+
+    const token = JWT.generateToken(user);
+
+    return {
+        token,
+        user: {
+            id: user.id,
+            username: user.username,
+            role: user.role,
+        },
+    };
+}
+
 async function login(req, res) {
     try {
         const { username, password } = req.body;
@@ -40,31 +71,7 @@ async function login(req, res) {
             });
         }
 
-        // -------------------------------------------------
-        // Ensure the user always has a settings record
-        // -------------------------------------------------
-
-        const existingSettings = await UserSettings.findByUserId(user.id);
-
-        if (!existingSettings) {
-            console.log(`[Auth] Creating default settings for user ${user.username}`);
-            await UserSettings.upsert(user.id, DEFAULT_SETTINGS);
-        }
-
-        // NOTE: locations are no longer per-user (see Location.js / locationsController.js) —
-        // they're a single shared table everyone reads from, so there's nothing to
-        // backfill into a user's own settings anymore.
-
-        const token = JWT.generateToken(user);
-
-        res.json({
-            token,
-            user: {
-                id: user.id,
-                username: user.username,
-                role: user.role,
-            },
-        });
+        res.json(await issueSession(user));
     } catch (error) {
         console.error(error);
 
