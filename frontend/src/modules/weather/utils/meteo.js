@@ -18,6 +18,10 @@ export function fmtSigned(value, digits = 0, fallback = "--") {
     return value > 0 ? `+${s}` : s;
 }
 
+// value -> 0..1 within [lo, hi] (null when unknown). Drives the tile gauges.
+export const frac = (v, lo, hi) =>
+    isNum(v) ? Math.min(1, Math.max(0, (v - lo) / (hi - lo))) : null;
+
 // "2026-10-21T05:41" (location-local, no zone) -> pseudo-UTC ms.
 // Only ever used for differences between two such strings.
 export const localMs = (s) => (s ? Date.parse(`${s}Z`) : NaN);
@@ -289,4 +293,75 @@ export function moonWindow(daily, now) {
         rise: iso(span.rise),
         set: iso(span.set),
     };
+}
+
+/**
+ * Approximate lunar position (low-precision series, good to ~0.5°).
+ * Altitude includes topocentric parallax; azimuth is clockwise from north.
+ */
+export function moonPosition(date, latDeg, lonDeg) {
+    const rad = Math.PI / 180;
+    const d = date.getTime() / 86400000 + 2440587.5 - 2451545.0; // days since J2000
+
+    const L = rad * (218.316 + 13.176396 * d);
+    const M = rad * (134.963 + 13.064993 * d);
+    const F = rad * (93.272 + 13.22935 * d);
+    const lon = L + rad * 6.289 * Math.sin(M);
+    const lat = rad * 5.128 * Math.sin(F);
+    const distKm = 385001 - 20905 * Math.cos(M);
+
+    const eps = rad * 23.4397;
+    const ra = Math.atan2(
+        Math.sin(lon) * Math.cos(eps) - Math.tan(lat) * Math.sin(eps),
+        Math.cos(lon),
+    );
+    const dec = Math.asin(
+        Math.sin(lat) * Math.cos(eps) + Math.cos(lat) * Math.sin(eps) * Math.sin(lon),
+    );
+
+    const siderealTime = rad * (280.16 + 360.9856235 * d) + rad * lonDeg;
+    const H = siderealTime - ra;
+    const phi = latDeg * rad;
+
+    let altitude = Math.asin(
+        Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(H),
+    );
+    // topocentric parallax (up to ~1° near the horizon)
+    altitude -= Math.asin(6378.14 / distKm) * Math.cos(altitude);
+
+    const azimuth = Math.atan2(
+        Math.sin(H),
+        Math.cos(H) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi),
+    );
+
+    return {
+        altitude: altitude / rad,
+        azimuth: (((azimuth / rad + 180) % 360) + 360) % 360,
+    };
+}
+
+/**
+ * Times (location-local "HH:MM") at which the sun crosses `altDeg` on the
+ * date of `dateIso` (any ISO string starting YYYY-MM-DD). Scans the local day
+ * in 5-minute steps and interpolates. Missing crossing (polar day/night) -> null.
+ * @returns {{ rising: string|null, falling: string|null }}
+ */
+export function solarCrossings(dateIso, utcOffsetSeconds, latDeg, lonDeg, altDeg) {
+    const STEP = 300000;
+    const midnight = Date.parse(`${dateIso.slice(0, 10)}T00:00Z`); // pseudo-UTC
+    const alt = (ms) =>
+        solarPosition(new Date(ms - utcOffsetSeconds * 1000), latDeg, lonDeg).altitude - altDeg;
+
+    const out = { rising: null, falling: null };
+    let prev = alt(midnight);
+    for (let k = 1; k <= 288; k++) {
+        const cur = alt(midnight + k * STEP);
+        if (prev < 0 !== cur < 0) {
+            const ms = midnight + (k - 1 + prev / (prev - cur)) * STEP;
+            const key = cur > prev ? "rising" : "falling";
+            if (out[key] === null) out[key] = new Date(ms).toISOString().slice(11, 16);
+        }
+        prev = cur;
+    }
+    return out;
 }

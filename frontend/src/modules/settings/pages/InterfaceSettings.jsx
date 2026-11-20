@@ -24,6 +24,8 @@ import { Computer } from "lucide-react";
 export default function InterfaceSettings() {
     const { loading, settings, updatePreference, applyTheme, applyLocation } = useSettings();
 
+    const T = useLanguage();
+
     if (loading) {
         return <div className="interface-settings">{T.settings.status.loading}</div>;
     }
@@ -52,8 +54,6 @@ export default function InterfaceSettings() {
     const currentTheme = (themes ?? []).find(
         (theme) => theme.id === settings.preferences.appearance.currentTheme,
     );
-
-    const T = useLanguage();
 
     return (
         <div className="interface-settings">
@@ -174,10 +174,11 @@ export default function InterfaceSettings() {
                                     type: "confirm",
                                     props: {
                                         title: T.settings.interface.location.deleteTitle,
-                                        description: T.settings.interface.location.deleteMessage.replace(
-                                            "{name}",
-                                            location.name,
-                                        ),
+                                        description:
+                                            T.settings.interface.location.deleteMessage.replace(
+                                                "{name}",
+                                                location.name,
+                                            ),
                                         confirmText: T.settings.interface.location.deleteConfirm,
                                         danger: true,
                                         onConfirm: () => deleteLocation(location.id),

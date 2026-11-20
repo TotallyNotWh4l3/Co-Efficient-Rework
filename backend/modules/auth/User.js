@@ -1,4 +1,3 @@
-
 // ===================================================
 // ファイル名: User.js
 // 作成日: 2026/08/27
@@ -21,6 +20,17 @@ async function findByUsername(username) {
     const result = await db.execute({
         sql: `SELECT * FROM users WHERE username = ?`,
         args: [username],
+    });
+
+    return result.rows[0];
+}
+
+// Oldest account with the given role, or undefined. Used to find the owner
+// of built-in locations/themes without assuming the admin is named "admin".
+async function findFirstByRole(role) {
+    const result = await db.execute({
+        sql: `SELECT * FROM users WHERE role = ? ORDER BY id ASC LIMIT 1`,
+        args: [role],
     });
 
     return result.rows[0];
@@ -74,6 +84,7 @@ async function deleteById(id) {
 export default {
     findById,
     findByUsername,
+    findFirstByRole,
     findAll,
     create,
     updateRole,

@@ -1,0 +1,313 @@
+/* ===================================================
+   sandbox-page.css — 開発用サンドボックスページ
+   ページはダッシュボードのセル外に置かれるため --u は --ui-base (16px) のまま。
+   長さは他モジュールと同様 calc(n * var(--u)) で指定する。
+   縦方向のレイアウトは flex + space-between で、下に未使用の空白を作らない。
+   =================================================== */
+
+.sandbox {
+    display: flex;
+    flex-direction: row;
+    gap: calc(0.75 * var(--u));
+
+    height: 100%;
+    padding: calc(0.75 * var(--u));
+    color: var(--color-text);
+}
+
+/* ===== Entry list ===== */
+.sandbox__list {
+    flex: 0 0 calc(14 * var(--u));
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: calc(0.5 * var(--u));
+
+    padding: calc(0.75 * var(--u));
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.5 * var(--u));
+}
+
+.sandbox__list-top {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.625 * var(--u));
+}
+
+.sandbox__title {
+    display: flex;
+    align-items: center;
+    gap: calc(0.5 * var(--u));
+
+    font-size: calc(0.9375 * var(--u));
+    font-weight: 700;
+}
+
+.sandbox__search {
+    display: flex;
+    align-items: center;
+    gap: calc(0.5 * var(--u));
+
+    padding: calc(0.375 * var(--u)) calc(0.625 * var(--u));
+    background: var(--color-input-bg);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.375 * var(--u));
+    color: var(--color-text-muted);
+}
+
+.sandbox__search:focus-within {
+    background: var(--color-input-focus);
+    border-color: var(--color-border-focus);
+}
+
+.sandbox__search input {
+    flex: 1;
+    min-width: 0;
+
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--color-text);
+    font: inherit;
+    font-size: calc(0.8125 * var(--u));
+}
+
+.sandbox__groups {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.75 * var(--u));
+}
+
+.sandbox__group {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.125 * var(--u));
+}
+
+.sandbox__group-label {
+    padding: 0 calc(0.5 * var(--u));
+    margin-bottom: calc(0.125 * var(--u));
+
+    color: var(--color-text-muted);
+    font-size: calc(0.6875 * var(--u));
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.sandbox__entry {
+    padding: calc(0.4375 * var(--u)) calc(0.625 * var(--u));
+
+    background: transparent;
+    border: none;
+    border-radius: calc(0.375 * var(--u));
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: calc(0.8125 * var(--u));
+    text-align: left;
+    cursor: pointer;
+}
+
+.sandbox__entry:hover {
+    background: var(--color-element-hover);
+    color: var(--color-text);
+}
+
+.sandbox__entry--active {
+    background: var(--color-accent-muted);
+    color: var(--color-text-accent);
+    font-weight: 600;
+}
+
+.sandbox__list-empty {
+    margin: 0;
+    padding: calc(0.5 * var(--u));
+    color: var(--color-text-muted);
+    font-size: calc(0.75 * var(--u));
+}
+
+.sandbox__list-footer {
+    padding-top: calc(0.5 * var(--u));
+    border-top: var(--hairline) solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: calc(0.6875 * var(--u));
+}
+
+/* ===== Preview ===== */
+.sandbox__preview {
+    flex: 1;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: calc(0.75 * var(--u));
+}
+
+.sandbox__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(0.75 * var(--u));
+
+    padding: calc(0.625 * var(--u)) calc(0.875 * var(--u));
+    background: var(--color-surface);
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.5 * var(--u));
+}
+
+.sandbox__heading {
+    min-width: 0;
+}
+
+.sandbox__name {
+    margin: 0;
+    font-size: calc(1 * var(--u));
+    font-weight: 700;
+}
+
+.sandbox__meta {
+    margin: calc(0.125 * var(--u)) 0 0;
+    color: var(--color-text-muted);
+    font-size: calc(0.75 * var(--u));
+}
+
+.sandbox__controls {
+    display: flex;
+    align-items: center;
+    gap: calc(0.5 * var(--u));
+}
+
+.sandbox__segmented {
+    display: flex;
+    padding: calc(0.125 * var(--u));
+    background: var(--color-element);
+    border-radius: calc(0.375 * var(--u));
+}
+
+.sandbox__seg-btn,
+.sandbox__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: calc(0.3125 * var(--u)) calc(0.625 * var(--u));
+    background: transparent;
+    border: none;
+    border-radius: calc(0.25 * var(--u));
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: calc(0.75 * var(--u));
+    cursor: pointer;
+}
+
+.sandbox__seg-btn:hover,
+.sandbox__icon-btn:hover:not(:disabled) {
+    background: var(--color-element-hover);
+    color: var(--color-text);
+}
+
+.sandbox__seg-btn--active,
+.sandbox__seg-btn--active:hover {
+    background: var(--color-element-selected);
+    color: var(--color-text);
+}
+
+.sandbox__icon-btn {
+    background: var(--color-element);
+    padding: calc(0.4375 * var(--u));
+}
+
+.sandbox__icon-btn:disabled {
+    background: var(--color-element-disabled);
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+}
+
+/* ===== Stage ===== */
+.sandbox__stage {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+
+    padding: calc(1.5 * var(--u));
+    border: var(--hairline) solid var(--color-border);
+    border-radius: calc(0.5 * var(--u));
+}
+
+.sandbox__stage--surface {
+    background: var(--color-surface);
+}
+
+.sandbox__stage--base {
+    background: var(--color-bg);
+}
+
+/* checker makes transparency / shadows easy to judge */
+.sandbox__stage--checker {
+    background-color: var(--color-bg);
+    background-image:
+        linear-gradient(45deg, var(--color-surface) 25%, transparent 25%),
+        linear-gradient(-45deg, var(--color-surface) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, var(--color-surface) 75%),
+        linear-gradient(-45deg, transparent 75%, var(--color-surface) 75%);
+    background-size: calc(1.25 * var(--u)) calc(1.25 * var(--u));
+    background-position:
+        0 0,
+        0 calc(0.625 * var(--u)),
+        calc(0.625 * var(--u)) calc(-0.625 * var(--u)),
+        calc(-0.625 * var(--u)) 0;
+}
+
+.sandbox__frame {
+    width: 100%;
+    min-width: 0;
+}
+
+.sandbox__frame--tablet {
+    max-width: calc(48 * var(--u));
+}
+
+.sandbox__frame--mobile {
+    max-width: calc(23.4375 * var(--u));
+}
+
+.sandbox__stage-empty {
+    align-self: center;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: calc(0.875 * var(--u));
+    text-align: center;
+}
+
+/* ===== Error boundary ===== */
+.sandbox-error {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.5 * var(--u));
+
+    padding: calc(0.875 * var(--u));
+    background: var(--color-error-bg);
+    border: var(--hairline) solid var(--color-error);
+    border-radius: calc(0.5 * var(--u));
+    color: var(--color-error);
+}
+
+.sandbox-error__message {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: calc(0.75 * var(--u));
+}

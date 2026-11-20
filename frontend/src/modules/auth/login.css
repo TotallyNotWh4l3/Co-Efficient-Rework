@@ -25,6 +25,12 @@
     box-shadow: var(--shadow-md);
 }
 
+.login__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
 .login__title {
     margin: 0 0 1rem;
 

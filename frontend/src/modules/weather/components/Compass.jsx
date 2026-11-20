@@ -17,7 +17,9 @@ const MAX_SPEED = 20;
 
 const frac = (v) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v / MAX_SPEED)) : null);
 
-export default function Compass({ degrees, speed, gust, unit = "m/s" }) {
+// speed / gust are m/s (they drive the arcs); `shown` is the already-converted
+// number to print when the display unit isn't m/s.
+export default function Compass({ degrees, speed, gust, unit = "m/s", shown }) {
     const hasDir = Number.isFinite(degrees);
     const speedFrac = frac(speed);
     const gustFrac = frac(gust);
@@ -88,7 +90,7 @@ export default function Compass({ degrees, speed, gust, unit = "m/s" }) {
             )}
 
             <text className="wxp-compass__speed" x="100" y="108" textAnchor="middle">
-                {Number.isFinite(speed) ? speed.toFixed(1) : "--"}
+                {Number.isFinite(shown ?? speed) ? (shown ?? speed).toFixed(1) : "--"}
             </text>
             <text className="wxp-compass__unit" x="100" y="126" textAnchor="middle">
                 {unit}

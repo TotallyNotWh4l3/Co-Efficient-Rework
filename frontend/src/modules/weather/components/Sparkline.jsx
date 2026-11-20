@@ -3,17 +3,28 @@
 // 作成日: 2026/10/21
 // 概要: 計器タイル／ヒーロー背景用の極小SVG折れ線（現在時刻マーカー付き）
 //       色は currentColor を使うため、親の CSS (color) で指定する。
+//       2026/10/30: 線の太さ・なめらかさ・塗りの濃さを props で変えられるようにした
+//                   （天気ページのグラフ設定。既定値は従来と同じ見た目）。
 // ===================================================
+
+import { GRAPH_DEFAULTS } from "../utils/graphStyle";
+import { areaPath, linePath } from "../utils/smoothPath";
 
 const W = 100;
 const H = 30;
 const PAD = 3;
+// A sparkline is small, so it draws its line thinner than a chart does
+// (1.5px at the default 2px chart width).
+const WIDTH_RATIO = 0.75;
 
 /**
  * @param {(number|null)[]} values — evenly spaced samples (null = gap)
  * @param {number} [nowIndex] — index of "now" (-1 = none)
  * @param {boolean} [area] — fill under the line
  * @param {boolean} [dot] — draw the "now" dot (turn off when stretched)
+ * @param {number} [lineWidth] — chart-equivalent line width in px
+ * @param {number} [smoothness] — 0 (straight) .. 1 (rounded)
+ * @param {number} [fillOpacity] — strength of the area fill, 1 = default
  */
 export default function Sparkline({
     values = [],
@@ -21,6 +32,9 @@ export default function Sparkline({
     area = false,
     dot = true,
     className = "",
+    lineWidth = GRAPH_DEFAULTS.lineWidth,
+    smoothness = GRAPH_DEFAULTS.smoothness,
+    fillOpacity = GRAPH_DEFAULTS.fillOpacity,
 }) {
     const finite = values.filter(Number.isFinite);
     if (finite.length < 2) return null;
@@ -36,29 +50,8 @@ export default function Sparkline({
     const xAt = (i) => (i / (n - 1)) * W;
     const yAt = (v) => H - PAD - ((v - min) / (max - min)) * (H - 2 * PAD);
 
-    let line = "";
-    let fill = "";
-    let run = [];
-    const flush = () => {
-        if (run.length > 1) {
-            run.forEach((i, k) => {
-                line += `${k === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yAt(values[i]).toFixed(1)}`;
-            });
-            const first = xAt(run[0]).toFixed(1);
-            const last = xAt(run[run.length - 1]).toFixed(1);
-            fill += `M${first},${H}`;
-            run.forEach((i) => {
-                fill += `L${xAt(i).toFixed(1)},${yAt(values[i]).toFixed(1)}`;
-            });
-            fill += `L${last},${H}Z`;
-        }
-        run = [];
-    };
-    values.forEach((v, i) => {
-        if (Number.isFinite(v)) run.push(i);
-        else flush();
-    });
-    flush();
+    const line = linePath(values, xAt, yAt, smoothness);
+    const fill = area ? areaPath(values, xAt, yAt, H, smoothness) : "";
 
     const nowOk = nowIndex >= 0 && nowIndex < n && Number.isFinite(values[nowIndex]);
     const nx = nowOk ? xAt(nowIndex) : 0;
@@ -69,6 +62,7 @@ export default function Sparkline({
             className={`wxp-spark ${className}`}
             viewBox={`0 0 ${W} ${H}`}
             preserveAspectRatio="none"
+            style={{ "--spark-fill": fillOpacity }}
             aria-hidden="true"
         >
             {area && <path className="wxp-spark__area" d={fill} />}
@@ -82,7 +76,12 @@ export default function Sparkline({
                     vectorEffect="non-scaling-stroke"
                 />
             )}
-            <path className="wxp-spark__line" d={line} vectorEffect="non-scaling-stroke" />
+            <path
+                className="wxp-spark__line"
+                d={line}
+                style={{ strokeWidth: `${lineWidth * WIDTH_RATIO}px` }}
+                vectorEffect="non-scaling-stroke"
+            />
             {nowOk && dot && (
                 <line
                     className="wxp-spark__dot"

@@ -11,6 +11,7 @@ import DashboardWorkspace from "./DashboardWorkspace";
 import Sidebar from "../sidebar/Sidebar";
 import PlaceholderPage from "../sidebar/PlaceholderPage";
 import WeatherPage from "../weather/page/WeatherPage";
+import SandboxPage from "../sandbox/SandboxPage";
 import { useSidebar } from "../sidebar/useSidebar";
 
 import Settings from "../settings/Settings";
@@ -23,7 +24,7 @@ export default function Dashboard() {
     const { user } = useAuth();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSettingsClosing, setIsSettingsClosing] = useState(false);
-    const [activeSection, setActiveSection] = useState("dashboard");
+    const [activeSection, setActiveSection] = useState("sandbox"); // dev: always open the sandbox on load
 
     const sidebar = useSidebar(user);
 
@@ -76,6 +77,8 @@ export default function Dashboard() {
                     <DashboardWorkspace />
                 ) : activeSection === "weather" ? (
                     <WeatherPage />
+                ) : activeSection === "sandbox" ? (
+                    <SandboxPage />
                 ) : (
                     <PlaceholderPage titleKey={activeSection} />
                 )}

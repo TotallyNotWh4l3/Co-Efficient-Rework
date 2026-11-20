@@ -16,10 +16,10 @@ import isMain from "./isMain.js";
 const DEFAULT_THEMES = [DARK_DEFAULT_THEME, LIGHT_DEFAULT_THEME];
 
 export async function seedThemes() {
-    const admin = await User.findByUsername("admin");
+    const admin = await User.findFirstByRole("admin");
 
     if (!admin) {
-        throw new Error("No 'admin' user found — seed the users first.");
+        throw new Error("No user with role 'admin' found — seed the users first.");
     }
 
     const existing = await Theme.findAll();
