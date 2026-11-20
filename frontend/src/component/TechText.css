@@ -1,0 +1,21 @@
+/* ===================================================
+   TechText.css — TechText 用の最小スタイル
+   コンテナは親要素いっぱいに広がり、キャンバスがその上に重なる。
+   =================================================== */
+
+.tech-text {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    touch-action: none; /* lets pointer-drag work on touch screens */
+    user-select: none;
+}
+
+.tech-text-canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
