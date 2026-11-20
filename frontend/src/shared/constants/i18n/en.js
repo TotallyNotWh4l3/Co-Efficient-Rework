@@ -51,6 +51,12 @@ export default {
             username: "Username",
             password: "Password",
             submit: "Login",
+            dev: {
+                badge: "DEV",
+                loginAsAdmin: "Login as admin",
+                orPick: "Or pick an existing user",
+                noUsers: "No users found.",
+            },
         },
     },
     userMenu: {
@@ -77,10 +83,24 @@ export default {
         comingSoon: "This section isn't built yet — check back soon.",
         sections: {
             dashboard: "Dashboard",
-            attendance: "Attendance",
+            sandbox: "Sandbox",
             weather: "Weather",
         },
     },
+    sandboxPage: {
+        title: "Sandbox",
+        searchPlaceholder: "Search components...",
+        count: "components",
+        empty: "No components yet — add a .jsx file to modules/sandbox/playground.",
+        noResults: "No matching components.",
+        noSelection: "Nothing selected",
+        emptyHint: "Pick a component from the list.",
+        crashed: "This component crashed",
+        reset: "Reset component",
+        background: { label: "Background", surface: "Surface", base: "Base", checker: "Checker" },
+        width: { label: "Width", full: "Full", tablet: "Tablet", mobile: "Mobile" },
+    },
+
     weatherPage: {
         title: "Weather Lab",
         source: "Source: Open-Meteo",

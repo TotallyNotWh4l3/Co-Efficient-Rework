@@ -4,7 +4,7 @@
 // 概要: サイドバーのナビゲーションセクション定義
 // ===================================================
 
-import { LayoutGrid, ClipboardCheck, CloudSun } from "lucide-react";
+import { LayoutGrid, FlaskConical, CloudSun } from "lucide-react";
 
 // Central registry the sidebar renders buttons from. Adding a future
 // section (e.g. Poll/Survey) should only mean adding an entry here.
@@ -29,10 +29,10 @@ export const SIDEBAR_SECTIONS = [
         comingSoon: false,
     },
     {
-        id: "attendance",
-        icon: ClipboardCheck,
+        id: "sandbox",
+        icon: FlaskConical,
         roles: null,
-        comingSoon: true,
+        comingSoon: false,
     },
 ];
 

@@ -46,6 +46,12 @@ export default {
             username: "ユーザー名",
             password: "パスワード",
             submit: "ログイン",
+            dev: {
+                badge: "開発用",
+                loginAsAdmin: "管理者でログイン",
+                orPick: "既存のユーザーから選択",
+                noUsers: "ユーザーが見つかりません。",
+            },
         },
     },
 
@@ -75,9 +81,23 @@ export default {
         comingSoon: "この機能は現在準備中です。公開までお待ちください。",
         sections: {
             dashboard: "ダッシュボード",
-            attendance: "出席",
+            sandbox: "サンドボックス",
             weather: "天気",
         },
+    },
+
+    sandboxPage: {
+        title: "サンドボックス",
+        searchPlaceholder: "コンポーネントを検索...",
+        count: "件",
+        empty: "コンポーネントがありません。modules/sandbox/playground に .jsx を追加してください。",
+        noResults: "一致するコンポーネントがありません。",
+        noSelection: "未選択",
+        emptyHint: "一覧からコンポーネントを選んでください。",
+        crashed: "このコンポーネントでエラーが発生しました",
+        reset: "コンポーネントをリセット",
+        background: { label: "背景", surface: "サーフェス", base: "ベース", checker: "市松" },
+        width: { label: "幅", full: "全幅", tablet: "タブレット", mobile: "モバイル" },
     },
 
     weatherPage: {

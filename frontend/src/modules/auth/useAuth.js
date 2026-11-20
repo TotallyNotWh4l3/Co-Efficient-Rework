@@ -69,6 +69,21 @@ export function useAuthState() {
         console.log("[Auth] Login successful.");
     }, []);
 
+    // DEV quick-login: same session handling as login(), no password.
+    const devLogin = useCallback(async (target) => {
+        const data = await AuthService.devLogin(target);
+
+        localStorage.setItem("co-efficient-token", data.token);
+
+        setAuth({
+            user: data.user,
+            token: data.token,
+            loading: false,
+        });
+
+        console.log("[Auth] DEV quick-login successful.");
+    }, []);
+
     const logout = useCallback(() => {
         localStorage.removeItem("co-efficient-token");
 
@@ -85,6 +100,7 @@ export function useAuthState() {
         ...auth,
 
         login,
+        devLogin,
         logout,
     };
 }
